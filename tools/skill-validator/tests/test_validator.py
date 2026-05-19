@@ -30,8 +30,15 @@ from skill_validator import (
     PRINCIPLE_CATEGORY,
     SOFT_CATEGORIES,
     TRIGGER_PRESERVATION_CATEGORY,
+    collect_doc_files,
+    collect_files_to_check,
+    collect_skill_dirs,
     extract_headings,
     find_repo_root,
+    is_path_allowlisted,
+    is_placeholder_url,
+    line_has_inline_allow_marker,
+    main,
     parse_frontmatter,
     resolve_link,
     run_validation,
@@ -724,3 +731,279 @@ class TestSoftCategories:
         assert PRINCIPLE_CATEGORY in SOFT_CATEGORIES
         assert TRIGGER_PRESERVATION_CATEGORY in SOFT_CATEGORIES
         assert BODY_INLINE_CATEGORY in SOFT_CATEGORIES
+
+
+# ---------------------------------------------------------------------------
+# is_placeholder_url
+# ---------------------------------------------------------------------------
+
+
+def _skill_root(tmp_path: Path) -> Path:
+    """Create a minimal repo tree with .claude/skills/ and return the root."""
+    skills = tmp_path / ".claude" / "skills"
+    skills.mkdir(parents=True)
+    return tmp_path
+
+
+class TestIsPlaceholderUrl:
+    def test_angle_bracket_token_is_placeholder(self) -> None:
+        assert is_placeholder_url("<URL>") is True
+        assert is_placeholder_url("<link>") is True
+        assert is_placeholder_url("<tracker>") is True
+
+    def test_ellipsis_is_placeholder(self) -> None:
+        assert is_placeholder_url("...") is True
+        assert is_placeholder_url("…") is True
+
+    def test_real_url_is_not_placeholder(self) -> None:
+        assert is_placeholder_url("https://github.com/apache/airflow") is False
+
+    def test_empty_string_is_not_placeholder(self) -> None:
+        assert is_placeholder_url("") is False
+
+    def test_relative_path_is_not_placeholder(self) -> None:
+        assert is_placeholder_url("../docs/setup.md") is False
+
+
+# ---------------------------------------------------------------------------
+# line_has_inline_allow_marker
+# ---------------------------------------------------------------------------
+
+
+class TestLineHasInlineAllowMarker:
+    def test_line_with_example_marker_is_allowed(self) -> None:
+        assert line_has_inline_allow_marker("example: apache/airflow usage") is True
+
+    def test_line_with_eg_marker_is_allowed(self) -> None:
+        assert line_has_inline_allow_marker("e.g. for Airflow projects") is True
+
+    def test_plain_line_without_marker_is_not_allowed(self) -> None:
+        assert line_has_inline_allow_marker("This mentions apache/airflow directly") is False
+
+    def test_line_with_apache_airflow_steward_marker_is_allowed(self) -> None:
+        assert line_has_inline_allow_marker("see apache/airflow-steward for details") is True
+
+    def test_empty_line_is_not_allowed(self) -> None:
+        assert line_has_inline_allow_marker("") is False
+
+
+# ---------------------------------------------------------------------------
+# is_path_allowlisted
+# ---------------------------------------------------------------------------
+
+
+class TestIsPathAllowlisted:
+    def test_readme_is_allowlisted(self) -> None:
+        assert is_path_allowlisted(Path("README.md")) is True
+
+    def test_agents_md_is_allowlisted(self) -> None:
+        assert is_path_allowlisted(Path("AGENTS.md")) is True
+
+    def test_projects_template_subpath_is_allowlisted(self) -> None:
+        assert is_path_allowlisted(Path("projects/_template/some-skill/SKILL.md")) is True
+
+    def test_github_dir_is_allowlisted(self) -> None:
+        assert is_path_allowlisted(Path(".github/workflows/ci.yml")) is True
+
+    def test_skill_file_is_not_allowlisted(self) -> None:
+        assert is_path_allowlisted(Path(".claude/skills/my-skill/SKILL.md")) is False
+
+    def test_arbitrary_doc_file_is_not_allowlisted(self) -> None:
+        assert is_path_allowlisted(Path("docs/my-feature.md")) is False
+
+
+# ---------------------------------------------------------------------------
+# collect_files_to_check
+# ---------------------------------------------------------------------------
+
+
+class TestCollectFilesToCheck:
+    def test_returns_md_files_under_skills_dir(self, tmp_path: Path) -> None:
+        root = _skill_root(tmp_path)
+        skill = root / ".claude" / "skills" / "my-skill"
+        skill.mkdir()
+        (skill / "SKILL.md").write_text("content")
+        (skill / "other.md").write_text("content")
+
+        files = collect_files_to_check(root)
+        names = {f.name for f in files}
+        assert "SKILL.md" in names
+        assert "other.md" in names
+
+    def test_returns_empty_list_when_skills_dir_missing(self, tmp_path: Path) -> None:
+        assert collect_files_to_check(tmp_path) == []
+
+    def test_does_not_return_non_md_files(self, tmp_path: Path) -> None:
+        root = _skill_root(tmp_path)
+        skill = root / ".claude" / "skills" / "my-skill"
+        skill.mkdir()
+        (skill / "SKILL.md").write_text("content")
+        (skill / "config.toml").write_text("[tool]")
+
+        files = collect_files_to_check(root)
+        assert all(f.suffix == ".md" for f in files)
+
+    def test_recurses_into_nested_subdirectories(self, tmp_path: Path) -> None:
+        root = _skill_root(tmp_path)
+        nested = root / ".claude" / "skills" / "skill-a" / "subdir"
+        nested.mkdir(parents=True)
+        (nested / "extra.md").write_text("content")
+
+        files = collect_files_to_check(root)
+        assert any(f.name == "extra.md" for f in files)
+
+
+# ---------------------------------------------------------------------------
+# collect_skill_dirs
+# ---------------------------------------------------------------------------
+
+
+class TestCollectSkillDirs:
+    def test_returns_immediate_child_dirs(self, tmp_path: Path) -> None:
+        root = _skill_root(tmp_path)
+        for name in ("skill-a", "skill-b"):
+            (root / ".claude" / "skills" / name).mkdir()
+
+        dirs = collect_skill_dirs(root)
+        names = {d.name for d in dirs}
+        assert "skill-a" in names
+        assert "skill-b" in names
+
+    def test_returns_empty_set_when_skills_dir_missing(self, tmp_path: Path) -> None:
+        assert collect_skill_dirs(tmp_path) == set()
+
+    def test_does_not_return_files_only_dirs(self, tmp_path: Path) -> None:
+        root = _skill_root(tmp_path)
+        base = root / ".claude" / "skills"
+        (base / "skill-a").mkdir()
+        (base / "loose-file.md").write_text("content")
+
+        dirs = collect_skill_dirs(root)
+        assert all(d.is_dir() for d in dirs)
+        assert not any(d.name == "loose-file.md" for d in dirs)
+
+    def test_returns_resolved_absolute_paths(self, tmp_path: Path) -> None:
+        root = _skill_root(tmp_path)
+        (root / ".claude" / "skills" / "skill-a").mkdir()
+
+        dirs = collect_skill_dirs(root)
+        assert all(d.is_absolute() for d in dirs)
+
+
+# ---------------------------------------------------------------------------
+# collect_doc_files
+# ---------------------------------------------------------------------------
+
+
+class TestCollectDocFiles:
+    def test_returns_md_files_under_docs(self, tmp_path: Path) -> None:
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "guide.md").write_text("content")
+
+        files = collect_doc_files(tmp_path)
+        assert any(f.name == "guide.md" for f in files)
+
+    def test_returns_md_files_under_projects_template(self, tmp_path: Path) -> None:
+        tmpl = tmp_path / "projects" / "_template"
+        tmpl.mkdir(parents=True)
+        (tmpl / "README.md").write_text("content")
+
+        files = collect_doc_files(tmp_path)
+        assert any(f.name == "README.md" for f in files)
+
+    def test_returns_empty_set_when_neither_dir_exists(self, tmp_path: Path) -> None:
+        assert collect_doc_files(tmp_path) == set()
+
+    def test_returns_resolved_absolute_paths(self, tmp_path: Path) -> None:
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "guide.md").write_text("content")
+
+        files = collect_doc_files(tmp_path)
+        assert all(f.is_absolute() for f in files)
+
+    def test_does_not_return_non_md_files(self, tmp_path: Path) -> None:
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "guide.md").write_text("content")
+        (docs / "image.png").write_bytes(b"")
+
+        files = collect_doc_files(tmp_path)
+        assert all(f.suffix == ".md" for f in files)
+
+
+# ---------------------------------------------------------------------------
+# main (CLI)
+# ---------------------------------------------------------------------------
+
+
+def _make_valid_skill(root: Path, name: str) -> Path:
+    """Write a minimal valid SKILL.md under .claude/skills/<name>/."""
+    skill_dir = root / ".claude" / "skills" / name
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\n"
+        f"name: {name}\n"
+        "description: A test skill.\n"
+        "license: Apache-2.0\n"
+        "---\n"
+        "# Body\n"
+        "Some content.\n"
+    )
+    return skill_dir
+
+
+class TestMain:
+    def test_returns_0_when_no_violations(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        root = _skill_root(tmp_path)
+        _make_valid_skill(root, "my-skill")
+        monkeypatch.chdir(root)
+
+        rc = main([])
+        assert rc == 0
+
+    def test_returns_1_when_hard_violations_found(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+        root = _skill_root(tmp_path)
+        skill_dir = root / ".claude" / "skills" / "bad-skill"
+        skill_dir.mkdir(parents=True)
+        # Missing required frontmatter keys → hard violation
+        (skill_dir / "SKILL.md").write_text("# No frontmatter\n")
+        monkeypatch.chdir(root)
+
+        rc = main([])
+        assert rc == 1
+        assert "violation" in capsys.readouterr().out
+
+    def test_skip_categories_suppresses_violations(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        root = _skill_root(tmp_path)
+        skill_dir = root / ".claude" / "skills" / "bad-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# No frontmatter\n")
+        monkeypatch.chdir(root)
+
+        # Frontmatter violations use the "general" default category.
+        rc = main(["--skip-categories=general"])
+        assert rc == 0
+
+    def test_strict_promotes_soft_violations_to_hard(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        root = _skill_root(tmp_path)
+        skill_dir = root / ".claude" / "skills" / "soft-skill"
+        skill_dir.mkdir(parents=True)
+        # A --body "..." in a fenced block triggers a SOFT body-inline warning.
+        (skill_dir / "SKILL.md").write_text(
+            "---\n"
+            "name: soft-skill\n"
+            "description: A test skill.\n"
+            "license: Apache-2.0\n"
+            "---\n"
+            "```bash\n"
+            'gh pr comment 1 --body "attacker content"\n'
+            "```\n"
+        )
+        monkeypatch.chdir(root)
+
+        rc_normal = main([])
+        rc_strict = main(["--strict"])
+        assert rc_normal == 0
+        assert rc_strict == 1

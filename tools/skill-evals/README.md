@@ -28,6 +28,7 @@ Nineteen suites are currently implemented:
 - **list-steward-skills** — 7 cases across 2 steps (step-1-command, step-2-present)
 - **setup-isolated-setup-verify** — 11 cases across 2 steps (step-1-classify, step-2-recommend)
 - **setup-isolated-setup-update** — 13 cases across 3 steps (step-snapshot-drift, step-tool-freshness, step-after-report)
+- **committer-onboarding** — 20 cases across 4 steps (step-0-validate-vote, step-1-icla-comms, step-2-checklist, step-3-completion-summary)
 
 ## Run
 

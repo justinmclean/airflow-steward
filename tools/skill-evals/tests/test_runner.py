@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-import io
 import json
 import textwrap
 from pathlib import Path
@@ -77,18 +76,10 @@ def _make_case(fixtures_dir: Path, name: str, *, report: str = "report text", ex
     return case_dir
 
 
-def _run_main(monkeypatch: pytest.MonkeyPatch, argv: list[str]) -> tuple[int, str, str]:
-    stdout = io.StringIO()
-    stderr = io.StringIO()
-    monkeypatch.setattr("sys.stdout", stdout)
-    monkeypatch.setattr("sys.stderr", stderr)
-    monkeypatch.setattr("sys.argv", ["skill-eval", *argv])
-    try:
-        main()
-        rc = 0
-    except SystemExit as exc:
-        rc = int(exc.code) if exc.code is not None else 0
-    return rc, stdout.getvalue(), stderr.getvalue()
+def _run_main(capsys: pytest.CaptureFixture[str], argv: list[str]) -> tuple[int, str, str]:
+    rc = main(argv)
+    captured = capsys.readouterr()
+    return rc, captured.out, captured.err
 
 
 # ---------------------------------------------------------------------------
@@ -445,15 +436,15 @@ def test_find_cases_deduplicates_nested_fixtures(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_main_exits_1_when_no_cases_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_main_exits_1_when_no_cases_found(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     empty = tmp_path / "empty"
     empty.mkdir()
-    rc, _, stderr = _run_main(monkeypatch, [str(empty)])
+    rc, _, stderr = _run_main(capsys, [str(empty)])
     assert rc == 1
     assert "No eval cases found" in stderr
 
 
-def test_main_prints_case_header_and_expected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_main_prints_case_header_and_expected(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     repo_root = _make_repo(tmp_path)
     skill_md = repo_root / "SKILL.md"
     skill_md.write_text("## My Step\n\nDo the thing.\n")
@@ -464,13 +455,13 @@ def test_main_prints_case_header_and_expected(tmp_path: Path, monkeypatch: pytes
     )
     _make_case(fixtures_dir, "case-1", expected={"result": "pass"})
 
-    rc, stdout, _ = _run_main(monkeypatch, [str(fixtures_dir)])
+    rc, stdout, _ = _run_main(capsys, [str(fixtures_dir)])
     assert rc == 0
     assert "CASE:" in stdout
     assert '"result": "pass"' in stdout
 
 
-def test_main_quiet_suppresses_prompts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_main_quiet_suppresses_prompts(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     repo_root = _make_repo(tmp_path)
     skill_md = repo_root / "SKILL.md"
     skill_md.write_text("## Step\n\nSecret system prompt.\n")
@@ -481,14 +472,14 @@ def test_main_quiet_suppresses_prompts(tmp_path: Path, monkeypatch: pytest.Monke
     )
     _make_case(fixtures_dir, "case-1")
 
-    rc, stdout, _ = _run_main(monkeypatch, [str(fixtures_dir), "--quiet"])
+    rc, stdout, _ = _run_main(capsys, [str(fixtures_dir), "--quiet"])
     assert rc == 0
     assert "Secret system prompt" not in stdout
     assert "CASE:" in stdout
     assert "EXPECTED" in stdout
 
 
-def test_main_prints_system_and_user_prompt_without_quiet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_main_prints_system_and_user_prompt_without_quiet(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     repo_root = _make_repo(tmp_path)
     skill_md = repo_root / "SKILL.md"
     skill_md.write_text("## Step\n\nSystem content here.\n")
@@ -499,7 +490,7 @@ def test_main_prints_system_and_user_prompt_without_quiet(tmp_path: Path, monkey
     )
     _make_case(fixtures_dir, "case-1", report="The incoming report.")
 
-    rc, stdout, _ = _run_main(monkeypatch, [str(fixtures_dir)])
+    rc, stdout, _ = _run_main(capsys, [str(fixtures_dir)])
     assert rc == 0
     assert "SYSTEM PROMPT" in stdout
     assert "System content here" in stdout
@@ -507,7 +498,7 @@ def test_main_prints_system_and_user_prompt_without_quiet(tmp_path: Path, monkey
     assert "The incoming report" in stdout
 
 
-def test_main_caches_step_config_across_cases(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_main_caches_step_config_across_cases(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     """Step config should be loaded once per fixtures dir even with multiple cases."""
     repo_root = _make_repo(tmp_path)
     skill_md = repo_root / "SKILL.md"
@@ -520,13 +511,13 @@ def test_main_caches_step_config_across_cases(tmp_path: Path, monkeypatch: pytes
     _make_case(fixtures_dir, "case-1")
     _make_case(fixtures_dir, "case-2")
 
-    rc, stdout, _ = _run_main(monkeypatch, [str(fixtures_dir)])
+    rc, stdout, _ = _run_main(capsys, [str(fixtures_dir)])
     assert rc == 0
     # Both cases should appear
     assert stdout.count("CASE:") == 2
 
 
-def test_main_bad_user_prompt_template_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_main_bad_user_prompt_template_raises(tmp_path: Path):
     """A malformed user-prompt-template.md with unknown slots raises an error."""
     repo_root = _make_repo(tmp_path)
     skill_md = repo_root / "SKILL.md"
@@ -540,4 +531,4 @@ def test_main_bad_user_prompt_template_raises(tmp_path: Path, monkeypatch: pytes
     _make_case(fixtures_dir, "case-1")
 
     with pytest.raises(KeyError):
-        _run_main(monkeypatch, [str(fixtures_dir)])
+        main([str(fixtures_dir)])

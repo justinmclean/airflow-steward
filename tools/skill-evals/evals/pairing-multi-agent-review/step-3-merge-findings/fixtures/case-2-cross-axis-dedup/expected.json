@@ -1,0 +1,16 @@
+{
+  "merged_findings": [
+    {
+      "axis": "security",
+      "severity": "blocking",
+      "location": "src/integrations/smtp.py:21",
+      "summary": "Hardcoded fallback password introduced as module-level constant.",
+      "evidence": "+_FALLBACK_PASSWORD = \"hunter2\"",
+      "rule": "Credential material must not appear in source code.",
+      "also_flagged_by": ["correctness"]
+    }
+  ],
+  "aggregated_injection_attempts": [],
+  "blocking_count": 1,
+  "advisory_count": 0
+}

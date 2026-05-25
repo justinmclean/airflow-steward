@@ -1,0 +1,7 @@
+{
+  "overall_signal": "blocking",
+  "blocking_count": 2,
+  "advisory_count": 1,
+  "sections_present": ["correctness", "security", "conventions"],
+  "footer_present": true
+}

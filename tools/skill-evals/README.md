@@ -2,8 +2,9 @@
 
 Behavioral eval harness for Apache Steward skills. Each eval suite tests a skill pipeline step by step, verifying that the model produces the correct structured JSON output for a fixed set of fixture cases.
 
-Fifteen suites are currently implemented:
+Sixteen suites are currently implemented:
 
+- **pairing-multi-agent-review** — 15 cases across 6 steps (step-1-collect-diff, step-2a-correctness-pass, step-2b-security-pass, step-2c-conventions-pass, step-3-merge-findings, step-4-compose-report)
 - **security-issue-import** — 32 cases across 8 steps
 - **security-issue-triage** — 33 cases across 9 steps
 - **security-issue-deduplicate** — 18 cases across 6 steps (steps 1, 2, 3, 4, 5, 6)

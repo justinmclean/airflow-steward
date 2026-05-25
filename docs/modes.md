@@ -53,7 +53,7 @@ sequencing commitments behind them.
 | **Triage** | Issues, security reports, PRs: spot, classify, route, surface duplicates. Every output is a suggestion the human signs off on. | stable (security) / experimental (pr-management, issue-management, contributor-nomination) | 13 |
 | **Mentoring** | Joins issue and PR threads in a teaching register: clarifying questions, pointers to project conventions, paired examples from prior PRs, hand-off to a human when scope exceeds the agent. | proposed | 0 |
 | **Drafting** | Agent drafts a fix for a well-scoped problem and opens a PR; every PR is reviewed and merged by a human committer. | stable (security-only); experimental (issue-management) | 2 |
-| **Pairing** | Developer-side dev-cycle skills with mentorship intrinsic — multi-agent review pipelines, self-review and pre-flight patterns, scoped fix drafting under the developer's driver's seat. | proposed | 0 |
+| **Pairing** | Developer-side dev-cycle skills with mentorship intrinsic — multi-agent review pipelines, self-review and pre-flight patterns, scoped fix drafting under the developer's driver's seat. | experimental | 1 |
 | **Auto-merge** | Auto-merge restricted to objectively boring change classes (lint, dependency bumps inside an allow-list, license-header insertion, formatting, broken-link repair). | off | 0 |
 
 A few skills sit **outside** the mode taxonomy by design — see
@@ -148,7 +148,7 @@ for the rules the skill enforces.
 
 ## Pairing
 
-**Status: proposed. No skill yet.**
+**Status: experimental. 1 skill.**
 
 [`MISSION.md` § Pairing](../MISSION.md#technical-scope) introduces
 this mode as the developer-side counterpart to the project-side
@@ -172,6 +172,10 @@ they share the same skill format and security posture as the
 project-side modes, so a maintainer who already trusts the
 framework for Triage gets the same posture for the patches they
 write themselves.
+
+| Skill | Domain | Status |
+|---|---|---|
+| [`pairing-multi-agent-review`](../.claude/skills/pairing-multi-agent-review/SKILL.md) | Fan a diff through three independent review passes (correctness, security, conventions) and merge findings. | experimental |
 
 **Sequencing.** Pairing ships before Auto-merge in the project's
 automation roadmap — full auto-merge of maintainer-driven changes

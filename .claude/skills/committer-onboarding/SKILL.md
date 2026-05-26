@@ -14,6 +14,7 @@ when_to_use: |
   secretary request", "send the congratulations email". Also
   appropriate immediately after running contributor-nomination
   when the user asks what comes next after the vote.
+capability: capability:stats
 license: Apache-2.0
 ---
 

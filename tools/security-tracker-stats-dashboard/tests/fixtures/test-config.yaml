@@ -1,0 +1,4 @@
+# Minimal test overlay: disable upstream PR charts and simplify date range.
+upstream_repo: null
+start: "2026-01"
+milestones: []

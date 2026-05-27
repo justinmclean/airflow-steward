@@ -1,0 +1,14 @@
+{
+  "1": {
+    "body": "Please fix this issue",
+    "closedByPullRequestsReferences": []
+  },
+  "2": {
+    "body": "Fixed in apache/airflow#9999",
+    "closedByPullRequestsReferences": []
+  },
+  "3": {
+    "body": "Not a valid security issue",
+    "closedByPullRequestsReferences": []
+  }
+}

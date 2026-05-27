@@ -1,0 +1,44 @@
+[
+  {
+    "number": 1,
+    "title": "CVE-2026-0001 remote code execution",
+    "state": "OPEN",
+    "stateReason": null,
+    "createdAt": "2026-01-15T10:00:00Z",
+    "closedAt": null,
+    "labels": [{"name": "airflow"}, {"name": "needs triage"}],
+    "comments": [
+      {
+        "author": {"login": "security-team-member"},
+        "createdAt": "2026-01-16T08:00:00Z",
+        "body": "triage proposal: VALID — this is a genuine RCE"
+      }
+    ]
+  },
+  {
+    "number": 2,
+    "title": "XSS in admin panel",
+    "state": "CLOSED",
+    "stateReason": "COMPLETED",
+    "createdAt": "2026-02-01T09:00:00Z",
+    "closedAt": "2026-03-01T12:00:00Z",
+    "labels": [{"name": "airflow"}, {"name": "cve allocated"}, {"name": "fix released"}],
+    "comments": [
+      {
+        "author": {"login": "security-team-member"},
+        "createdAt": "2026-02-02T10:00:00Z",
+        "body": "proposed disposition: VALID"
+      }
+    ]
+  },
+  {
+    "number": 3,
+    "title": "Info disclosure in logs",
+    "state": "CLOSED",
+    "stateReason": "NOT_PLANNED",
+    "createdAt": "2026-03-10T14:00:00Z",
+    "closedAt": "2026-03-20T16:00:00Z",
+    "labels": [],
+    "comments": []
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "event": "labeled",
+    "label": "airflow",
+    "created_at": "2026-02-01T09:05:00Z"
+  },
+  {
+    "event": "labeled",
+    "label": "cve allocated",
+    "created_at": "2026-02-10T10:00:00Z"
+  },
+  {
+    "event": "labeled",
+    "label": "fix released",
+    "created_at": "2026-02-28T10:00:00Z"
+  },
+  {
+    "event": "closed",
+    "label": null,
+    "created_at": "2026-03-01T12:00:00Z"
+  }
+]

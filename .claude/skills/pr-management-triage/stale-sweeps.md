@@ -205,13 +205,33 @@ The label name comes from
 ### Common trigger (4a and 4b)
 
 - The PR carries the `ready for maintainer review` label.
-- `last_maintainer_comment_at` is not null and
-  `<now> - last_maintainer_comment_at >= 7 days`.
+- The `ready for maintainer review` label was added ≥ 7 days ago
+  (`<now> - ready_label_added_at >= 7 days`, where
+  `ready_label_added_at` is the most recent
+  `LabeledEvent { label.name == "ready for maintainer review" }`
+  timestamp from the PR's `timelineItems`).
+- The most recent maintainer comment came **after** the label
+  was added (`last_maintainer_comment_at > ready_label_added_at`)
+  AND `<now> - last_maintainer_comment_at >= 7 days`.
 - `last_author_activity_at` is null **or**
   `last_author_activity_at <= last_maintainer_comment_at`.
 
-The last condition makes this sweep about *author silence*,
-not label age — a "still working on it" reply resets the clock.
+The "maintainer comment after label-add" condition is the
+load-bearing guard against the freshly-promoted misfire: when a
+maintainer just added the `ready for maintainer review` label,
+the queue moves to the maintainers, not the author. A pre-label
+maintainer comment is part of the conversation that *got* the PR
+to ready; counting it as proof of author silence would close PRs
+the moment they get promoted, which is the opposite of what
+`ready for maintainer review` means. This guard mirrors the
+"after the label-add timestamp" pattern row F4 already uses for
+regression detection (see
+[`classify-and-act.md#decision-table`](classify-and-act.md), F4
+row).
+
+The author-activity condition makes this sweep about *author
+silence*, not label age — a "still working on it" reply resets
+the clock.
 
 ### 4a — Branch healthy → strip label
 

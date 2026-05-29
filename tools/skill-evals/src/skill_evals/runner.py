@@ -33,6 +33,17 @@ Two modes:
    ``has_*`` flags or ``mention_*`` lists) where automatic comparison
    is not meaningful; those still print prompts for manual review.
 
+   By default, free-text fields (rationale, reason, drop_reason,
+   blockers, etc.) are graded by piping a short rubric prompt to a
+   cheap judge model (``claude -p --model haiku`` by default) and
+   parsing ``{"match": bool, "reason": str}``. Decision fields
+   (booleans, enums, counts, ordering, IDs) are still compared
+   exactly. Override the grader command with ``--grader-cli``, or pass
+   ``--exact`` to disable grading and require verbatim equality on
+   every field. The set of prose fields defaults to a built-in list
+   and can be overridden per fixtures dir via ``grading-schema.json``.
+   No caching: every prose field is sent to the grader on every run.
+
 Usage:
     # Print prompts for all cases under a fixtures directory
     uv run --project tools/skill-evals skill-eval \\
@@ -42,9 +53,19 @@ Usage:
     uv run --project tools/skill-evals skill-eval \\
         evals/security-issue-import/step-2a-semantic-sweep/fixtures/case-1-clear-duplicate
 
-    # Automated comparison against a CLI (Claude Code shown; any LLM CLI
-    # that reads a prompt on stdin and writes the response to stdout works)
+    # Automated comparison against a CLI. Decision fields are graded
+    # exact; prose fields go to the default grader (claude -p --model haiku).
     uv run --project tools/skill-evals skill-eval --cli "claude -p" \\
+        evals/security-issue-import/step-2a-semantic-sweep/fixtures/
+
+    # Override the grader, e.g. to use a different cheap model.
+    uv run --project tools/skill-evals skill-eval \\
+        --cli "claude -p" \\
+        --grader-cli "llm -m gpt-4o-mini" \\
+        evals/security-issue-import/step-2a-semantic-sweep/fixtures/
+
+    # Disable the grader and require verbatim JSON equality on every field.
+    uv run --project tools/skill-evals skill-eval --cli "claude -p" --exact \\
         evals/security-issue-import/step-2a-semantic-sweep/fixtures/
 """
 
@@ -301,6 +322,204 @@ def compare_outputs(actual: object, expected: object) -> tuple[bool, str]:
     return False, _format_diff(actual, expected)
 
 
+# ---------------------------------------------------------------------------
+# Field-aware grading (--grader-cli mode)
+# ---------------------------------------------------------------------------
+
+# Default grader shell command. Used when --cli is set and --exact is not.
+# Haiku is the cheapest Claude model; the rubric is small so cost is minimal.
+DEFAULT_GRADER_CLI: str = "claude -p --model haiku"
+
+
+# Keys whose values are treated as prose by default. The runner sends these
+# to the grader CLI for a soft "does the candidate support the same
+# conclusion?" judgement instead of requiring verbatim string equality.
+# A per-fixtures-dir ``grading-schema.json`` can replace this list.
+DEFAULT_PROSE_FIELDS: frozenset[str] = frozenset(
+    {
+        "rationale",
+        "reason",
+        "reasons",
+        "drop_reason",
+        "blockers",
+        "notes",
+        "summary",
+        "explanation",
+        "details",
+        "description",
+    }
+)
+
+
+GRADER_RUBRIC = """\
+You are grading one field of a model's structured answer against a reference answer.
+
+Field path: {field_path}
+
+Expected value:
+{expected_value}
+
+Candidate value:
+{candidate_value}
+
+Does the candidate value support the same conclusion as the expected value? Ignore wording differences and reorderings. Reply with one line of JSON only, no prose: {{"match": true, "reason": "<one-line explanation>"}} or {{"match": false, "reason": "<one-line explanation>"}}.
+"""
+
+
+def load_grading_schema(fixtures_dir: Path) -> set[str]:
+    """Return the set of prose field names for cases in this fixtures dir.
+
+    Reads ``fixtures_dir/grading-schema.json`` when present. The file may
+    set ``prose_fields`` to a string list that *replaces* the default set
+    (use ``["rationale", "reason", ...]`` to be explicit, or ``[]`` to
+    grade everything by exact match).
+
+    Falls back to :data:`DEFAULT_PROSE_FIELDS` when no schema file exists.
+    """
+    path = fixtures_dir / "grading-schema.json"
+    if not path.exists():
+        return set(DEFAULT_PROSE_FIELDS)
+    data = json.loads(path.read_text())
+    fields = data.get("prose_fields")
+    if fields is None:
+        return set(DEFAULT_PROSE_FIELDS)
+    if not isinstance(fields, list) or not all(isinstance(f, str) for f in fields):
+        raise ValueError(f"{path} must contain a string-list 'prose_fields' field")
+    return set(fields)
+
+
+def _render_field_value(value: object) -> str:
+    """Render an expected/candidate field value for the grader prompt."""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False)
+
+
+def grade_prose_field(
+    field_path: str,
+    expected_value: object,
+    actual_value: object,
+    grader_cli: str,
+    timeout: int,
+) -> tuple[bool, str]:
+    """Ask the grader CLI whether the candidate value supports the same conclusion.
+
+    Returns ``(match, note)``. ``note`` is empty on match and a one-line
+    summary on mismatch (or grader failure).
+    """
+    if expected_value == actual_value:
+        return True, ""
+    prompt = GRADER_RUBRIC.format(
+        field_path=field_path,
+        expected_value=_render_field_value(expected_value),
+        candidate_value=_render_field_value(actual_value),
+    )
+    try:
+        stdout, stderr, rc = run_cli(grader_cli, prompt, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False, f"{field_path}: grader CLI timed out after {timeout}s"
+    except OSError as exc:
+        return False, f"{field_path}: grader CLI invocation failed ({exc})"
+    if rc != 0:
+        return False, f"{field_path}: grader CLI exited {rc} ({stderr.strip()[:200]})"
+    verdict, err = extract_json_from_output(stdout)
+    if err is not None or not isinstance(verdict, dict) or "match" not in verdict:
+        return False, f"{field_path}: grader returned unusable output ({err or 'missing match key'})"
+    match = bool(verdict.get("match"))
+    reason = str(verdict.get("reason", "")).strip()
+    if match:
+        return True, ""
+    return False, f"{field_path}: grader says NO ({reason or 'no reason given'})"
+
+
+def compare_with_grader(
+    actual: object,
+    expected: object,
+    *,
+    prose_fields: set[str],
+    grader_cli: str,
+    timeout: int,
+    path: str = "$",
+) -> tuple[bool, list[str]]:
+    """Field-aware comparison: decision keys exact, prose keys judged by grader.
+
+    Walks ``expected`` and ``actual`` in parallel. Type or shape mismatches
+    (different key sets, list length, scalar type) always fail: those are
+    decision-level properties. For dict keys whose name is in
+    ``prose_fields``, the entire value is sent to the grader. For all other
+    keys, recurse. Returns ``(ok, messages)``; ``messages`` is empty when
+    ok and otherwise lists one note per failing field.
+    """
+    if type(actual) is not type(expected):
+        return False, [
+            f"{path}: type mismatch (actual={type(actual).__name__}, expected={type(expected).__name__})"
+        ]
+
+    if isinstance(expected, dict):
+        actual_dict = actual  # type: ignore[assignment]
+        expected_keys = set(expected.keys())
+        actual_keys = set(actual_dict.keys())
+        if expected_keys != actual_keys:
+            missing = sorted(expected_keys - actual_keys)
+            extra = sorted(actual_keys - expected_keys)
+            parts = []
+            if missing:
+                parts.append(f"missing={missing}")
+            if extra:
+                parts.append(f"unexpected={extra}")
+            return False, [f"{path}: key set mismatch ({', '.join(parts)})"]
+        ok = True
+        msgs: list[str] = []
+        for key in expected:
+            child_path = f"{path}.{key}" if path else key
+            if key in prose_fields:
+                p_ok, note = grade_prose_field(
+                    child_path, expected[key], actual_dict[key], grader_cli, timeout
+                )
+                if not p_ok:
+                    ok = False
+                    msgs.append(note)
+            else:
+                sub_ok, sub_msgs = compare_with_grader(
+                    actual_dict[key],
+                    expected[key],
+                    prose_fields=prose_fields,
+                    grader_cli=grader_cli,
+                    timeout=timeout,
+                    path=child_path,
+                )
+                if not sub_ok:
+                    ok = False
+                    msgs.extend(sub_msgs)
+        return ok, msgs
+
+    if isinstance(expected, list):
+        actual_list = actual  # type: ignore[assignment]
+        if len(actual_list) != len(expected):
+            return False, [
+                f"{path}: length mismatch (actual={len(actual_list)}, expected={len(expected)})"
+            ]
+        ok = True
+        msgs = []
+        for i, (a_item, e_item) in enumerate(zip(actual_list, expected)):
+            sub_ok, sub_msgs = compare_with_grader(
+                a_item,
+                e_item,
+                prose_fields=prose_fields,
+                grader_cli=grader_cli,
+                timeout=timeout,
+                path=f"{path}[{i}]",
+            )
+            if not sub_ok:
+                ok = False
+                msgs.extend(sub_msgs)
+        return ok, msgs
+
+    if actual == expected:
+        return True, []
+    return False, [f"{path}: expected={expected!r}, actual={actual!r}"]
+
+
 def _format_diff(actual: object, expected: object) -> str:
     actual_text = json.dumps(actual, indent=2, sort_keys=True)
     expected_text = json.dumps(expected, indent=2, sort_keys=True)
@@ -410,6 +629,34 @@ def main(argv: list[str] | None = None) -> int:
         help="Timeout in seconds for each --cli invocation (default: 120).",
     )
     parser.add_argument(
+        "--grader-cli",
+        type=str,
+        default=DEFAULT_GRADER_CLI,
+        help=(
+            "Shell command for a cheap judge model that grades free-text "
+            "fields (rationale, reason, drop_reason, blockers, etc.). "
+            "Prose fields are compared via a rubric prompt instead of "
+            "exact equality; decision fields stay on exact compare. The set "
+            "of prose fields is the runner's default plus any per-fixtures "
+            "grading-schema.json overrides. Requires --cli. Default: "
+            f"'{DEFAULT_GRADER_CLI}'. Pass --exact to disable grading."
+        ),
+    )
+    parser.add_argument(
+        "--exact",
+        action="store_true",
+        help=(
+            "Disable the field-aware grader and require verbatim JSON "
+            "equality on every field (the runner's pre-grader behaviour)."
+        ),
+    )
+    parser.add_argument(
+        "--grader-timeout",
+        type=int,
+        default=60,
+        help="Timeout in seconds for each --grader-cli invocation (default: 60).",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -425,6 +672,10 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = parser.parse_args(argv)
+
+    grader_explicit = args.grader_cli != DEFAULT_GRADER_CLI
+    if args.cli is None and (grader_explicit or args.exact):
+        parser.error("--grader-cli and --exact require --cli")
 
     cases = find_cases(args.path)
     if args.tag:
@@ -442,6 +693,8 @@ def main(argv: list[str] | None = None) -> int:
     # Cache loaded step configs so we don't re-read prompts for every case in
     # the same fixtures dir (common when running a whole skill at once).
     _step_config_cache: dict[Path, tuple[str, str]] = {}
+    # Cache the prose-field schema per fixtures dir (config only, not grader results).
+    _grading_schema_cache: dict[Path, set[str]] = {}
 
     passed = failed = manual = errored = 0
 
@@ -518,14 +771,34 @@ def main(argv: list[str] | None = None) -> int:
                 print(stdout)
             continue
 
-        ok, diff = compare_outputs(actual, expected)
-        if ok:
-            print(f"PASS    {case_label}")
-            passed += 1
+        if not args.exact:
+            if fixtures_dir not in _grading_schema_cache:
+                _grading_schema_cache[fixtures_dir] = load_grading_schema(fixtures_dir)
+            prose_fields = _grading_schema_cache[fixtures_dir]
+            ok, notes = compare_with_grader(
+                actual,
+                expected,
+                prose_fields=prose_fields,
+                grader_cli=args.grader_cli,
+                timeout=args.grader_timeout,
+            )
+            if ok:
+                print(f"PASS    {case_label}")
+                passed += 1
+            else:
+                print(f"FAIL    {case_label}")
+                for note in notes:
+                    print(f"  {note}")
+                failed += 1
         else:
-            print(f"FAIL    {case_label}")
-            print(diff)
-            failed += 1
+            ok, diff = compare_outputs(actual, expected)
+            if ok:
+                print(f"PASS    {case_label}")
+                passed += 1
+            else:
+                print(f"FAIL    {case_label}")
+                print(diff)
+                failed += 1
 
         if args.verbose:
             print("--- SYSTEM PROMPT ---")

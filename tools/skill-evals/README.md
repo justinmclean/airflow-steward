@@ -92,6 +92,58 @@ automatic JSON-equality comparison is meaningless. Those cases report
 `MANUAL` and the runner skips the CLI call; review them by re-running
 without `--cli` (or with `--verbose`).
 
+### Field-aware grading (default in `--cli` mode)
+
+Pure JSON-equality on `expected.json` is too strict for free-text fields
+like `rationale`, `reason`, `drop_reason`, and `blockers`: a candidate
+answer can carry the right decision but be flagged FAIL on wording
+alone. By default, `--cli` mode now sends those fields to a cheap judge
+model and grades them by meaning instead of by string equality.
+
+```bash
+# Decision fields exact; prose fields graded by the default Haiku judge.
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --cli "claude -p" \
+    tools/skill-evals/evals/issue-triage/
+
+# Use a different judge.
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner \
+    --cli "claude -p" \
+    --grader-cli "llm -m gpt-4o-mini" \
+    tools/skill-evals/evals/issue-triage/
+
+# Opt out: require verbatim JSON equality on every field (old behaviour).
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --cli "claude -p" --exact \
+    tools/skill-evals/evals/issue-triage/
+```
+
+Decision fields (booleans, enums, counts, ordering, IDs) stay on exact
+equality. For each prose field the runner pipes a fixed rubric prompt
+to the grader and parses one line of JSON
+(`{"match": bool, "reason": str}`). A case passes when every decision
+field matches exactly and every prose field returns `match: true`.
+Failures print the field path, the grader's one-line reason, and any
+decision-field diffs.
+
+The default grader is `claude -p --model haiku`. Override with
+`--grader-cli "<command>"` (any shell command that reads stdin and
+writes stdout works). Pass `--exact` to disable grading entirely.
+
+The default prose-field set is `rationale`, `reason`, `reasons`,
+`drop_reason`, `blockers`, `notes`, `summary`, `explanation`,
+`details`, `description`. Override it per fixtures dir by placing a
+`grading-schema.json` next to `step-config.json`:
+
+```json
+{
+  "prose_fields": ["rationale", "drop_reason"]
+}
+```
+
+An empty list (`"prose_fields": []`) makes every field decision-graded
+even with the grader on, equivalent to passing `--exact` for that
+fixtures dir. The grader is called fresh on every run; nothing is
+cached.
+
 **Self-eval caveat.** When the model invoked by `--cli` is the same
 model (or model class) that just authored the skill change, the
 comparison is a self-eval pass — useful as a smoke test for prompt /
@@ -146,7 +198,9 @@ This means:
 
 ## Assertion approach
 
-Most steps assert an exact JSON match against `expected.json`. Composition steps — where the model writes prose (e.g. a GitHub triage proposal comment) — use structural assertions instead. The expected JSON contains boolean flags like `has_security_model_quote` and `has_bare_issue_numbers` and a `mention_handles` list, rather than requiring prose to match verbatim. This avoids brittle string comparison while still catching the properties that matter.
+Most steps assert an exact JSON match against `expected.json`. Composition steps, where the model writes prose (e.g. a GitHub triage proposal comment), use structural assertions instead. The expected JSON contains boolean flags like `has_security_model_quote` and `has_bare_issue_numbers` and a `mention_handles` list, rather than requiring prose to match verbatim. This avoids brittle string comparison while still catching the properties that matter.
+
+For everything in between (decisions wrapped in explanatory prose like `rationale` or `reason`), `--grader-cli` adds a third mode: decision fields stay on exact equality, prose fields go to a cheap judge model that scores "does the candidate support the same conclusion?" See the "Field-aware grading" section above.
 
 ## CI considerations
 

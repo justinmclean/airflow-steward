@@ -949,7 +949,7 @@ Tracker `<tracker>#244` (*DAG author RCE on webserver via
 unrestricted import_string() in BaseSerialization.deserialize()*),
 import path: `security@`-imported. Step 3 mines five comments
 arguing the dag author is already trusted (with quotes from
-@potiuk and @ephraimbuddy). Canned: *When someone claims Dag
+two security-team members). Canned: *When someone claims Dag
 author-provided "user input" is dangerous*. Email draft created
 on thread `<threadId>` with the canned spine + augmentation
 quoting the team's specific reasoning. Tracker closed as

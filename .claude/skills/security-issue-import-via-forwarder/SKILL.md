@@ -393,12 +393,12 @@ the skill produces:
 1. **`to_recipients`** — the matched adapter's `contact_handle`,
    read from the adopter's
    [`<project-config>/project.md → forwarders.<adapter>.contact_handle`](../../../<project-config>/project.md#forwarders).
-   For the ASF-default adapter this is the security-team liaison
-   (currently `@raboof`, with a rota fallback when configured);
-   for huntr.com it would be huntr's program contact; for
-   HackerOne it would be the assigned triager. The adapter MAY
-   return a list of fallbacks — pick the first available one and
-   surface the chosen handle in the recap.
+   For the ASF-default `asf-security` adapter this is the
+   configured security-team liaison handle (with a rota fallback
+   when configured); for huntr.com it would be huntr's program
+   contact; for HackerOne it would be the assigned triager. The
+   adapter MAY return a list of fallbacks — pick the first
+   available one and surface the chosen handle in the recap.
 
 2. **`addressing_block`** — the paste-ready block rendered by
    the adapter's `reporter_addressing_block()` per
@@ -406,9 +406,10 @@ the skill produces:
    Parameters passed in:
 
    - `forwarder_first_name` — derived from the adapter's
-     `contact_handle` (the first-name part — for `@raboof`,
-     *"Arnout"*). When the handle is a list, use the first
-     available contact's first name.
+     `contact_handle` (the first-name part — e.g. for a handle
+     like `@some-liaison`, the first name *"Some"* derived from
+     the GitHub profile). When the handle is a list, use the
+     first available contact's first name.
    - `reporter_first_name` — the first-name part of the credit
      extracted at Step 2. Empty when Step 2 returned `null`;
      the adapter's wrapper falls back to a generic salutation

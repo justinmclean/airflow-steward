@@ -807,7 +807,7 @@ If the query returns nothing, **propose creating the milestone**:
 
 ```bash
 # Write tool: file_path: /tmp/ms-title.txt, content: <target>
-# Write tool: file_path: /tmp/ms-desc.txt, content: Airflow <target> release tracking.
+# Write tool: file_path: /tmp/ms-desc.txt, content: <product> <target> release tracking.
 gh api repos/<tracker>/milestones \
   -F title=@/tmp/ms-title.txt \
   -f state=open \

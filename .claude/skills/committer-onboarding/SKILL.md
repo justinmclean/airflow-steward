@@ -194,8 +194,14 @@ or technical skill, flag it to the nominator as likely insufficient
 and suggest they seek clarification from the voter before treating
 it as blocking.
 
-If a valid justification was given, the veto stands and the vote did
-not pass; stop and tell the nominator.
+A binding -1 with an insufficient justification does not become a
+free pass on the spot; the model is not the arbiter. While the
+justification is being checked, `vote_result` stays `FAIL` and
+`proceed` stays `false`. Flip to `PASS` only after the voter either
+withdraws the -1 or substitutes a fitness-based concern.
+
+If a valid (fitness-based) justification was given, the veto stands
+and the vote did not pass; stop and tell the nominator.
 
 **3. Confirm the vote period was ≥ 72 hours.** The standard
 committer-vote period is 72 hours; verify the thread timestamps

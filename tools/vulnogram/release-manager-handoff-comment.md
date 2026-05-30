@@ -107,7 +107,7 @@ Open the record's [`#source` tab](SOURCE_TAB_URL) in your browser. **State** fie
 
 1. **Click the [`#email` tab](EMAIL_TAB_URL)** on the same page. Scroll through any reviewer comments left by the ASF Security Team's CVE reviewers. **You do not need to act on reviewer comments yourself** — they arrive by email on `SECURITY_LIST` with the CVE ID in the subject, and sync detects them on the next run, opens corresponding body-field updates on this tracker, and re-pushes the JSON. If the comments tab is empty, or carries a closure note (*"OK, looks good"* / *"approved"*), proceed to the next step.
 
-2. **When the reviewer thread is clear** (no open comments, or all comments have an *"OK, looks good"*-style closer), use the **State** dropdown on `#source` to change `REVIEW` → `READY`. Click **Save**. *The record is now staged for advisory send.*
+2. **When the reviewer thread is clear** (no open comments, or all comments have an *"OK, looks good"*-style closer), click the **REVIEW button on the Editor tab** to advance the record from `REVIEW` → `READY`. Click **Save**. *The record is now staged for advisory send.*
 
 > 💡 *How do you know the reviewer thread is clear?* Two signals: (a) no new reviewer email on `SECURITY_LIST` carrying the CVE ID for ~3 days, or (b) an explicit "looks good" reply from the reviewer. Most CVEs go through `REVIEW` with no reviewer comments at all — in that case, you can usually move `REVIEW → READY` immediately after Step 1.1's tab-check confirms there's nothing to address.
 

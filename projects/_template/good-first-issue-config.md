@@ -4,7 +4,7 @@
 
 - [TODO: `<Project Name>` — good-first-issue authoring configuration](#todo-project-name--good-first-issue-authoring-configuration)
   - [Identifiers](#identifiers)
-  - [Getting-started links](#getting-started-links)
+  - [Getting-started link](#getting-started-link)
   - [Out-of-scope topics](#out-of-scope-topics)
   - [AI-attribution footer](#ai-attribution-footer)
 
@@ -29,19 +29,22 @@ the skill aborts and points back here rather than guessing.
 | `good_first_issue_label` | `good first issue` | The label proposed on the drafted issue. The skill proposes it; a maintainer applies it on confirmation. |
 | `max_effort_hours` | `4` | Upper bound on the estimated effort a good first issue may carry. A candidate that clearly exceeds it is `scope-too-large`. |
 
-## Getting-started links
+## Getting-started link
 
-Links the drafted issue points a newcomer at, by trigger. The skill links
-these rather than paraphrasing them. The links must resolve before the
-skill drafts an issue; do not leave placeholder URLs in this table.
-Replace the framework defaults below with the equivalent docs in your
-project, or drop a row that does not apply.
+A single link the drafted issue points a newcomer at. The skill links it
+rather than paraphrasing. The link must resolve from a GitHub issue body
+(not a repo-rendered file), so use an absolute URL: relative paths like
+`CONTRIBUTING.md` 404 when rendered inside an issue. The link must
+resolve before the skill drafts an issue; do not leave a placeholder URL
+in this row.
 
 | Trigger | Link | One-line label |
 |---|---|---|
-| Contributing guide | `CONTRIBUTING.md` | How to contribute |
-| Local setup | `CONTRIBUTING.md#getting-set-up` | Set up a local dev environment |
-| Opening a PR | `CONTRIBUTING.md#opening-a-pull-request` | How to open a pull request |
+| Newcomer onboarding | `https://github.com/<upstream>/blob/<default-branch>/CONTRIBUTING.md#your-first-contribution` | How to contribute |
+
+Pick the section of the contributing guide that is genuinely
+newcomer-shaped (a "Your first contribution" / "Getting started" section,
+not the top of the file, which usually lands on a doctoc TOC).
 
 ## Out-of-scope topics
 

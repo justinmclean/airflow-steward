@@ -46,9 +46,9 @@ A rough band at or under the project's `max_effort_hours`, e.g.
 
 ## Getting started
 
-Links the contributor needs, drawn from `getting_started_links` (linked,
-never paraphrased): the contributing guide, the local-setup guide, and
-how to open a PR.
+The newcomer-onboarding link, drawn from `getting_started_link` (linked,
+never paraphrased). One absolute-URL link to a "Your first contribution"
+or equivalent section, not the top of the contributing doc.
 
 <ai_attribution_footer>
 ```

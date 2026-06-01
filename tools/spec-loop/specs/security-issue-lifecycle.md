@@ -34,8 +34,12 @@ publication, with a human gate and an audit-log entry at every step.
   `security-cve-allocate`, `security-issue-fix`, `security-issue-sync`,
   `security-issue-invalidate`.
 - Tools: `tools/cve-tool-vulnogram/generate-cve-json` (CVE 5.x JSON),
-  `tools/cve-org`, `tools/gmail` + `tools/ponymail` (mail), and the
-  `tools/privacy-llm` gate/redactor ([the privacy gate](privacy-llm-gate.md)).
+  `tools/cve-org`, `tools/gmail` + `tools/ponymail` (mail), the
+  `tools/privacy-llm` gate/redactor ([the privacy gate](privacy-llm-gate.md)),
+  and `tools/preflight-audit/` (CLI that dry-runs the bulk-mode pre-flight
+  classifier for `security-issue-sync` — implements the executable spec of
+  the rule table in `security-issue-sync/bulk-mode.md`; used for
+  tune-then-verify loops and CI regression testing).
 
 ## Behaviour & contract
 
@@ -68,6 +72,7 @@ publication, with a human gate and an audit-log entry at every step.
 ```bash
 uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
 uv run --project tools/cve-tool-vulnogram/generate-cve-json --group dev pytest
+uv run --project tools/preflight-audit --group dev pytest
 ```
 
 ## Known gaps

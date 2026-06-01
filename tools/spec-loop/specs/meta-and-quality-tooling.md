@@ -45,6 +45,12 @@ trustworthy as it grows.
 - `tools/spec-validator/` — validates spec-loop spec frontmatter
   (required keys, valid `status`/`kind`/`mode` values, body-section
   presence); the spec-side counterpart to `skill-and-tool-validator`.
+- `tools/permission-audit/` — audits and atomically edits Claude Code's
+  `permissions.allow[]` entries in `.claude/settings.json` /
+  `.claude/settings.local.json`, detecting forbidden wildcards and
+  identifying missing recommended read-only patterns. Backs the
+  `--apply-permission-audit` flag of `/setup-steward verify` (check 8d).
+  CLI: `audit` / `apply` / `list-known`.
 - Skills: `write-skill` (author/update a skill), `list-steward-skills`
   (live, generated index of every skill, grouped by family).
 
@@ -75,6 +81,7 @@ trustworthy as it grows.
 ```bash
 uv run --project tools/skill-and-tool-validator --group dev pytest
 uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
+uv run --project tools/permission-audit --group dev pytest
 ```
 
 ## Known gaps

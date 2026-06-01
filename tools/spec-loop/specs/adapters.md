@@ -2,7 +2,7 @@
      https://www.apache.org/licenses/LICENSE-2.0 -->
 
 ---
-title: Adapters (Gmail / PonyMail / Jira / GitHub / mail-source)
+title: Adapters (Gmail / PonyMail / Jira / GitHub / mail-source / forwarder-relay / mail-archive / github-body-field / github-rollup)
 status: experimental
 kind: feature
 mode: infra
@@ -10,7 +10,9 @@ source: >
   MISSION.md § Rationale ("ASF integrations live behind clean
   configuration boundaries; non-ASF adopters swap them") and § Technical
   scope (extensible adapter layer). Implemented in tools/gmail/,
-  tools/ponymail/, tools/jira/, tools/github/, tools/mail-source/.
+  tools/ponymail/, tools/jira/, tools/github/, tools/mail-source/,
+  tools/forwarder-relay/, tools/mail-archive/, tools/github-body-field/,
+  tools/github-rollup/.
 acceptance:
   - Project-specific integrations live behind adapter modules, not
     hardcoded into skills.
@@ -20,7 +22,7 @@ acceptance:
     redactor before any LLM read.
 ---
 
-# Adapters (Gmail / PonyMail / Jira / GitHub)
+# Adapters (Gmail / PonyMail / Jira / GitHub / mail-source / forwarder-relay / mail-archive)
 
 ## What it does
 
@@ -43,6 +45,26 @@ by swapping the adapter, not the skill.
   source through this contract rather than calling Gmail or PonyMail
   directly; the adopter's `<project-config>/project.md → Mail sources`
   section declares which backends are active and what role each plays.
+- `tools/forwarder-relay/` — adapter contract for security-report
+  forwarding services (ASF Security, huntr.com, HackerOne, GHSA). Detects
+  relayed messages, extracts reporter credit, and routes reporter-facing
+  reply drafts back through the relay channel. Consumed by
+  `security-issue-import`, `-sync`, `-invalidate`, and `-cve-allocate`.
+- `tools/mail-archive/` — adapter contract for public mail-archive
+  backends (PonyMail, Hyperkitty, Discourse, Google Groups, GitHub
+  Discussions). Abstracts archive-specific URL construction and search
+  semantics; the shipping PonyMail adapter queries `lists.apache.org`.
+  Consumed by security-import/sync/invalidate skills.
+- `tools/github-body-field/` — reads or rewrites a single `### Field`
+  section of a GitHub issue body without loading the entire body into
+  agent context (`get` / `set` / `list` operations via `gh` CLI). Reduces
+  token overhead in sync workflows that patch individual fields one at a
+  time.
+- `tools/github-rollup/` — appends status entries to (or creates) a
+  status-rollup comment on a GitHub issue without bringing the full
+  rollup body into context (`append` / `list` / `latest` operations via
+  `gh` CLI). Used by all tracker-writing skills (import receipt, sync,
+  CVE allocation, dedupe, fix-PR announcements).
 
 ## Behaviour & contract
 
@@ -73,7 +95,7 @@ by swapping the adapter, not the skill.
 ## Validation
 
 ```bash
-for t in gmail ponymail jira github; do
+for t in gmail ponymail jira github github-body-field github-rollup; do
   uv run --project tools/$t --group dev pytest || echo "check tools/$t test setup"
 done
 ```

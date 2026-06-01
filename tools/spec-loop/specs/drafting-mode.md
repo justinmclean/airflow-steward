@@ -8,8 +8,8 @@ kind: feature
 mode: Drafting
 source: >
   MISSION.md § Technical scope (Drafting). docs/modes.md § Drafting.
-  Implemented by security-issue-fix (stable, security-only) and
-  issue-fix-workflow (experimental).
+  Implemented by security-issue-fix (stable, security-only),
+  issue-fix-workflow (experimental), and audit-finding-fix (experimental).
 acceptance:
   - A drafting skill produces the failing test, the smallest production
     change, targeted test runs, and a commit — but never merges.
@@ -37,6 +37,12 @@ merges its own work.
 - `issue-fix-workflow` (experimental) — drafts a fix for a triaged
   general-issue; **does not** open the PR on autopilot, hands back a
   branch + commits + test results for the human to push.
+- `audit-finding-fix` (experimental) — drafts the smallest fix for each
+  actionable finding from audit tools (ruff, flake8, mypy, pylint, CodeQL,
+  Apache Verum, Apache Caer, etc.); re-runs the tool after each batch to
+  confirm findings are cleared; produces a commit + hand-back artefact;
+  never opens a PR on autopilot. Has an eval suite under
+  `tools/skill-evals/evals/audit-finding-fix/`.
 - `tools/dev` — shared local-check helpers.
 
 ## Behaviour & contract
@@ -51,8 +57,8 @@ merges its own work.
 
 ## Out of scope
 
-- Generic Drafting beyond security + general-issue (lint fixes, audit-
-  tool findings, doc holes at scale) — `proposed`, not yet built.
+- Generic Drafting beyond the three shipped skills: doc holes at scale and
+  the release-management family are `proposed`, not yet built.
 - Merging, releasing, or pushing without a human.
 
 ## Acceptance criteria
@@ -69,5 +75,10 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
 
 ## Known gaps
 
-- Generic (non-security, non-issue) Drafting from audit-tool findings is
-  `proposed`. Only `security-issue-fix` is stable today.
+- `audit-finding-fix` covers audit-tool findings (ruff, mypy, CodeQL, etc.)
+  as `experimental`; no adopter pilot has run it yet.
+- Release-management Drafting family (6 skills: `release-prepare`,
+  `release-keys-sync`, `release-rc-cut`, `release-vote-draft`,
+  `release-promote`, `release-announce-draft`) is `proposed` — not yet
+  built.
+- Doc-hole Drafting at scale is `proposed`.

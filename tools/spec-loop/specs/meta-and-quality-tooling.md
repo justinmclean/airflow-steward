@@ -51,7 +51,12 @@ trustworthy as it grows.
   identifying missing recommended read-only patterns. Backs the
   `--apply-permission-audit` flag of `/setup-steward verify` (check 8d).
   CLI: `audit` / `apply` / `list-known`.
-- Skills: `write-skill` (author/update a skill), `list-steward-skills`
+- Skills: `write-skill` (author/update a skill), `optimize-skill`
+  (restructure an existing skill without changing its behaviour — splits
+  oversized `SKILL.md` files into linked siblings, lifts concrete values
+  into `<project-config>` placeholders, batches per-item fetches, adds
+  deterministic pre-flight classifiers; ships with an eval suite at
+  `tools/skill-evals/evals/optimize-skill/`), `list-steward-skills`
   (live, generated index of every skill, grouped by family).
 
 ## Behaviour & contract

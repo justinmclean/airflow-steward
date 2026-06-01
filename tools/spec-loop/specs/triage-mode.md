@@ -30,7 +30,13 @@ suggestion the human signs off on.
 ## Where it lives
 
 - PR queue: `pr-management-triage`, `pr-management-stats`,
-  `pr-management-code-review` (deep review is a triage variant).
+  `pr-management-code-review` (deep review is a triage variant),
+  `pr-management-quick-merge` (express lane — screens the
+  `ready for maintainer review` queue for trivial, all-gates-green PRs
+  touching only supplementary paths; surfaces candidates with per-PR
+  diff summaries and the exact merge command; optionally submits an
+  APPROVE review on explicit per-PR confirmation; never merges itself —
+  Mode D remains off by governance sequencing).
   Reference implementation: `tools/pr-management-stats/`.
 - General issues: `issue-triage`, `issue-reassess`, `issue-reproducer`.
   Companion reporting skill: `issue-reassess-stats` (read-only dashboard

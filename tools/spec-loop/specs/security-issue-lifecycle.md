@@ -53,6 +53,12 @@ publication, with a human gate and an audit-log entry at every step.
 - **Reporter PII redacted in-context; reporter *credit* preserved** in
   the CVE `credits[]` only after the reporter confirms on the thread.
 - **Audit log** of every applied change (redacted identifiers only).
+- **Advisory-shipped state is authoritative, not derived from the
+  tracker body.** `security-issue-sync` checks the public
+  `<users-list>` archive (PonyMail) and `cve.org` directly for the CVE
+  ID; the tracker body's *Public advisory URL* field and `announced`
+  label are a lagging mirror written on the *next* sync. An empty body
+  field is never proof the advisory has not shipped.
 
 ## Out of scope
 

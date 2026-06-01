@@ -9,8 +9,9 @@ mode: infra
 source: >
   MISSION.md § Privacy, security and supply-chain integrity ("Clean-
   environment wrapper", "Layered sandbox by default", "Pinned, reviewed,
-  signed dependencies"). Implemented in tools/agent-isolation/, the
-  setup-isolated-setup-* skills, and .claude/settings.json.
+  signed dependencies"). Implemented in tools/agent-isolation/,
+  tools/egress-gateway/, the setup-isolated-setup-* skills, and
+  .claude/settings.json.
 acceptance:
   - Every agent subprocess runs inside an OS-level sandbox with default-
     deny filesystem reads and network egress.
@@ -39,11 +40,17 @@ saying "no".
   `-doctor` (probes live sandbox restrictions — SSH-agent reachability,
   localhost port binding, docker/podman socket — and maps each to a
   numbered troubleshooting entry; read-only, never modifies settings).
+- `tools/egress-gateway/` — a loopback-bound HTTP(S) forward proxy that
+  enforces a default-deny host allowlist on tool egress; closes the
+  `Bash(curl *)` gap that the OS-level sandbox proxy does not cover.
+  Runs outside the sandbox; tools reach it via `HTTPS_PROXY`/`HTTP_PROXY`
+  persisted in `.claude/settings.local.json`. See
+  [`tools/egress-gateway/tool.md`](../../../tools/egress-gateway/tool.md).
 - `docs/setup/secure-agent-internals.md` — the three-layer model.
 
 ## Behaviour & contract
 
-The reference model is four layers, layered:
+The reference model is five layers, layered:
 
 1. **Clean environment** — a wrapper strips the process env to a
    project-declared whitelist before exec (no `$GH_TOKEN`, `$AWS_*`,
@@ -51,9 +58,14 @@ The reference model is four layers, layered:
 2. **Filesystem + network sandbox** — Linux `bubblewrap` + `socat` SNI
    proxy; macOS `sandbox-exec`. Default-deny reads outside the tree and
    egress to non-allowed hosts.
-3. **Tool permissions** — the host's `permissions.deny` blocks denied
+3. **Egress gateway** — `tools/egress-gateway` runs a loopback-bound
+   default-deny allowlist proxy that funnels all tool HTTP(S) egress
+   through a single auditable chokepoint; prompt-injection payloads
+   cannot reach a non-sanctioned host even when a higher layer is
+   bypassed. Host allowlist mirrors `sandbox.network.allowedDomains`.
+4. **Tool permissions** — the host's `permissions.deny` blocks denied
    paths/binaries (`Read(~/.ssh/**)`, `Bash(curl *)`, …).
-4. **Forced confirmation** — `permissions.ask` on every state-mutating
+5. **Forced confirmation** — `permissions.ask` on every state-mutating
    shell call (`git push`, `gh pr create`, `gh issue edit`, …).
 
 Pinned system tools (`bubblewrap`, `socat`, agent CLI) are aged through a
@@ -71,11 +83,14 @@ cooldown window; bumps are PRs, not silent updates.
 2. The clean-env wrapper strips credential-shaped vars before exec.
 3. `git push` / `gh pr create` are in `permissions.ask`; secret/cred
    files are in `permissions.deny`.
+4. `tools/egress-gateway` rejects `CONNECT` to any host not in the
+   allowlist before opening an upstream socket.
 
 ## Validation
 
 ```bash
 uv run --project tools/agent-isolation --group dev pytest
+uv run --project tools/egress-gateway --group dev pytest
 python3 -c "import json,sys; s=json.load(open('.claude/settings.json')); \
   asks=' '.join(s['permissions']['ask']); \
   sys.exit(0 if 'git push' in asks and 'gh pr create *' in asks else 1)"

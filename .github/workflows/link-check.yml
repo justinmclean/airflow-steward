@@ -18,12 +18,14 @@
 ---
 name: link-check
 
-# Lychee runs in informational mode for now: it surfaces broken
-# internal links and broken external URLs, but does not block PR
-# merges. The existing tree has a known set of pre-existing broken
-# references (to files like `config/active-project.md` that this
-# repository plans to add later) which would otherwise fail every
-# PR. Once the baseline reaches zero, flip `continue-on-error` off.
+# Lychee is a hard gate: every broken internal link or unreachable
+# external URL fails this workflow, and `lychee` is one of the
+# required status checks in `.asf.yaml`. Promoted from
+# informational mode in PR #47 after the pre-existing baseline
+# was driven to zero. Anyone adding a broken link to a PR fails
+# this check and cannot merge until the link is fixed (or
+# excluded via `.lychee.toml` if the target is genuinely
+# placeholder-style — but the bar for adding excludes is high).
 
 on:  # yamllint disable-line rule:truthy
   pull_request:

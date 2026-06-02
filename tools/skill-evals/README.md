@@ -29,6 +29,7 @@ Nineteen suites are currently implemented:
 - **setup-isolated-setup-verify** — 11 cases across 2 steps (step-1-classify, step-2-recommend)
 - **setup-isolated-setup-update** — 13 cases across 3 steps (step-snapshot-drift, step-tool-freshness, step-after-report)
 - **contributor-activity-sweep** — 12 cases across 3 steps (step-0-resolve-inputs, step-1-classify-reviews, step-2-render)
+- **optimize-skill** — 5 cases across 1 step (step-diagnose)
 
 ## Run
 
@@ -86,12 +87,84 @@ stdout as JSON, look for the first ```` ```json ```` fenced block, then
 the largest balanced `{...}` (or `[...]`) substring. Models that wrap
 output in prose or markdown fences still work.
 
+If none of those strategies finds JSON, the runner silently wraps the
+raw stdout as `{"raw_output": <stdout>}` and proceeds with normal
+field-aware grading. Under the intersection-only comparator this means
+a model that refused to emit JSON (e.g. a prose-only refusal) will
+PASS any case whose `expected.json` doesn't declare a `raw_output`
+key. A non-zero exit from the CLI is wrapped the same way as
+`{"raw_output": <stdout>, "stderr": <stderr>, "exit_code": <rc>}`, so
+refusals that signal via exit code (some safety filters) also fall
+back to the comparator. Suite authors who want to gate on the prose
+can add `"raw_output": "<expected text>"` to their `expected.json`.
+In `--exact` mode, non-JSON and non-zero exits still ERROR.
+
 **Structural cases (composition steps).** When `expected.json` describes
 prose properties via boolean flags (`has_security_model_quote`,
 `has_bare_issue_numbers`) or membership lists (`mention_handles`),
 automatic JSON-equality comparison is meaningless. Those cases report
 `MANUAL` and the runner skips the CLI call; review them by re-running
 without `--cli` (or with `--verbose`).
+
+### Field-aware grading (default in `--cli` mode)
+
+Pure JSON-equality on `expected.json` is too strict for free-text fields
+like `rationale`, `reason`, `drop_reason`, and `blockers`: a candidate
+answer can carry the right decision but be flagged FAIL on wording
+alone. By default, `--cli` mode now sends those fields to a cheap judge
+model and grades them by meaning instead of by string equality.
+
+```bash
+# Decision fields exact; prose fields graded by the default Haiku judge.
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --cli "claude -p" \
+    tools/skill-evals/evals/issue-triage/
+
+# Use a different judge.
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner \
+    --cli "claude -p" \
+    --grader-cli "llm -m gpt-4o-mini" \
+    tools/skill-evals/evals/issue-triage/
+
+# Opt out: require verbatim JSON equality on every field (old behaviour).
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --cli "claude -p" --exact \
+    tools/skill-evals/evals/issue-triage/
+```
+
+Decision fields (booleans, enums, counts, ordering, IDs) stay on exact
+equality. `expected.json` is treated as a description of values where
+the model speaks: only keys present in **both** expected and actual
+are asserted. Extra keys in the model's output are ignored, and keys
+declared in expected that the model didn't emit are skipped (not
+failed). Suite authors should keep expected.json focused on the keys
+that actually carry the eval's signal, since a model returning `{}`
+would match any expected. All prose-field mismatches for a single
+case are batched into one rubric prompt and sent to the grader as a
+single call (so a case with N prose-field mismatches costs one Haiku
+call, not N). The grader returns a one-line JSON object mapping each
+field path to `{"match": bool, "reason": str}`. A case passes when
+every asserted decision field matches exactly and every asserted
+prose field returns `match: true`. When a decision field already
+fails, the grader is not called at all for that case.
+
+The default grader is `claude -p --model haiku`. Override with
+`--grader-cli "<command>"` (any shell command that reads stdin and
+writes stdout works). Pass `--exact` to disable grading entirely.
+
+The default prose-field set is `rationale`, `reason`, `reasons`,
+`drop_reason`, `blockers`, `notes`, `summary`, `explanation`,
+`details`, `description`. Override it per fixtures dir by placing a
+`grading-schema.json` next to `step-config.json`:
+
+```json
+{
+  "prose_fields": ["rationale", "drop_reason"]
+}
+```
+
+An empty list (`"prose_fields": []`) makes every field decision-graded
+even with the grader on, equivalent to passing `--exact` for that
+fixtures dir. The grader is called fresh on every run; nothing is
+cached.
 
 **Self-eval caveat.** When the model invoked by `--cli` is the same
 model (or model class) that just authored the skill change, the
@@ -147,7 +220,9 @@ This means:
 
 ## Assertion approach
 
-Most steps assert an exact JSON match against `expected.json`. Composition steps — where the model writes prose (e.g. a GitHub triage proposal comment) — use structural assertions instead. The expected JSON contains boolean flags like `has_security_model_quote` and `has_bare_issue_numbers` and a `mention_handles` list, rather than requiring prose to match verbatim. This avoids brittle string comparison while still catching the properties that matter.
+Most steps assert an exact JSON match against `expected.json`. Composition steps, where the model writes prose (e.g. a GitHub triage proposal comment), use structural assertions instead. The expected JSON contains boolean flags like `has_security_model_quote` and `has_bare_issue_numbers` and a `mention_handles` list, rather than requiring prose to match verbatim. This avoids brittle string comparison while still catching the properties that matter.
+
+For everything in between (decisions wrapped in explanatory prose like `rationale` or `reason`), `--grader-cli` adds a third mode: decision fields stay on exact equality, prose fields go to a cheap judge model that scores "does the candidate support the same conclusion?" See the "Field-aware grading" section above.
 
 ## CI considerations
 

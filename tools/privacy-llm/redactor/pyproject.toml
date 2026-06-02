@@ -35,13 +35,6 @@ pii-redact = "redactor.redact:main"
 pii-reveal = "redactor.reveal:main"
 pii-list = "redactor.list_cmd:main"
 
-[dependency-groups]
-dev = [
-  "mypy>=2.1.0",
-  "pytest>=8.0",
-  "ruff>=0.15.13",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/redactor"]
 

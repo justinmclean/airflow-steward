@@ -25,19 +25,43 @@ from pathlib import Path
 import pytest
 
 from skill_evals.runner import (
+    DEFAULT_GRADER_CLI,
+    DEFAULT_PROSE_FIELDS,
+    batch_grade_prose_fields,
     build_corpus_text,
     build_roster_text,
+    collect_diffs,
+    collect_tag_counts,
     compare_outputs,
+    compare_with_grader,
     extract_json_from_output,
     extract_skill_section,
     find_cases,
     find_repo_root,
+    grade_prose_field,
     is_structural_expected,
     load_case,
     load_case_tags,
+    load_grading_schema,
     load_step_config,
     main,
 )
+
+_TESTS_DIR = Path(__file__).resolve().parent
+_GRADER_YES = f"python3 {_TESTS_DIR / '_grader_yes.py'}"
+_GRADER_NO = f"python3 {_TESTS_DIR / '_grader_no.py'}"
+
+
+def _grader_count_cli(counter_path: Path) -> str:
+    """Return a grader-cli string that records each call to ``counter_path``."""
+    return f"GRADER_COUNTER_FILE={counter_path} python3 {_TESTS_DIR / '_grader_count.py'}"
+
+
+def _count_grader_calls(counter_path: Path) -> int:
+    if not counter_path.exists():
+        return 0
+    return sum(1 for _ in counter_path.read_text().splitlines() if _)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -730,6 +754,58 @@ def test_cli_mode_fail_with_wrong_json(tmp_path: Path, capsys: pytest.CaptureFix
     assert "1 failed" in stdout
 
 
+def test_cli_mode_fail_with_wrong_jsons(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """A CLI that returns the wrong JSONS should FAIL with multiple failures and exit non-zero."""
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
+    _make_case(fixtures_dir, "case-2", report="another report", expected={"verdict": "ok"})
+    rc, stdout, _ = _run_main(
+        capsys,
+        ["--cli", 'echo \'{"verdict": "wrong"}\'', str(fixtures_dir)],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+    assert (
+        "2 failed" in stdout
+    )  # asserts that behaviour doesn't changes and outputs exactly 2 failures instead of stopping at the first one, which is tested in the next test case
+
+
+def test_cli_model_with_fail_fast_and_wrong_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """With --fail-fast, the runner should stop at the first failure and not run further cases."""
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
+    # Add a second case that would FAIL if it ran, but should be skipped due to fail-fast.
+    _make_case(fixtures_dir, "case-2", report="another report", expected={"verdict": "ok"})
+    rc, stdout, _ = _run_main(
+        capsys,
+        ["--cli", 'echo \'{"verdict": "wrong"}\'', "--fail-fast", str(fixtures_dir)],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+    assert "1 failed" in stdout
+    assert "CASE: case-2" not in stdout  # second case should not run at all
+
+
+def test_cli_model_with_fail_fast_and_error_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """In timeout being negative raise internal error when run_cli is called and --fail-fast is used."""
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "wrong"})
+    _make_case(fixtures_dir, "case-2", report="another report", expected={"verdict": "ok"})
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            'echo \'{"verdict": "wrong"}\'',
+            "--timeout",
+            "-1",  # force an error (timeout) instead of a fail, to check that fail-fast also applies to errors
+            "--exact",
+            "--fail-fast",
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 1
+    assert "ERROR" in stdout
+    assert "1 errored" in stdout
+    assert "CASE: case-2" not in stdout  # second case should not run at all
+
+
 def test_cli_mode_manual_skips_structural(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     """Structural expected.json (has_* / mention_*) is reported MANUAL, not auto-compared."""
     fixtures_dir, _ = _make_cli_case(
@@ -745,24 +821,90 @@ def test_cli_mode_manual_skips_structural(tmp_path: Path, capsys: pytest.Capture
     assert "1 manual" in stdout
 
 
-def test_cli_mode_error_on_non_json_output(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
-    """A CLI that returns prose without any JSON should ERROR and exit non-zero."""
+def test_cli_mode_non_json_under_exact_errors(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """In --exact mode, prose with no JSON returns ERROR and exits non-zero."""
     fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
     rc, stdout, _ = _run_main(
         capsys,
-        ["--cli", "echo 'just prose, no JSON here'", str(fixtures_dir)],
+        [
+            "--cli",
+            "echo 'just prose, no JSON here'",
+            "--exact",
+            str(fixtures_dir),
+        ],
     )
     assert rc == 1
     assert "ERROR" in stdout
     assert "1 errored" in stdout
 
 
-def test_cli_mode_error_on_non_zero_exit(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
-    """A CLI that exits non-zero should ERROR and exit non-zero."""
+def test_cli_mode_non_json_wraps_and_passes_under_field_aware(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    """Default field-aware mode wraps prose as {"raw_output": ...} so the
+    intersection-only comparator can proceed. With expected.json declaring
+    no raw_output key, the case passes."""
     fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
-    rc, stdout, _ = _run_main(capsys, ["--cli", "false", str(fixtures_dir)])
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            "echo 'just prose, no JSON here'",
+            "--grader-cli",
+            _GRADER_YES,  # not actually invoked; no overlapping keys
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 0
+    assert "PASS" in stdout
+    assert "1 passed" in stdout
+
+
+def test_cli_mode_non_json_wrap_can_assert_on_raw_output(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """Suite authors who want to gate on the prose can declare raw_output
+    in expected.json; the wrapped actual carries the model's prose and a
+    mismatch is a real decision-level failure."""
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"raw_output": "this exact prose\n"})
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            "echo 'different prose'",
+            "--grader-cli",
+            _GRADER_YES,
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+    assert "raw_output" in stdout
+
+
+def test_cli_mode_non_zero_exit_under_exact_errors(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """In --exact mode, a non-zero CLI exit still returns ERROR and exits non-zero."""
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
+    rc, stdout, _ = _run_main(capsys, ["--cli", "false", "--exact", str(fixtures_dir)])
     assert rc == 1
     assert "ERROR" in stdout
+
+
+def test_cli_mode_non_zero_exit_wraps_under_field_aware(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """In the default field-aware mode, a non-zero CLI exit is wrapped as
+    raw_output (+ stderr + exit_code) and the intersection-only comparator
+    decides whether the case passes."""
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            "false",
+            "--grader-cli",
+            _GRADER_YES,
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 0
+    assert "PASS" in stdout
 
 
 def test_cli_mode_extracts_json_from_fenced_response(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
@@ -810,3 +952,513 @@ def test_tag_filter_runs_only_matching_cases(tmp_path: Path, capsys: pytest.Capt
     assert rc == 0
     assert "1 passed" in stdout
     assert "case-2-untagged" not in stdout
+
+
+def test_list_tags_prints_counts(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """--list-tags prints distinct tags with per-tag case counts."""
+    fixtures_dir = tmp_path / "fixtures"
+    fixtures_dir.mkdir()
+    case1 = _make_case(fixtures_dir, "case-1")
+    case2 = _make_case(fixtures_dir, "case-2")
+    (case1 / "case-meta.json").write_text(json.dumps({"tags": ["llama"]}))
+    (case2 / "case-meta.json").write_text(json.dumps({"tags": ["qwen", "llama"]}))
+
+    rc, stdout, stderr = _run_main(capsys, [str(fixtures_dir), "--list-tags"])
+    assert rc == 0
+    assert stderr == ""
+    assert stdout.strip().splitlines() == ["llama 2", "qwen 1"]
+
+
+def test_list_tags_no_tags_found(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """--list-tags exits 0 with an informational line when no tags exist."""
+    fixtures_dir = tmp_path / "fixtures"
+    _make_case(fixtures_dir, "case-1")
+
+    rc, stdout, stderr = _run_main(capsys, [str(fixtures_dir), "--list-tags"])
+    assert rc == 0
+    assert stderr == ""
+    assert stdout.strip() == "no tags found"
+
+
+def test_collect_tag_counts(tmp_path: Path):
+    fixtures_dir = tmp_path / "fixtures"
+    case1 = _make_case(fixtures_dir, "case-1")
+    case2 = _make_case(fixtures_dir, "case-2")
+    (case1 / "case-meta.json").write_text(json.dumps({"tags": ["alpha"]}))
+    (case2 / "case-meta.json").write_text(json.dumps({"tags": ["alpha", "beta"]}))
+
+    counts = collect_tag_counts(find_cases(fixtures_dir))
+    assert counts == {"alpha": 2, "beta": 1}
+
+
+# ---------------------------------------------------------------------------
+# load_grading_schema
+# ---------------------------------------------------------------------------
+
+
+def test_load_grading_schema_defaults_when_no_file(tmp_path: Path):
+    fixtures_dir = tmp_path / "fixtures"
+    fixtures_dir.mkdir()
+    assert load_grading_schema(fixtures_dir) == set(DEFAULT_PROSE_FIELDS)
+
+
+def test_load_grading_schema_override_replaces_default(tmp_path: Path):
+    fixtures_dir = tmp_path / "fixtures"
+    fixtures_dir.mkdir()
+    (fixtures_dir / "grading-schema.json").write_text(json.dumps({"prose_fields": ["why"]}))
+    assert load_grading_schema(fixtures_dir) == {"why"}
+
+
+def test_load_grading_schema_empty_list_disables_grader(tmp_path: Path):
+    fixtures_dir = tmp_path / "fixtures"
+    fixtures_dir.mkdir()
+    (fixtures_dir / "grading-schema.json").write_text(json.dumps({"prose_fields": []}))
+    assert load_grading_schema(fixtures_dir) == set()
+
+
+def test_load_grading_schema_rejects_non_string_entries(tmp_path: Path):
+    fixtures_dir = tmp_path / "fixtures"
+    fixtures_dir.mkdir()
+    (fixtures_dir / "grading-schema.json").write_text(json.dumps({"prose_fields": ["why", 7]}))
+    with pytest.raises(ValueError, match="prose_fields"):
+        load_grading_schema(fixtures_dir)
+
+
+def test_load_grading_schema_missing_key_falls_back_to_default(tmp_path: Path):
+    fixtures_dir = tmp_path / "fixtures"
+    fixtures_dir.mkdir()
+    (fixtures_dir / "grading-schema.json").write_text(json.dumps({"unrelated": True}))
+    assert load_grading_schema(fixtures_dir) == set(DEFAULT_PROSE_FIELDS)
+
+
+# ---------------------------------------------------------------------------
+# grade_prose_field (single-field helper retained for callers that want
+# per-field grading; the main runner path uses the batched grader below.)
+# ---------------------------------------------------------------------------
+
+
+def test_grade_prose_field_short_circuits_on_exact_equality():
+    # Identical values should pass without invoking any CLI.
+    ok, note = grade_prose_field("$.reason", "boom", "boom", grader_cli="false", timeout=5)
+    assert ok is True
+    assert note == ""
+
+
+def test_grade_prose_field_grader_says_match():
+    grader = 'echo \'{"match": true, "reason": "same meaning"}\''
+    ok, note = grade_prose_field("$.reason", "the build failed", "build broke", grader_cli=grader, timeout=5)
+    assert ok is True
+    assert note == ""
+
+
+def test_grade_prose_field_grader_says_no():
+    grader = 'echo \'{"match": false, "reason": "different conclusion"}\''
+    ok, note = grade_prose_field(
+        "$.reason", "the build failed", "the build passed", grader_cli=grader, timeout=5
+    )
+    assert ok is False
+    assert "$.reason" in note
+    assert "different conclusion" in note
+
+
+def test_grade_prose_field_grader_returns_garbage():
+    ok, note = grade_prose_field("$.reason", "x", "y", grader_cli="echo 'not json at all'", timeout=5)
+    assert ok is False
+    assert "$.reason" in note
+
+
+def test_grade_prose_field_grader_non_zero_exit():
+    ok, note = grade_prose_field("$.reason", "x", "y", grader_cli="false", timeout=5)
+    assert ok is False
+    assert "$.reason" in note
+
+
+# ---------------------------------------------------------------------------
+# collect_diffs (pure walker; no grader calls)
+# ---------------------------------------------------------------------------
+
+
+def test_collect_diffs_no_diff_when_equal():
+    d, p = collect_diffs({"verdict": "BUG"}, {"verdict": "BUG"}, prose_fields=set())
+    assert d == []
+    assert p == []
+
+
+def test_collect_diffs_decision_scalar_mismatch_is_decision_only():
+    d, p = collect_diffs({"verdict": "X"}, {"verdict": "Y"}, prose_fields={"reason"})
+    assert any("verdict" in m for m in d)
+    assert p == []
+
+
+def test_collect_diffs_prose_mismatch_yields_pair():
+    d, p = collect_diffs(
+        {"verdict": "BUG", "reason": "wording A"},
+        {"verdict": "BUG", "reason": "wording B"},
+        prose_fields={"reason"},
+    )
+    assert d == []
+    assert len(p) == 1
+    path, exp, act = p[0]
+    assert path == "$.reason"
+    assert exp == "wording B"
+    assert act == "wording A"
+
+
+def test_collect_diffs_nested_list_of_prose_fields_yields_multiple_pairs():
+    actual = {"items": [{"reason": "a"}, {"reason": "c"}]}
+    expected = {"items": [{"reason": "b"}, {"reason": "d"}]}
+    d, p = collect_diffs(actual, expected, prose_fields={"reason"})
+    assert d == []
+    assert [pair[0] for pair in p] == ["$.items[0].reason", "$.items[1].reason"]
+
+
+def test_collect_diffs_missing_key_in_actual_is_skipped():
+    """Expected declares 'b'; actual omits it. Skipped, not failed —
+    expected.json is a description of values where the model speaks, not a
+    required-keys schema."""
+    d, p = collect_diffs({"a": 1}, {"a": 1, "b": 2}, prose_fields=set())
+    assert d == []
+    assert p == []
+
+
+def test_collect_diffs_extra_keys_in_actual_are_ignored():
+    """Only the intersection is asserted; extras in actual pass."""
+    d, p = collect_diffs({"a": 1, "extra": "anything"}, {"a": 1}, prose_fields=set())
+    assert d == []
+    assert p == []
+
+
+def test_collect_diffs_intersection_value_mismatch_still_fails():
+    """Keys present in both that differ in value still fail."""
+    d, _ = collect_diffs({"a": 2, "extra": "x"}, {"a": 1, "b": 2}, prose_fields=set())
+    assert any("a" in m for m in d)
+
+
+def test_collect_diffs_empty_actual_passes_against_any_expected():
+    """Document the trade-off: a model returning {} matches any expected.
+    Suite authors should keep expected.json focused on the keys that
+    actually carry the eval's signal."""
+    d, p = collect_diffs({}, {"a": 1, "b": 2, "c": [1, 2]}, prose_fields=set())
+    assert d == []
+    assert p == []
+
+
+def test_collect_diffs_length_mismatch_is_decision():
+    d, _ = collect_diffs({"items": [1, 2]}, {"items": [1, 2, 3]}, prose_fields=set())
+    assert any("length mismatch" in m for m in d)
+
+
+def test_collect_diffs_equal_prose_does_not_emit_pair():
+    d, p = collect_diffs({"reason": "same"}, {"reason": "same"}, prose_fields={"reason"})
+    assert d == []
+    assert p == []
+
+
+# ---------------------------------------------------------------------------
+# batch_grade_prose_fields
+# ---------------------------------------------------------------------------
+
+
+def test_batch_grade_empty_pairs_makes_no_grader_call(tmp_path: Path):
+    counter = tmp_path / "calls"
+    result = batch_grade_prose_fields([], _grader_count_cli(counter), timeout=5)
+    assert result == {}
+    assert _count_grader_calls(counter) == 0
+
+
+def test_batch_grade_single_pair_one_call(tmp_path: Path):
+    counter = tmp_path / "calls"
+    pairs = [("$.reason", "expected", "actual")]
+    result = batch_grade_prose_fields(pairs, _grader_count_cli(counter), timeout=5)
+    assert _count_grader_calls(counter) == 1
+    assert result["$.reason"] == (True, "")
+
+
+def test_batch_grade_many_pairs_one_call(tmp_path: Path):
+    """Headline guarantee: N prose mismatches → 1 grader call."""
+    counter = tmp_path / "calls"
+    pairs = [
+        ("$.a", "x", "y"),
+        ("$.b", "x", "y"),
+        ("$.c.d", "x", "y"),
+        ("$.list[0].reason", "x", "y"),
+    ]
+    result = batch_grade_prose_fields(pairs, _grader_count_cli(counter), timeout=5)
+    assert _count_grader_calls(counter) == 1
+    for path, _, _ in pairs:
+        assert result[path] == (True, "")
+
+
+def test_batch_grade_grader_says_no():
+    pairs = [("$.reason", "expected", "actual")]
+    result = batch_grade_prose_fields(pairs, _GRADER_NO, timeout=5)
+    ok, note = result["$.reason"]
+    assert ok is False
+    assert "differs" in note
+
+
+def test_batch_grade_grader_failure_marks_all_fail():
+    pairs = [("$.a", "x", "y"), ("$.b", "x", "y")]
+    result = batch_grade_prose_fields(pairs, "false", timeout=5)
+    for path, _, _ in pairs:
+        ok, _ = result[path]
+        assert ok is False
+
+
+# ---------------------------------------------------------------------------
+# compare_with_grader (uses the batched grader path)
+# ---------------------------------------------------------------------------
+
+
+def test_compare_with_grader_passes_when_decision_fields_match_and_prose_judged_match():
+    actual = {"verdict": "BUG", "reason": "the system crashes on a null record"}
+    expected = {"verdict": "BUG", "reason": "crashes on null input"}
+    ok, msgs = compare_with_grader(
+        actual,
+        expected,
+        prose_fields={"reason"},
+        grader_cli=_GRADER_YES,
+        timeout=5,
+    )
+    assert ok is True
+    assert msgs == []
+
+
+def test_compare_with_grader_skips_grader_when_decision_field_differs(tmp_path: Path):
+    """Decision-field failure must not invoke the grader."""
+    counter = tmp_path / "calls"
+    actual = {"verdict": "INVALID", "reason": "wording A"}
+    expected = {"verdict": "BUG", "reason": "wording B"}
+    ok, msgs = compare_with_grader(
+        actual,
+        expected,
+        prose_fields={"reason"},
+        grader_cli=_grader_count_cli(counter),
+        timeout=5,
+    )
+    assert ok is False
+    assert _count_grader_calls(counter) == 0
+    assert any("verdict" in m for m in msgs)
+
+
+def test_compare_with_grader_multiple_prose_mismatches_one_call(tmp_path: Path):
+    counter = tmp_path / "calls"
+    actual = {
+        "verdict": "BUG",
+        "reason": "a",
+        "follow_up": [{"reason": "c"}, {"reason": "e"}],
+    }
+    expected = {
+        "verdict": "BUG",
+        "reason": "b",
+        "follow_up": [{"reason": "d"}, {"reason": "f"}],
+    }
+    ok, msgs = compare_with_grader(
+        actual,
+        expected,
+        prose_fields={"reason"},
+        grader_cli=_grader_count_cli(counter),
+        timeout=5,
+    )
+    assert ok is True, msgs
+    assert _count_grader_calls(counter) == 1
+
+
+def test_compare_with_grader_fails_when_grader_says_no():
+    actual = {"verdict": "BUG", "reason": "crashes on overflow"}
+    expected = {"verdict": "BUG", "reason": "null pointer on init"}
+    ok, msgs = compare_with_grader(
+        actual,
+        expected,
+        prose_fields={"reason"},
+        grader_cli=_GRADER_NO,
+        timeout=5,
+    )
+    assert ok is False
+    assert any("reason" in m for m in msgs)
+
+
+def test_compare_with_grader_handles_nested_list_of_dicts():
+    actual = {
+        "overall": "fail",
+        "follow_up": [
+            {"skill": "install", "reason": "missing hook script"},
+            {"skill": "update", "reason": "stale claude-code version"},
+        ],
+    }
+    expected = {
+        "overall": "fail",
+        "follow_up": [
+            {"skill": "install", "reason": "hooks/scripts not installed"},
+            {"skill": "update", "reason": "claude-code is older than pinned version"},
+        ],
+    }
+    ok, msgs = compare_with_grader(
+        actual,
+        expected,
+        prose_fields={"reason"},
+        grader_cli=_GRADER_YES,
+        timeout=5,
+    )
+    assert ok is True
+    assert msgs == []
+
+
+def test_compare_with_grader_no_prose_diff_no_grader_call(tmp_path: Path):
+    counter = tmp_path / "calls"
+    ok, _ = compare_with_grader(
+        {"verdict": "BUG", "reason": "same"},
+        {"verdict": "BUG", "reason": "same"},
+        prose_fields={"reason"},
+        grader_cli=_grader_count_cli(counter),
+        timeout=5,
+    )
+    assert ok is True
+    assert _count_grader_calls(counter) == 0
+
+
+# ---------------------------------------------------------------------------
+# --grader-cli end-to-end
+# ---------------------------------------------------------------------------
+
+
+def test_cli_grader_mode_passes_on_wording_difference(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """Same verdict, different prose in `reason` — grader-cli mode should PASS."""
+    expected = {"verdict": "BUG", "reason": "crashes on null input"}
+    actual = {"verdict": "BUG", "reason": "null pointer on first call"}
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected=expected)
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            f"echo '{json.dumps(actual)}'",
+            "--grader-cli",
+            _GRADER_YES,
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 0, stdout
+    assert "PASS" in stdout
+    assert "1 passed" in stdout
+
+
+def test_cli_grader_mode_fails_on_decision_field_difference(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    """Decision field (verdict) differs — must FAIL even if grader would say YES."""
+    expected = {"verdict": "BUG", "reason": "same"}
+    actual = {"verdict": "INVALID", "reason": "same"}
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected=expected)
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            f"echo '{json.dumps(actual)}'",
+            "--grader-cli",
+            _GRADER_YES,
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+    assert "verdict" in stdout
+
+
+def test_cli_grader_mode_fails_when_grader_rejects_prose(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """Decision match, but grader says prose differs."""
+    expected = {"verdict": "BUG", "reason": "crashes on null input"}
+    actual = {"verdict": "BUG", "reason": "totally unrelated text"}
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected=expected)
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            f"echo '{json.dumps(actual)}'",
+            "--grader-cli",
+            _GRADER_NO,
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+    assert "reason" in stdout
+
+
+def test_cli_grader_mode_respects_grading_schema_override(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """grading-schema.json with prose_fields=[] forces exact compare on `reason`."""
+    expected = {"verdict": "BUG", "reason": "crashes on null input"}
+    actual = {"verdict": "BUG", "reason": "null pointer on first call"}
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected=expected)
+    (fixtures_dir / "grading-schema.json").write_text(json.dumps({"prose_fields": []}))
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            f"echo '{json.dumps(actual)}'",
+            "--grader-cli",
+            _GRADER_YES,  # would say YES, but reason should be graded exact now
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+    assert "reason" in stdout
+
+
+def test_grader_cli_requires_cli_flag(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
+    with pytest.raises(SystemExit):
+        main(["--grader-cli", _GRADER_YES, str(fixtures_dir)])
+    err = capsys.readouterr().err
+    assert "require --cli" in err
+
+
+def test_exact_requires_cli_flag(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected={"verdict": "ok"})
+    with pytest.raises(SystemExit):
+        main(["--exact", str(fixtures_dir)])
+    err = capsys.readouterr().err
+    assert "require --cli" in err
+
+
+def test_default_grader_constant_is_haiku():
+    # Defending the documented default so a future rename doesn't silently
+    # change cost characteristics for users.
+    assert "haiku" in DEFAULT_GRADER_CLI
+
+
+def test_exact_mode_falls_back_to_verbatim_comparison(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    """With --exact, a wording-only diff on a prose field should FAIL."""
+    expected = {"verdict": "BUG", "reason": "null input crash"}
+    actual = {"verdict": "BUG", "reason": "different wording"}
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected=expected)
+    rc, stdout, _ = _run_main(
+        capsys,
+        [
+            "--cli",
+            f"echo '{json.dumps(actual)}'",
+            "--exact",
+            str(fixtures_dir),
+        ],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+
+
+def test_default_grader_not_invoked_when_decision_field_differs(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    """If only decision fields differ, the grader is never called, so the
+    default (claude -p --model haiku) does not need to exist on PATH."""
+    expected = {"verdict": "BUG"}
+    actual = {"verdict": "INVALID"}
+    fixtures_dir, _ = _make_cli_case(tmp_path, expected=expected)
+    # Do NOT pass --grader-cli or --exact: rely on the default grader being
+    # un-invoked. If it were invoked, the test would error (claude not on PATH).
+    rc, stdout, _ = _run_main(
+        capsys,
+        ["--cli", f"echo '{json.dumps(actual)}'", str(fixtures_dir)],
+    )
+    assert rc == 1
+    assert "FAIL" in stdout
+    assert "verdict" in stdout

@@ -40,16 +40,27 @@ description = "Reusable framework for handling security vulnerabilities in Apach
 requires-python = ">=3.11"
 
 [dependency-groups]
-# Dev tooling installed at the framework root. Currently just
-# `prek` (the static-check / pre-commit runner). CI installs this
-# group via `uv sync --group dev` and invokes `uv run prek …`.
-# The lower bound mirrors `minimum_prek_version` in
-# `.pre-commit-config.yaml`; the upper bound is enforced implicitly
-# by the 7-day `[tool.uv] exclude-newer` cooldown below, so the
-# resolved version is "the most recent prek that is at least 7 days
-# old".
+# Dev tooling installed at the framework root.
+#
+# - `prek` is the static-check / pre-commit runner. CI installs it
+#   via `uv sync --group dev` and invokes `uv run prek …`.
+# - `ruff`, `mypy`, `pytest` are the shared static-analysis +
+#   test toolchain used by every workspace member under `tools/`.
+#   They are declared once here (workspace-root) instead of being
+#   repeated in every member's `[dependency-groups] dev` block.
+#   `uv sync` at workspace root installs them into the shared
+#   workspace environment and `uv run --directory <member> <tool>`
+#   picks them up.
+#
+# Lower bounds mirror what individual tools needed at their last
+# bump; the upper bound is enforced implicitly by the 7-day
+# `[tool.uv] exclude-newer` cooldown below, so the resolved version
+# is "the most recent that is at least 7 days old".
 dev = [
   "prek>=0.4.1",
+  "ruff>=0.15.14",
+  "mypy>=2.1.0",
+  "pytest>=8.0",
 ]
 
 [tool.uv]
@@ -67,3 +78,38 @@ exclude-newer = "7 days"
 # This pyproject.toml is purely a settings file; do not build or
 # install it as a package.
 package = false
+
+# Workspace declaration — `apache-steward` is the root of a uv
+# workspace whose members are every Python project under `tools/`.
+# Adding a new tool is a one-line edit here; everything downstream
+# (pre-commit hooks, CI matrix, root uv.lock) follows automatically.
+# See `tools/dev/run-workspace-check.sh` for the iteration helper
+# and `.github/workflows/tests.yml` for the dynamic CI matrix.
+#
+# Trade-off: workspace dependency resolution is shared across
+# members, so a version conflict between two members becomes a
+# workspace-level problem (caught at `uv sync` time, not at
+# per-tool install time). This is desired — drift between tools'
+# pinned versions is harder to spot when each has its own lock
+# file.
+[tool.uv.workspace]
+members = [
+  "tools/agent-isolation",
+  "tools/egress-gateway",
+  "tools/cve-tool-vulnogram/generate-cve-json",
+  "tools/cve-tool-vulnogram/oauth-api",
+  "tools/github-body-field",
+  "tools/github-rollup",
+  "tools/gmail/oauth-draft",
+  "tools/jira",
+  "tools/permission-audit",
+  "tools/pr-management-stats",
+  "tools/preflight-audit",
+  "tools/privacy-llm/checker",
+  "tools/privacy-llm/redactor",
+  "tools/sandbox-lint",
+  "tools/skill-and-tool-validator",
+  "tools/skill-evals",
+  "tools/spec-status-index",
+  "tools/spec-validator",
+]

@@ -39,13 +39,6 @@ oauth-draft-setup = "oauth_draft.setup_creds:main"
 oauth-draft-create = "oauth_draft.create_draft:main"
 oauth-draft-mark-read = "oauth_draft.mark_threads_read:main"
 
-[dependency-groups]
-dev = [
-  "mypy>=2.1.0",
-  "pytest>=8.0",
-  "ruff>=0.15.13",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/oauth_draft"]
 

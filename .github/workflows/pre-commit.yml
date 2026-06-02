@@ -35,16 +35,32 @@ jobs:
         with:
           persist-credentials: false
       # `uv` brings its own Python and is required by both:
-      #  - the per-project prek hooks under
-      #    `tools/{vulnogram/generate-cve-json,gmail/oauth-draft}/`,
-      #    which invoke `uv run --directory ...` for ruff / mypy /
-      #    pytest;
+      #  - the four `workspace-*` prek hooks in
+      #    `.pre-commit-config.yaml`, which call
+      #    `tools/dev/run-workspace-check.sh` to iterate over every
+      #    workspace member declared in the root pyproject's
+      #    `[tool.uv.workspace] members` list and invoke ruff /
+      #    mypy / pytest in each via `uv run --directory`;
       #  - the `uv tool install prek` step below.
       # Minimum uv version is pinned in the root `pyproject.toml`
       # (`[tool.uv] required-version`).
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
         with:
           enable-cache: true
+      # Sync the uv workspace with the dev group so that
+      # `ruff`, `mypy`, and `pytest` (declared at workspace root)
+      # are present in the shared `.venv`. The `workspace-*` hooks
+      # in `.pre-commit-config.yaml` call
+      # `tools/dev/run-workspace-check.sh`, which invokes
+      # `uv run --directory <member> <check>`; without the explicit
+      # sync, the auto-sync uv runs on `uv run` only resolves
+      # member runtime deps and the dev tools are missing.
+      - name: Sync workspace (installs ruff / mypy / pytest from root dev group)
+        # `--all-packages` is required — without it `uv sync` only
+        # installs the root project's deps, and the root has
+        # `package = false` so member packages and their
+        # `[project.scripts]` entry points would be skipped.
+        run: uv sync --all-packages --group dev
       # Install prek via uv (rather than via the `j178/prek-action`
       # action) so the `[tool.uv] exclude-newer` cooldown in the
       # root `pyproject.toml` applies to the prek install as well.

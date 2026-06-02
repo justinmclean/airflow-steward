@@ -1,0 +1,268 @@
+{
+  "_comment": "Synthetic GraphQL response that exercises every classifier rule. Each issue is purpose-built to land in a specific bucket so the eval test can assert the full distribution. `now` for the test is 2026-06-01T12:00:00Z; every timestamp below is relative to that. Renaming this file or shifting `now` breaks the test on purpose — both pieces are documented as in lock-step in `test_eval_replay.py`.",
+  "data": {
+    "repository": {
+      "i100": {
+        "_purpose": "Rule 1 dispatch — recent human activity within 7d.",
+        "number": 100,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-30T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "cve allocated"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "reporter-jane"},
+              "createdAt": "2026-05-30T08:00:00Z",
+              "body": "I'd like to discuss this further.\n"
+            }
+          ]
+        }
+      },
+      "i101": {
+        "_purpose": "Rule 1 yields (skill-drove-update) → Rule 7 fires (skip-noop, fix released awaiting advisory).",
+        "number": 101,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-30T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "cve allocated"},
+            {"name": "fix released"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "potiuk"},
+              "createdAt": "2026-05-30T08:00:00Z",
+              "body": "<!-- apache-steward: release-manager-handoff v1 -->\nRollup entry body.\n"
+            }
+          ]
+        }
+      },
+      "i102": {
+        "_purpose": "Rule 2 dispatch-urgent — non-skill comment <24h ago, updatedAt is older (>7d) so Rule 1 doesn't catch first.",
+        "number": 102,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-10T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "needs triage"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "reporter"},
+              "createdAt": "2026-06-01T06:00:00Z",
+              "body": "Bumping — has anyone looked?\n"
+            }
+          ]
+        }
+      },
+      "i103": {
+        "_purpose": "Rule 3 skip-noop — closed >30d ago with announced label.",
+        "number": 103,
+        "state": "CLOSED",
+        "closedAt": "2026-04-15T10:00:00Z",
+        "updatedAt": "2026-04-15T10:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "announced"},
+            {"name": "cve allocated"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "potiuk"},
+              "createdAt": "2026-04-15T10:00:00Z",
+              "body": "<!-- apache-steward: wrap-up v1 -->\nClosed.\n"
+            }
+          ]
+        }
+      },
+      "i104": {
+        "_purpose": "Rule 4 skip-noop — closed >90d ago with no announced label (stale invalid/dup).",
+        "number": 104,
+        "state": "CLOSED",
+        "closedAt": "2025-12-01T10:00:00Z",
+        "updatedAt": "2025-12-01T10:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "invalid"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "reporter"},
+              "createdAt": "2025-11-30T10:00:00Z",
+              "body": "Acknowledging.\n"
+            }
+          ]
+        }
+      },
+      "i105": {
+        "_purpose": "Rule 5 skip-noop — open with full lifecycle labels + skill-last.",
+        "number": 105,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-25T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "cve allocated"},
+            {"name": "pr merged"},
+            {"name": "announced"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "potiuk"},
+              "createdAt": "2026-05-25T08:00:00Z",
+              "body": "<!-- apache-steward: status-rollup v1 -->\nLast sync entry.\n"
+            }
+          ]
+        }
+      },
+      "i106": {
+        "_purpose": "Rule 6 skip-noop — open with cve+pr+skill-last, awaiting release.",
+        "number": 106,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-20T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "cve allocated"},
+            {"name": "pr merged"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "potiuk"},
+              "createdAt": "2026-05-20T08:00:00Z",
+              "body": "<!-- apache-steward: status-rollup v1 -->\nAwaiting release.\n"
+            }
+          ]
+        }
+      },
+      "i107": {
+        "_purpose": "Rule 7 skip-noop — open with cve+fix-released+skill-last, awaiting advisory.",
+        "number": 107,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-18T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "cve allocated"},
+            {"name": "fix released"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "potiuk"},
+              "createdAt": "2026-05-18T08:00:00Z",
+              "body": "<!-- apache-steward: release-manager-handoff v1 -->\nAwaiting advisory.\n"
+            }
+          ]
+        }
+      },
+      "i108": {
+        "_purpose": "GitHub-App bot login → skill-or-bot detection via `[bot]` suffix; lands in Rule 7 skip-noop.",
+        "number": 108,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-15T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "cve allocated"},
+            {"name": "fix released"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "github-actions[bot]"},
+              "createdAt": "2026-05-15T08:00:00Z",
+              "body": "CI run completed.\n"
+            }
+          ]
+        }
+      },
+      "i109": {
+        "_purpose": "Personal-account bot — by default this dispatches (not detected), with --bot-logins it skips via Rule 7.",
+        "number": 109,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-05-10T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "cve allocated"},
+            {"name": "fix released"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "company-private-bot"},
+              "createdAt": "2026-05-10T08:00:00Z",
+              "body": "No skill marker here.\n"
+            }
+          ]
+        }
+      },
+      "i110": {
+        "_purpose": "Fall-through dispatch — no rule matches (open, lifecycle incomplete, skill-last but only single label).",
+        "number": 110,
+        "state": "OPEN",
+        "closedAt": null,
+        "updatedAt": "2026-04-01T08:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "needs triage"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "potiuk"},
+              "createdAt": "2026-04-01T08:00:00Z",
+              "body": "<!-- apache-steward: status-rollup v1 -->\nOrphan rollup.\n"
+            }
+          ]
+        }
+      },
+      "i111": {
+        "_purpose": "Closed recently (<30d), announced label — dispatches under Rule 1 (recent updatedAt without skill-drove-update; closed 5d ago).",
+        "number": 111,
+        "state": "CLOSED",
+        "closedAt": "2026-05-27T10:00:00Z",
+        "updatedAt": "2026-05-27T10:00:00Z",
+        "labels": {
+          "nodes": [
+            {"name": "announced"},
+            {"name": "cve allocated"}
+          ]
+        },
+        "comments": {
+          "nodes": [
+            {
+              "author": {"login": "rm-shahar"},
+              "createdAt": "2026-05-27T10:00:00Z",
+              "body": "Released as part of v3.3.0.\n"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

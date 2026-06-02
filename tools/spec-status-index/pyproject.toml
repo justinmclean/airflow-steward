@@ -31,13 +31,6 @@ dependencies = []
 [project.scripts]
 spec-status = "spec_status_index:main"
 
-[dependency-groups]
-dev = [
-  "mypy>=1.11",
-  "pytest>=8.0",
-  "ruff>=0.6",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/spec_status_index"]
 

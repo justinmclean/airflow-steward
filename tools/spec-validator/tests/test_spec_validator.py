@@ -108,9 +108,7 @@ def _make_spec(*, status: str = "stable", **overrides: str) -> str:
         "acceptance:",
         acceptance_items,
     ]
-    body_sections = "\n\n".join(
-        f"## {s}\n\nContent." for s in REQUIRED_SECTIONS
-    )
+    body_sections = "\n\n".join(f"## {s}\n\nContent." for s in REQUIRED_SECTIONS)
     # Replace Validation section with one that has a code block
     body_sections = body_sections.replace(
         "## Validation\n\nContent.",
@@ -289,7 +287,9 @@ class TestValidateFrontmatter:
         assert any("invalid mode" in v.message for v in violations)
 
     def test_empty_acceptance_list(self, tmp_path: Path) -> None:
-        text = "---\ntitle: t\nstatus: stable\nkind: feature\nmode: Triage\nsource: x\nacceptance:\n---\n# t\n"
+        text = (
+            "---\ntitle: t\nstatus: stable\nkind: feature\nmode: Triage\nsource: x\nacceptance:\n---\n# t\n"
+        )
         p = tmp_path / "spec.md"
         violations = validate_frontmatter(p, text)
         assert any("acceptance" in v.message for v in violations)

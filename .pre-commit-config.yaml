@@ -48,7 +48,7 @@ repos:
         # Skip the PR template — GitHub pre-populates a new PR description
         # with the template verbatim, so a TOC block becomes per-PR noise the
         # contributor has to delete by hand.
-        exclude: ^(\.claude/skills/.*|tools/vulnogram/generate-cve-json/SKILL\.md|tools/skill-evals/.*|tools/spec-loop/.*|\.github/PULL_REQUEST_TEMPLATE\.md)$
+        exclude: ^(\.claude/skills/.*|tools/cve-tool-vulnogram/generate-cve-json/SKILL\.md|tools/skill-evals/.*|tools/spec-loop/.*|\.github/PULL_REQUEST_TEMPLATE\.md)$
         args:
           - "--maxlevel"
           - "3"
@@ -80,7 +80,7 @@ repos:
   # the hook never silently rewrites files; CI surfaces typos as
   # errors instead.
   - repo: https://github.com/crate-ci/typos
-    rev: v1.46.2
+    rev: v1.46.3
     hooks:
       - id: typos
         name: typos
@@ -97,240 +97,58 @@ repos:
         entry: tools/dev/check-placeholders.sh
         files: ^(\.claude/skills/.*|tools/.*)\.(md|sh|py|yaml|yml|toml)$
         pass_filenames: false
-  # Project-local checks for the `generate-cve-json` Python project at
-  # `tools/vulnogram/generate-cve-json/`. Each hook sets the working
-  # directory via `uv run --directory` so ruff / mypy / pytest pick up
-  # config from the project's pyproject.toml without explicit paths.
-  # The `files:` pattern scopes each hook to changes inside the project
-  # directory.
+  # Workspace-membership guard. The single source of truth for
+  # which Python projects get pre-commit hooks + the CI pytest
+  # matrix is the `[tool.uv.workspace] members` array in the root
+  # `pyproject.toml`. If a new `tools/<name>/pyproject.toml`
+  # appears without being added to that array, both surfaces
+  # silently skip it — the very drift bug the workspace refactor
+  # was meant to prevent. This hook re-fires whenever any
+  # tools/**/pyproject.toml or the root pyproject changes.
   - repo: local
     hooks:
-      - id: generate-cve-json-ruff-check
-        name: ruff check (generate-cve-json)
+      - id: check-workspace-members
+        name: check-workspace-members
         language: system
-        entry: uv run --directory tools/vulnogram/generate-cve-json ruff check
-        files: ^tools/vulnogram/generate-cve-json/(src|tests|pyproject\.toml)
+        entry: tools/dev/check-workspace-members.py
+        files: ^(tools/[^/]+(/[^/]+)?/pyproject\.toml|pyproject\.toml)$
         pass_filenames: false
-      - id: generate-cve-json-ruff-format
-        name: ruff format (generate-cve-json)
-        language: system
-        entry: uv run --directory tools/vulnogram/generate-cve-json ruff format --check
-        files: ^tools/vulnogram/generate-cve-json/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: generate-cve-json-mypy
-        name: mypy (generate-cve-json)
-        language: system
-        entry: uv run --directory tools/vulnogram/generate-cve-json mypy
-        files: ^tools/vulnogram/generate-cve-json/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: generate-cve-json-pytest
-        name: pytest (generate-cve-json)
-        language: system
-        entry: uv run --directory tools/vulnogram/generate-cve-json pytest
-        files: ^tools/vulnogram/generate-cve-json/(src|tests|pyproject\.toml)
-        pass_filenames: false
-  # Project-local checks for the `oauth-draft` Python project at
-  # `tools/gmail/oauth-draft/`. Same shape as the generate-cve-json
-  # hooks above — `uv run --directory` so each tool picks up config
-  # from its own pyproject.toml; `files:` scopes by path.
+  # Workspace-level static checks. Iterate over every uv-workspace
+  # member declared in the root `pyproject.toml`'s
+  # `[tool.uv.workspace] members` list via
+  # `tools/dev/run-workspace-check.sh`. The driver auto-discovers
+  # which checks apply per member (e.g. only runs `mypy` on members
+  # with a `[tool.mypy]` section in their pyproject) and honours an
+  # opt-out `[tool.steward.checks] skip = [...]` block per member.
+  #
+  # Adding a new uv-managed tool requires NO edit here — append its
+  # path to `[tool.uv.workspace] members` in the root pyproject and
+  # all four hooks pick it up automatically.
   - repo: local
     hooks:
-      - id: oauth-draft-ruff-check
-        name: ruff check (oauth-draft)
+      - id: workspace-ruff-check
+        name: ruff check (workspace)
         language: system
-        entry: uv run --directory tools/gmail/oauth-draft ruff check
-        files: ^tools/gmail/oauth-draft/(src|tests|pyproject\.toml)
+        entry: tools/dev/run-workspace-check.sh ruff "ruff check"
+        files: ^(tools/[^/]+(/[^/]+)?/(src|tests|pyproject\.toml)|pyproject\.toml|tools/dev/run-workspace-check\.sh)
         pass_filenames: false
-      - id: oauth-draft-ruff-format
-        name: ruff format (oauth-draft)
+      - id: workspace-ruff-format
+        name: ruff format (workspace)
         language: system
-        entry: uv run --directory tools/gmail/oauth-draft ruff format --check
-        files: ^tools/gmail/oauth-draft/(src|tests|pyproject\.toml)
+        entry: tools/dev/run-workspace-check.sh ruff-format "ruff format --check"
+        files: ^(tools/[^/]+(/[^/]+)?/(src|tests|pyproject\.toml)|pyproject\.toml|tools/dev/run-workspace-check\.sh)
         pass_filenames: false
-      - id: oauth-draft-mypy
-        name: mypy (oauth-draft)
+      - id: workspace-mypy
+        name: mypy (workspace)
         language: system
-        entry: uv run --directory tools/gmail/oauth-draft mypy
-        files: ^tools/gmail/oauth-draft/(src|tests|pyproject\.toml)
+        entry: tools/dev/run-workspace-check.sh mypy mypy
+        files: ^(tools/[^/]+(/[^/]+)?/(src|tests|pyproject\.toml)|pyproject\.toml|tools/dev/run-workspace-check\.sh)
         pass_filenames: false
-      - id: oauth-draft-pytest
-        name: pytest (oauth-draft)
+      - id: workspace-pytest
+        name: pytest (workspace)
         language: system
-        entry: uv run --directory tools/gmail/oauth-draft pytest
-        files: ^tools/gmail/oauth-draft/(src|tests|pyproject\.toml)
-        pass_filenames: false
-
-  # Project-local checks for the Vulnogram OAuth-API helpers at
-  # `tools/vulnogram/oauth-api/`. Same shape as the gmail/oauth-draft
-  # hooks above.
-  - repo: local
-    hooks:
-      - id: vulnogram-oauth-api-ruff-check
-        name: ruff check (vulnogram-oauth-api)
-        language: system
-        entry: uv run --directory tools/vulnogram/oauth-api ruff check
-        files: ^tools/vulnogram/oauth-api/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: vulnogram-oauth-api-ruff-format
-        name: ruff format (vulnogram-oauth-api)
-        language: system
-        entry: uv run --directory tools/vulnogram/oauth-api ruff format --check
-        files: ^tools/vulnogram/oauth-api/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: vulnogram-oauth-api-mypy
-        name: mypy (vulnogram-oauth-api)
-        language: system
-        entry: uv run --directory tools/vulnogram/oauth-api mypy
-        files: ^tools/vulnogram/oauth-api/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: vulnogram-oauth-api-pytest
-        name: pytest (vulnogram-oauth-api)
-        language: system
-        entry: uv run --directory tools/vulnogram/oauth-api pytest
-        files: ^tools/vulnogram/oauth-api/(src|tests|pyproject\.toml)
-        pass_filenames: false
-
-  - repo: local
-    hooks:
-      - id: redactor-ruff-check
-        name: ruff check (redactor)
-        language: system
-        entry: uv run --directory tools/privacy-llm/redactor ruff check
-        files: ^tools/privacy-llm/redactor/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: redactor-ruff-format
-        name: ruff format (redactor)
-        language: system
-        entry: uv run --directory tools/privacy-llm/redactor ruff format --check
-        files: ^tools/privacy-llm/redactor/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: redactor-mypy
-        name: mypy (redactor)
-        language: system
-        entry: uv run --directory tools/privacy-llm/redactor mypy
-        files: ^tools/privacy-llm/redactor/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: redactor-pytest
-        name: pytest (redactor)
-        language: system
-        entry: uv run --directory tools/privacy-llm/redactor pytest
-        files: ^tools/privacy-llm/redactor/(src|tests|pyproject\.toml)
-        pass_filenames: false
-
-  - repo: local
-    hooks:
-      - id: checker-ruff-check
-        name: ruff check (checker)
-        language: system
-        entry: uv run --directory tools/privacy-llm/checker ruff check
-        files: ^tools/privacy-llm/checker/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: checker-ruff-format
-        name: ruff format (checker)
-        language: system
-        entry: uv run --directory tools/privacy-llm/checker ruff format --check
-        files: ^tools/privacy-llm/checker/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: checker-mypy
-        name: mypy (checker)
-        language: system
-        entry: uv run --directory tools/privacy-llm/checker mypy
-        files: ^tools/privacy-llm/checker/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: checker-pytest
-        name: pytest (checker)
-        language: system
-        entry: uv run --directory tools/privacy-llm/checker pytest
-        files: ^tools/privacy-llm/checker/(src|tests|pyproject\.toml)
-        pass_filenames: false
-
-  # Project-local checks for the sandbox-lint Python project at
-  # `tools/sandbox-lint/`. Same shape as the other tool hooks.
-  # The pytest hook also covers the lint of `.claude/settings.json`
-  # against `tools/sandbox-lint/expected.json` because the project's
-  # tests load both files at module scope.
-  - repo: local
-    hooks:
-      - id: sandbox-lint-ruff-check
-        name: ruff check (sandbox-lint)
-        language: system
-        entry: uv run --directory tools/sandbox-lint ruff check
-        files: ^tools/sandbox-lint/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: sandbox-lint-ruff-format
-        name: ruff format (sandbox-lint)
-        language: system
-        entry: uv run --directory tools/sandbox-lint ruff format --check
-        files: ^tools/sandbox-lint/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: sandbox-lint-mypy
-        name: mypy (sandbox-lint)
-        language: system
-        entry: uv run --directory tools/sandbox-lint mypy
-        files: ^tools/sandbox-lint/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: sandbox-lint-pytest
-        name: pytest (sandbox-lint)
-        language: system
-        entry: uv run --directory tools/sandbox-lint pytest
-        files: ^(tools/sandbox-lint/(src|tests|pyproject\.toml|expected\.json)|\.claude/settings\.json)
-        pass_filenames: false
-
-  - repo: local
-    hooks:
-      - id: skill-and-tool-validator-ruff-check
-        name: ruff check (skill-and-tool-validator)
-        language: system
-        entry: uv run --directory tools/skill-and-tool-validator ruff check
-        files: ^tools/skill-and-tool-validator/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: skill-and-tool-validator-ruff-format
-        name: ruff format (skill-and-tool-validator)
-        language: system
-        entry: uv run --directory tools/skill-and-tool-validator ruff format --check
-        files: ^tools/skill-and-tool-validator/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: skill-and-tool-validator-mypy
-        name: mypy (skill-and-tool-validator)
-        language: system
-        entry: uv run --directory tools/skill-and-tool-validator mypy
-        files: ^tools/skill-and-tool-validator/(src|tests|pyproject\.toml)
-        pass_filenames: false
-      - id: skill-and-tool-validator-pytest
-        name: pytest (skill-and-tool-validator)
-        language: system
-        entry: uv run --directory tools/skill-and-tool-validator pytest
-        files: ^tools/skill-and-tool-validator/(src|tests|pyproject\.toml)
-        pass_filenames: false
-
-  # Project-local checks for the JIRA bridge test harness at
-  # `tools/jira/`. The `files:` pattern also triggers on `bridge.groovy`
-  # changes so test coverage is re-validated when the bridge itself changes.
-  - repo: local
-    hooks:
-      - id: jira-ruff-check
-        name: ruff check (jira)
-        language: system
-        entry: uv run --directory tools/jira ruff check
-        files: ^tools/jira/(src|tests|pyproject\.toml|bridge\.groovy)
-        pass_filenames: false
-      - id: jira-ruff-format
-        name: ruff format (jira)
-        language: system
-        entry: uv run --directory tools/jira ruff format --check
-        files: ^tools/jira/(src|tests|pyproject\.toml|bridge\.groovy)
-        pass_filenames: false
-      - id: jira-mypy
-        name: mypy (jira)
-        language: system
-        entry: uv run --directory tools/jira mypy
-        files: ^tools/jira/(src|tests|pyproject\.toml|bridge\.groovy)
-        pass_filenames: false
-      - id: jira-pytest
-        name: pytest (jira)
-        language: system
-        entry: uv run --directory tools/jira pytest
-        files: ^tools/jira/(src|tests|pyproject\.toml|bridge\.groovy)
+        entry: tools/dev/run-workspace-check.sh pytest "pytest --color=yes"
+        files: ^(tools/[^/]+(/[^/]+)?/(src|tests|pyproject\.toml)|pyproject\.toml|tools/dev/run-workspace-check\.sh)
         pass_filenames: false
 
   # Validate `.claude/skills/**`, every `tools/<name>/README.md`, and the

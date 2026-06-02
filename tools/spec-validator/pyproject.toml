@@ -31,12 +31,6 @@ dependencies = []
 [project.scripts]
 spec-validate = "spec_validator:main"
 
-[dependency-groups]
-dev = [
-  "pytest>=8.0",
-  "ruff>=0.6",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/spec_validator"]
 

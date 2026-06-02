@@ -31,12 +31,6 @@ dependencies = []
 [project.scripts]
 skill-eval = "skill_evals.runner:main"
 
-[dependency-groups]
-dev = [
-  "pytest>=8.0",
-  "ruff>=0.15.13",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/skill_evals"]
 

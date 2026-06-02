@@ -33,13 +33,6 @@ dependencies = []
 [project.scripts]
 skill-and-tool-validate = "skill_and_tool_validator:main"
 
-[dependency-groups]
-dev = [
-  "mypy>=2.1.0",
-  "pytest>=8.0",
-  "ruff>=0.15.13",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/skill_and_tool_validator"]
 

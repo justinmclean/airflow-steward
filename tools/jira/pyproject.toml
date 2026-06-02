@@ -29,13 +29,6 @@ license = { text = "Apache-2.0" }
 # All logic lives in bridge.groovy; this package ships only tests.
 dependencies = []
 
-[dependency-groups]
-dev = [
-  "mypy>=2.1.0",
-  "pytest>=8.0",
-  "ruff>=0.15.13",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/jira_bridge"]
 

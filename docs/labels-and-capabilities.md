@@ -87,7 +87,7 @@ surface.
 | `capability:resolve` | Close-out actions: invalidate, dedupe, CVE-allocate, post-announcement housekeeping. |
 | `capability:reassess` | Re-run resolved or end-of-life issues against current code to verify still-fixed / still-broken. |
 | `capability:stats` | Read-only dashboards, metrics, governance evidence, contributor nomination briefs. |
-| `capability:setup` | Framework / agent / substrate infrastructure: install, verify, update, doctor, override-upstream, write-skill, plus new tools under `tools/*`. |
+| `capability:setup` | Framework / agent / substrate infrastructure: install, verify, update, doctor, override-upstream, write-skill, optimize-skill, plus new tools under `tools/*`. |
 
 The `capability:*` dimension is **orthogonal** to `area:*`. A single
 query can answer "how is our triage stack doing across PR + issue +
@@ -134,14 +134,18 @@ Capabilities for every skill currently in
 | `pr-management-triage` | `capability:triage` |
 | `issue-triage` | `capability:triage` |
 | `security-issue-triage` | `capability:triage` |
+| `pr-management-quick-merge` | `capability:triage` + `capability:review` *(screens the ready-for-review queue for trivial, all-gates-green PRs — triage; submits the maintainer's approve on per-PR confirmation — review)* |
 | `pr-management-code-review` | `capability:review` |
 | `pairing-self-review` | `capability:review` |
 | `pr-management-mentor` | `capability:review` |
+| `good-first-issue-author` | `capability:review` *(authors a newcomer-ready good first issue — contributor mentoring on the supply side)* |
 | `issue-fix-workflow` | `capability:fix` |
+| `audit-finding-fix` | `capability:fix` |
 | `security-issue-fix` | `capability:fix` + `capability:resolve` *(opens the PR that closes the tracker — both phases)* |
 | `security-issue-import` | `capability:intake` |
 | `security-issue-import-from-md` | `capability:intake` |
 | `security-issue-import-from-pr` | `capability:intake` |
+| `security-issue-import-via-forwarder` | `capability:intake` |
 | `security-issue-sync` | `capability:intake` *(+ `capability:reconciliation` once [#337](https://github.com/apache/airflow-steward/issues/337) lands the ASF-dashboard step)* |
 | `setup-shared-config-sync` | `capability:intake` + `capability:setup` *(reconciles user-scope config to a sync repo; the act is intake, the subject is setup)* |
 | `security-cve-allocate` | `capability:resolve` |
@@ -162,6 +166,7 @@ Capabilities for every skill currently in
 | `setup-isolated-setup-doctor` | `capability:setup` + `capability:reassess` *(re-checks an installed sandbox against current spec — the phase is reassess on subject setup)* |
 | `setup-override-upstream` | `capability:setup` |
 | `write-skill` | `capability:setup` |
+| `optimize-skill` | `capability:setup` |
 
 ## Capability to tool map
 
@@ -171,15 +176,25 @@ Tools under [`tools/`](../tools/). Tools with two values (separated by
 | Tool | Capability / capabilities | Role |
 |---|---|---|
 | [`tools/agent-isolation`](../tools/agent-isolation/) | `capability:setup` | Secure-agent sandbox helpers |
+| [`tools/apache-projects`](../tools/apache-projects/) | `capability:stats` + `capability:intake` | ASF project-metadata substrate (`apache/comdev` `apache-projects-mcp`); read-only `projects.apache.org/json` rosters / people / releases. Backs `contributor-nomination` and the security roster-resolution paths; tracked at `main`, not pinned |
 | [`tools/cve-org`](../tools/cve-org/) | `capability:resolve` + `capability:intake` | Publishes to CVE.org *(resolve)* and records the resulting CVE state back into the tracker *(intake)* |
+| [`tools/cve-tool`](../tools/cve-tool/) | `capability:setup` | Adapter contract for CNA backends (Vulnogram, MITRE form, CVE.org direct, GHSA). Pure interface spec; no executable code — adapters under sibling `tools/cve-tool-*/` directories implement it. |
+| [`tools/cve-tool-vulnogram`](../tools/cve-tool-vulnogram/) | `capability:resolve` | ASF Vulnogram CVE-allocation adapter. Implements the `tools/cve-tool/` contract. Previously named `tools/vulnogram/`. |
 | [`tools/dashboard-generator`](../tools/dashboard-generator/) | `capability:stats` | Self-contained HTML dashboard generator |
 | [`tools/dev`](../tools/dev/) | `capability:setup` | Framework dev-loop helpers |
+| [`tools/egress-gateway`](../tools/egress-gateway/) | `capability:setup` | Egress-allowlist forward proxy (proxy.py plugin); host-level egress chokepoint — defence-in-depth for RFC-AI-0003 §4.4 |
+| [`tools/forwarder-relay`](../tools/forwarder-relay/) | `capability:setup` | Adapter contract for inbound-relay backends (ASF Security relay, huntr.com, HackerOne triagers). Pure interface spec; adapters declare detection + credit-extraction + reporter-addressing rules. |
 | [`tools/github`](../tools/github/) | `capability:setup` | GitHub REST / GraphQL substrate (called by every lifecycle phase — pure substrate, no single phase) |
+| [`tools/github-body-field`](../tools/github-body-field/) | `capability:setup` | Read or rewrite one `### Field` section of a GitHub issue body without bringing the body into agent context — substrate helper for the security-sync skills |
+| [`tools/github-rollup`](../tools/github-rollup/) | `capability:setup` | Append to (or create) the status-rollup comment on a GitHub issue without bringing the rollup body into agent context — substrate helper for every status-update-emitting skill |
 | [`tools/gmail`](../tools/gmail/) | `capability:setup` | Gmail API substrate |
 | [`tools/jira`](../tools/jira/) | `capability:setup` | JIRA REST substrate (read-only today; write subcommands tracked in [#301](https://github.com/apache/airflow-steward/issues/301)) |
+| [`tools/mail-archive`](../tools/mail-archive/) | `capability:setup` | Adapter contract for public mail-archive backends (PonyMail, Hyperkitty, Discourse, Google Groups, GitHub Discussions). Pure interface spec. |
 | [`tools/mail-source`](../tools/mail-source/) | `capability:setup` + `capability:intake` | Mail-source backend abstraction (mbox / IMAP / Mailman 3); the abstraction is setup, every concrete read is part of the intake pipeline |
 | [`tools/ponymail`](../tools/ponymail/) | `capability:setup` + `capability:intake` | PonyMail archive substrate; same dual role as `mail-source` — substrate plus an intake-pipeline component |
+| [`tools/permission-audit`](../tools/permission-audit/) | `capability:setup` | Audit + atomically edit Claude Code `permissions.allow[]` entries; backs `/setup-steward verify --apply-permission-audit` (check 8d) |
 | [`tools/pr-management-stats`](../tools/pr-management-stats/) | `capability:stats` | PR-backlog analytics engine |
+| [`tools/preflight-audit`](../tools/preflight-audit/) | `capability:stats` | Dry-run the bulk-mode pre-flight classifier; measure skip-rate before / after any rule edit in the security-issue-sync skill |
 | [`tools/privacy-llm`](../tools/privacy-llm/) | `capability:setup` | Privacy-LLM PII-scrubbing gate |
 | [`tools/probe-templates`](../tools/probe-templates/) | `capability:setup` | Sandbox-doctor probe templates |
 | [`tools/sandbox-lint`](../tools/sandbox-lint/) | `capability:setup` | Sandbox settings linter |
@@ -189,7 +204,6 @@ Tools under [`tools/`](../tools/). Tools with two values (separated by
 | [`tools/skill-and-tool-validator`](../tools/skill-and-tool-validator/) | `capability:setup` | Skill-frontmatter and convention validator |
 | [`tools/spec-status-index`](../tools/spec-status-index/) | `capability:setup` + `capability:stats` | Index of spec / RFC implementation status — substrate that also doubles as a governance/stats view |
 | [`tools/spec-validator`](../tools/spec-validator/) | `capability:setup` | Spec-frontmatter and body-section validator — counterpart to `skill-and-tool-validator` for `tools/spec-loop/specs/` |
-| [`tools/vulnogram`](../tools/vulnogram/) | `capability:resolve` | ASF Vulnogram CVE-allocation client |
 
 A tool's capabilities are determined by its **use-case lifecycle
 phases**, not by which skills happen to consume it. `tools/github` is

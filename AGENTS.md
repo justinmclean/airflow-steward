@@ -1445,7 +1445,7 @@ Currently available:
   change before applying it. Points the user at
   [`security-cve-allocate`](.claude/skills/security-cve-allocate/SKILL.md) when a CVE is
   needed. **At the end of every run** it also invokes
-  [`generate-cve-json`](tools/vulnogram/generate-cve-json/SKILL.md) with
+  [`generate-cve-json`](tools/cve-tool-vulnogram/generate-cve-json/SKILL.md) with
   `--attach` to refresh the CVE JSON attachment on the tracking issue (auto-
   resolving `--remediation-developer` from the first <upstream> PR author
   in the *PR with the fix* body field), so the attached JSON stays in
@@ -1486,12 +1486,12 @@ Currently available:
   tree, the substring `airflow-s`) / `vulnerability` / `security fix`
   leakage before being written or pushed. Updates the `<tracker>`
   tracking issue with the new PR link afterwards.
-- [`generate-cve-json`](tools/vulnogram/generate-cve-json/SKILL.md) — generates
+- [`generate-cve-json`](tools/cve-tool-vulnogram/generate-cve-json/SKILL.md) — generates
   a paste-ready CVE 5.x JSON record from a tracking issue, matching the shape
   Vulnogram exports (`containers.cna` with `affected`, `descriptions` + HTML
   `supportingMedia`, `problemTypes` with `type: "CWE"`, `metrics.other`,
   tagged `references`, `providerMetadata.orgId`, `cveMetadata` envelope). A
-  deterministic `uv run` script — [the `generate-cve-json` project](tools/vulnogram/generate-cve-json/) —
+  deterministic `uv run` script — [the `generate-cve-json` project](tools/cve-tool-vulnogram/generate-cve-json/) —
   parses the issue's template fields (multiple credits on separate lines,
   multiple reference URLs, `>= X, < Y` version ranges), writes the JSON to a
   file, and prints the Vulnogram `#json` paste URL for the CVE. The
@@ -1681,6 +1681,32 @@ that does not change what the model is asked to produce —
 
 - Re-read the diff and check that every change is intentional.
 - Check that any renamed headings have matching TOC updates.
+- **Run lychee against every changed `.md` / `.rst` / `.md.j2` file.**
+  CI runs the same check on every PR and a single broken link blocks
+  the merge; catching it locally avoids a round-trip. The canonical
+  recipe — same as
+  [`.github/workflows/link-check.yml`](.github/workflows/link-check.yml)
+  invokes:
+
+  ```bash
+  lychee --config .lychee.toml .
+  ```
+
+  Run on the whole repo (cheap — most checks are offline file +
+  fragment lookups; only the external-URL subset hits the network).
+  Pay attention to **`Fragment not found in document`** errors —
+  those are anchor-style links (`other.md#section`) whose target
+  heading no longer exists. They are the most common breakage after
+  any refactor that moved a section between files or renamed a
+  heading. Re-write the link to point at the new location; do not
+  silence it with an ignore-pattern.
+
+  If your local lychee is v0.24+ (the example config in
+  `.lychee.toml` pins the v0.23 schema), replace
+  `include_fragments = true` with `include_fragments = "anchor-only"`
+  before running, or invoke directly:
+  `lychee --include-fragments=anchor-only --no-progress <paths>`.
+
 - Verify that links to the project's Security Model use an anchor that
   exists on the current stable version (adopting project's anchors:
   [`<project-config>/security-model.md`](<project-config>/security-model.md)).
@@ -1701,5 +1727,5 @@ that does not change what the model is asked to produce —
 - [`<project-config>/`](projects/_template/) — other project-specific files (canned responses, release trains, security model, scope labels, milestones, title-normalization, fix workflow, naming conventions).
 - [`tools/github/`](tools/github/) — GitHub tool adapter: `tool.md` (overview), `operations.md` (`gh` CLI / API catalogue), `issue-template.md` (body-field schema), `labels.md` (lifecycle-label taxonomy), `project-board.md` (Projects V2 GraphQL).
 - [`tools/gmail/`](tools/gmail/) — Gmail tool adapter: `tool.md` (overview), `operations.md` (MCP catalogue + no-update limitation), `threading.md` (prefer-`threadId`-else-subject-fallback rule), `asf-relay.md` (ASF-security-relay drafting), `search-queries.md` (query templates), `ponymail-archive.md` (ASF PonyMail URL construction).
-- [`tools/vulnogram/`](tools/vulnogram/) — Vulnogram (ASF CVE tool) adapter: `tool.md` (overview), `allocation.md` (PMC-gated allocation flow), `record.md` (record URLs + `#source` paste + `DRAFT`/`REVIEW`/`PUBLIC` state machine + reviewer-comment signal), `generate-cve-json/` (CVE-5.x JSON generator — Python project).
+- [`tools/cve-tool-vulnogram/`](tools/cve-tool-vulnogram/) — Vulnogram (ASF CVE tool) adapter: `tool.md` (overview), `allocation.md` (PMC-gated allocation flow), `record.md` (record URLs + `#source` paste + `DRAFT`/`REVIEW`/`PUBLIC` state machine + reviewer-comment signal), `generate-cve-json/` (CVE-5.x JSON generator — Python project).
 - [`tools/cve-org/`](tools/cve-org/) — public CVE registry adapter: `tool.md` covers the MITRE CVE Services API v2 `check-published` recipe, used by `security-issue-sync` to verify that a closed tracker's CVE has propagated from the CNA tool to cve.org before sending the reporter the final *"CVE is live"* email.

@@ -169,13 +169,23 @@ because **every** framework symlink now carries the prefix:
 /.apache-magpie/
 /.apache-magpie.local.lock
 /.claude/skills/magpie-*
+!/.claude/skills/magpie-setup
 /.github/skills/magpie-*              # (Pattern B; or the canonical side for D)
+!/.github/skills/magpie-setup        # (Pattern B/D — same side as the glob above)
 ```
 
 Keep the orientation right for the adopter's pattern (Pattern A → only
-the `.claude/skills/magpie-*` line; D → only the canonical side). The
-committed `.apache-magpie.lock` and `.apache-magpie-overrides/` are
-**not** gitignored.
+the `.claude/skills/magpie-*` pair; D → only the canonical side). The
+`!/.../magpie-setup` negation is **required**: the `magpie-*` glob would
+otherwise swallow the committed `magpie-setup` bootstrap (the one tracked
+framework skill, per [`SKILL.md` Golden rule 6](SKILL.md#golden-rules)), so
+a plain `git add` would silently skip it and fresh clones would land with
+no bootstrap skill. Keep the negation on the **same side(s)** as the glob
+(Pattern A → the `.claude` pair only; Pattern B → both pairs; Pattern D →
+the canonical side only). Use **no trailing slash** — it must re-include
+the outer symlink in Pattern B as well as the real directory. The committed
+`.apache-magpie.lock` and `.apache-magpie-overrides/` are **not**
+gitignored.
 
 ## Step 7 — Migrate the per-user config dir + sandbox allowlist
 
@@ -196,7 +206,7 @@ or user-scope `~/.claude/settings.json`) must become
 able to read the moved credentials. The framework cannot edit those
 settings files for the operator — surface the exact one-line change.
 
-## Step 8 — Migrate the post-checkout hook + doc sections
+## Step 8 — Migrate the post-checkout hook, lint config + doc sections
 
 - **Git hook.** If `.git/hooks/post-checkout` contains the legacy
   `setup-steward verify --auto-fix-symlinks` recipe, update it to
@@ -208,6 +218,18 @@ settings files for the operator — surface the exact one-line change.
   symlinks. Best-effort and surfaced as part of the migration diff; the
   framework-name prose ("Apache Magpie") is independent and not touched
   here.
+- **Lint / pre-commit config.** If the adopter's `.pre-commit-config.yaml`
+  (or any other prek / linter config) *excludes* the committed framework
+  skill or the overrides dir by their old paths — e.g.
+  `^\.github/skills/setup-steward/`, `^\.claude/skills/setup-steward/`,
+  `^\.apache-steward-overrides/` — re-point those exclusion patterns to the
+  magpie paths (`magpie-setup`, `.apache-magpie-overrides/`). Adopters add
+  these so the committed bootstrap skill is skipped by license / spellcheck
+  / markdown-lint / link-check hooks; leaving a pattern stale lets those
+  hooks run on the renamed files and the migration commit **fails**. The
+  exact lines are adopter-specific — grep the config for `setup-steward`
+  and `apache-steward` and re-point every match. Surfaced as part of the
+  migration diff.
 
 ## Step 9 — Hand off to `magpie-setup` and finish the upgrade
 

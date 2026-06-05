@@ -80,6 +80,13 @@ repos:
       - id: markdownlint-cli2
         name: markdownlint
         files: \.md$
+        # Skip skill-evals fixture markdown: report.md / system-prompt.md /
+        # user-prompt-template.md are test data containing raw code diffs and
+        # CLI snippets (leading-underscore identifiers, `*args`, `--- /dev/null`,
+        # etc.). The eval runner reads them as plain text, never rendered, so
+        # prose rules like MD037 only ever false-positive on them. Suite
+        # README.md files are NOT excluded — they are real docs.
+        exclude: ^tools/skill-evals/evals/.+/fixtures/.+\.md$
   # typos — fast spell-checker. Allowlist is `.typos.toml`.
   # Override the default args (which include `--write-changes`) so
   # the hook never silently rewrites files; CI surfaces typos as

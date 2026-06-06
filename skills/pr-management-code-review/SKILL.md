@@ -50,6 +50,7 @@ Detail files in this directory break the logic out topic-by-topic:
 | [`prerequisites.md`](prerequisites.md) | Pre-flight — `gh` auth, repo access, plugin / adversarial-reviewer detection. |
 | [`selectors.md`](selectors.md) | Input parsing — default `review-requested-for-me`, `area:`, `collab:`, single-PR, repo override. |
 | [`review-flow.md`](review-flow.md) | Per-PR sequential workflow — fetch, examine, classify findings, draft, confirm, post. |
+| [`slop-detection.md`](slop-detection.md) | Structural scan (Step 2.5) — fast early-exit for crystal-clear non-genuine PRs; signals, thresholds, comment/close/lock/report actions. |
 | [`adversarial.md`](adversarial.md) | Integration with locally-configured second reviewers (e.g. Codex plugin); handling of the "assistant proposes, user fires" slash-command pattern. |
 | [`posting.md`](posting.md) | `gh pr review` recipes + verbatim review-body templates with AI-attribution footer. |
 | [`criteria.md`](criteria.md) | Source-of-truth pointers + quick-reference checklist of the project's review criteria. |
@@ -235,6 +236,17 @@ should really be drafted because of merge conflicts that
 appeared), the skill says so explicitly and points them at
 `/magpie-pr-management-triage pr:<N>`. It does not silently invoke triage actions.
 
+**Exception — slop-detection early exit.** The `[X]` action in
+[`slop-detection.md`](slop-detection.md) (close PR + lock
+conversation) is an explicit, deliberate carve-out for structurally
+non-genuine PRs detected at Step 2.5. This action is only surfaced
+after two or more hard signals fire; it is never available during a
+normal review flow. The maintainer must confirm before execution —
+the skill never auto-closes. The decision to add this action here
+rather than in `pr-management-triage` is deliberate: slop detection
+fires in the middle of a review session and the `[X]` path must not
+require a context switch to a separate skill.
+
 **Golden rule 10 — every PR number is rendered as its full
 URL.** A bare `#65981` is unclickable in most terminals; the
 maintainer cannot open it without retyping. Whenever this
@@ -286,6 +298,22 @@ naturally with the terminal-side line-comment workflow.
 The skill never opens drafts, already-merged PRs, or
 self-authored PRs (those are skipped before they reach the
 headline-confirm gate anyway).
+
+**Golden rule 12 — fast-exit on crystal-clear slop; do not spend a
+full review on structurally non-genuine PRs.** After fetching the
+diff (Step 2), run the structural scan in
+[`slop-detection.md`](slop-detection.md). If two or more hard
+signals fire, or one hard signal plus three or more soft signals fire
+(note: H3+H4 together count as one hard signal for threshold purposes
+when no other hard signal is present — see the Threshold section of
+[`slop-detection.md`](slop-detection.md)),
+**stop the review and present the slop report** to the maintainer
+before spending tokens on a line-by-line analysis. Offer: post a
+contribution-guidelines warning comment, close+lock the PR and show
+the GitHub report link, review anyway, or skip. The maintainer
+decides — the skill never auto-closes or auto-comments. If the
+maintainer picks `[R]eview anyway`, the normal review resumes from
+Step 3 with no changes to findings or disposition.
 
 ---
 
@@ -521,11 +549,12 @@ writes a session log to disk.
 
 ## What this skill deliberately does NOT do
 
-- **First-pass triage actions.** Drafting, closing, rebasing,
+- **First-pass triage actions.** Drafting, rebasing,
   pinging, rerunning CI, marking `ready for maintainer review` —
   all live in [`pr-management-triage`](../pr-management-triage/SKILL.md). If the
   current PR needs one of those, the skill says so and points
-  at `/magpie-pr-management-triage pr:<N>`.
+  at `/magpie-pr-management-triage pr:<N>`. *(Exception: the
+  slop-detection `[X]` close+lock path — see Golden rule 9.)*
 - **Merging.** Merging is a conscious maintainer action that
   belongs in a separate flow.
 - **Submitting reviews on closed / merged PRs.** The skill only

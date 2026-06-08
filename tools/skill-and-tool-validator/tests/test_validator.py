@@ -1112,6 +1112,38 @@ class TestValidateInjectionGuard:
 
     # --- Category exposure ---
 
+    def test_forwarder_relay_signal_without_callout_hard_violation(self, tmp_path: Path) -> None:
+        """forwarder-relay reference without callout → HARD injection_guard violation."""
+        path = tmp_path / "SKILL.md"
+        text = _GUARD_FM + (
+            "Dispatch through adapters in `tools/forwarder-relay/<name>/` "
+            "per the contract in `tools/forwarder-relay/README.md`.\n"
+        )
+        violations = list(validate_injection_guard(path, text))
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.category == INJECTION_GUARD_CATEGORY
+        assert "forwarder-relay" in v.message
+
+    def test_forwarder_relay_signal_with_callout_ok(self, tmp_path: Path) -> None:
+        """forwarder-relay signal AND the callout present → no violation."""
+        path = tmp_path / "SKILL.md"
+        text = _GUARD_FM + _CALLOUT + ("Dispatch through adapters in `tools/forwarder-relay/<name>/`.\n")
+        violations = list(validate_injection_guard(path, text))
+        assert violations == []
+
+    def test_forwarder_relay_hyphen_variant_detected(self, tmp_path: Path) -> None:
+        """'forwarder relay' (space) and 'forwarder-relay' (hyphen) both trigger."""
+        path = tmp_path / "SKILL.md"
+        # Space-separated variant
+        text_space = _GUARD_FM + "Dispatch through the forwarder relay adapter.\n"
+        assert any(v.category == INJECTION_GUARD_CATEGORY for v in validate_injection_guard(path, text_space))
+        # Hyphen-separated variant
+        text_hyphen = _GUARD_FM + "Dispatch through the forwarder-relay adapter.\n"
+        assert any(
+            v.category == INJECTION_GUARD_CATEGORY for v in validate_injection_guard(path, text_hyphen)
+        )
+
     def test_injection_guard_category_is_hard(self) -> None:
         """injection_guard is not in SOFT_CATEGORIES — it is a hard failure."""
         assert INJECTION_GUARD_CATEGORY not in SOFT_CATEGORIES

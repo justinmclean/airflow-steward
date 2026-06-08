@@ -23,9 +23,13 @@ Steps:
    that commit. If the diff is empty, exit without creating a branch or
    commit (print "specs already in sync as of <SHA>"). If no previous
    sync commit is recorded, fall through to a full inventory.
-2. **Create the sync branch off the integration base**, then switch to
-   it: `git checkout -b sync-specs`. (One reviewable PR for the
-   sync.) Never commit the sync to the integration branch.
+2. **Create a uniquely-named sync branch off the integration base**, then
+   switch to it: `git checkout -b "sync-specs-$(date +%Y%m%d-%H%M%S)"`. A
+   fresh branch every run keeps each sync as its own reviewable PR and
+   never collides with or commits on top of a previous `sync-specs*`
+   branch. Note the exact name you created — you will print it in the
+   human-run commands below. Never commit the sync to the integration
+   branch.
 3. Inventory the code with parallel subagents (full inventory only if
    step 1 did not narrow the surface):
    - every `.claude/skills/*/SKILL.md` (name, mode, what it does);
@@ -55,9 +59,12 @@ Steps:
 
 Then STOP. Do NOT push, do NOT open a PR. Print the human-run commands:
 
+(substitute `<sync-branch>` with the exact branch name you created in
+step 2)
+
 ```text
-git push -u origin sync-specs
-gh pr create --web --base <integration-base> --head sync-specs \
+git push -u origin <sync-branch>
+gh pr create --web --base <integration-base> --head <sync-branch> \
   --title "Sync specs with contributed functionality" --body-file <body>
 ```
 

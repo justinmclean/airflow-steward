@@ -299,6 +299,11 @@ EXTERNAL_SURFACE_SIGNALS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"gmail\.googleapis|Gmail\s+MCP|Gmail\s+API", re.IGNORECASE), "Gmail API/MCP"),
     # Scanner / vulnerability findings
     (re.compile(r"scanner[- ]finding", re.IGNORECASE), "scanner findings"),
+    # Forwarder / relay adapter — skills that dispatch through the
+    # forwarder-relay tool process inbound mail bodies from upstream brokers
+    # (ASF security team, huntr.com, HackerOne, GHSA, etc.) which are
+    # attacker-controlled external content.
+    (re.compile(r"\bforwarder[- ]relay\b", re.IGNORECASE), "forwarder-relay adapter"),
     # Self-declaration: a golden-rule or hard-rule block in THIS skill that says
     # external content must be treated as data, not instructions.
     (

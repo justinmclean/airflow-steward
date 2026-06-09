@@ -1,0 +1,5 @@
+{
+  "match": null,
+  "sub_skill_applied": false,
+  "rationale": "No registered adapter matched this message: neither the sender pattern nor the preamble regex matched for any registered adapter."
+}

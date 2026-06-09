@@ -37,6 +37,7 @@ from skill_and_tool_validator import (
     INJECTION_GUARD_CATEGORY,
     INJECTION_GUARD_TODO_CATEGORY,
     INJECTION_GUARD_TODO_SENTINEL,
+    LICENSE_HEADER_CATEGORY,
     LOWERCASE_F_FIELD_CATEGORY,
     MAX_METADATA_CHARS,
     PRINCIPLE_CATEGORY,
@@ -48,6 +49,7 @@ from skill_and_tool_validator import (
     collect_doc_files,
     collect_files_to_check,
     collect_skill_dirs,
+    collect_tool_python_files,
     extract_headings,
     find_repo_root,
     is_path_allowlisted,
@@ -62,6 +64,7 @@ from skill_and_tool_validator import (
     validate_frontmatter,
     validate_gh_list_limit,
     validate_injection_guard,
+    validate_license_header,
     validate_links,
     validate_lowercase_f_field,
     validate_name_convention,
@@ -631,7 +634,9 @@ class TestSubDocFiles:
         skill_dir = root / "skills" / skill_name
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text(
-            f"---\nname: magpie-{skill_name}\ndescription: bar\ncapability: capability:setup\nlicense: Apache-2.0\n---\n# body\n",
+            f"---\nname: magpie-{skill_name}\ndescription: bar\ncapability: capability:setup\nlicense: Apache-2.0\n---\n"
+            "<!-- SPDX-License-Identifier: Apache-2.0\n     https://www.apache.org/licenses/LICENSE-2.0 -->\n"
+            "# body\n",
             encoding="utf-8",
         )
         docs = root / "docs"
@@ -699,6 +704,7 @@ class TestSubDocFiles:
         skill_dir = self._make_skill_dir(tmp_path, skill_name="setup")
         for name in ("adopt.md", "agents.md", "overrides.md", "upgrade.md", "verify.md"):
             (skill_dir / name).write_text(
+                "<!-- SPDX-License-Identifier: Apache-2.0\n     https://www.apache.org/licenses/LICENSE-2.0 -->\n"
                 f"# {name.removesuffix('.md')}\n\nContent for {name}.\n",
                 encoding="utf-8",
             )
@@ -1438,6 +1444,135 @@ class TestLowercaseFField:
 
 
 # ---------------------------------------------------------------------------
+# License-header check
+# ---------------------------------------------------------------------------
+
+# Full Apache License preamble as used in Python tool files.
+_ASF_HEADER = (
+    "# Licensed to the Apache Software Foundation (ASF) under one\n"
+    "# or more contributor license agreements.  See the NOTICE file\n"
+    "# distributed with this work for additional information\n"
+    "# regarding copyright ownership.  The ASF licenses this file\n"
+    "# to you under the Apache License, Version 2.0 (the\n"
+    '# "License"); you may not use this file except in compliance\n'
+    "# with the License.  You may obtain a copy of the License at\n"
+    "#\n"
+    "#   http://www.apache.org/licenses/LICENSE-2.0\n"
+    "#\n"
+    "# Unless required by applicable law or agreed to in writing,\n"
+    "# software distributed under the License is distributed on an\n"
+    '# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n'
+    "# KIND, either express or implied.  See the License for the\n"
+    "# specific language governing permissions and limitations\n"
+    "# under the License.\n"
+)
+_SPDX_PY_HEADER = "# SPDX-License-Identifier: Apache-2.0\n"
+
+
+class TestValidateLicenseHeader:
+    # ------------------------------------------------------------------ #
+    # Python (.py) checks                                                 #
+    # ------------------------------------------------------------------ #
+
+    def test_license_header_violation_is_hard_category(self) -> None:
+        assert LICENSE_HEADER_CATEGORY in HARD_CATEGORIES
+        assert LICENSE_HEADER_CATEGORY not in SOFT_CATEGORIES
+
+    def test_md_file_is_exempt(self, tmp_path: Path) -> None:
+        """Skill .md files declare license via frontmatter, so they need no header."""
+        path = tmp_path / "SKILL.md"
+        text = "---\nname: foo\ndescription: bar\ncapability: capability:setup\nlicense: Apache-2.0\n---\n# Body\n"
+        violations = list(validate_license_header(path, text))
+        assert violations == []
+
+    def test_py_with_asf_header_passes(self, tmp_path: Path) -> None:
+        """A Python file with the full ASF license preamble → no violation."""
+        path = tmp_path / "tool.py"
+        text = _ASF_HEADER + '\n"""Module docstring."""\n'
+        violations = list(validate_license_header(path, text))
+        assert violations == []
+
+    def test_py_with_spdx_one_liner_passes(self, tmp_path: Path) -> None:
+        """A Python file with only the SPDX one-liner → no violation."""
+        path = tmp_path / "tool.py"
+        text = _SPDX_PY_HEADER + '\n"""Module docstring."""\n'
+        violations = list(validate_license_header(path, text))
+        assert violations == []
+
+    def test_py_without_any_header_fails(self, tmp_path: Path) -> None:
+        """A Python file with no license marker → HARD violation."""
+        path = tmp_path / "tool.py"
+        text = '"""Module with no license header."""\n\ndef foo() -> None:\n    pass\n'
+        violations = list(validate_license_header(path, text))
+        assert len(violations) == 1
+        assert violations[0].category == LICENSE_HEADER_CATEGORY
+        assert "license header" in violations[0].message
+
+    def test_py_shebang_plus_asf_passes(self, tmp_path: Path) -> None:
+        """A script with shebang + ASF header → no violation."""
+        path = tmp_path / "script.py"
+        text = "#!/usr/bin/env python3\n" + _ASF_HEADER + '"""Script."""\n'
+        violations = list(validate_license_header(path, text))
+        assert violations == []
+
+    def test_non_py_non_md_file_ignored(self, tmp_path: Path) -> None:
+        """Files with other extensions are not checked."""
+        path = tmp_path / "config.toml"
+        text = "[tool]\nno_license = true\n"
+        violations = list(validate_license_header(path, text))
+        assert violations == []
+
+    # ------------------------------------------------------------------ #
+    # collect_tool_python_files scoping                                   #
+    # ------------------------------------------------------------------ #
+
+    def test_collect_tool_python_files_includes_src_files(self, tmp_path: Path) -> None:
+        """Non-trivial Python files under tools/*/src/ are included."""
+        (tmp_path / "tools" / "my-tool" / "src" / "my_tool").mkdir(parents=True)
+        target = tmp_path / "tools" / "my-tool" / "src" / "my_tool" / "__init__.py"
+        target.write_text(_ASF_HEADER + '"""Package."""\n')
+        files = collect_tool_python_files(tmp_path)
+        assert target in files
+
+    def test_collect_tool_python_files_excludes_venv(self, tmp_path: Path) -> None:
+        """Files under .venv/ are excluded even if otherwise eligible."""
+        venv_py = tmp_path / "tools" / "my-tool" / ".venv" / "lib" / "python3.12" / "site-packages" / "pkg.py"
+        venv_py.parent.mkdir(parents=True)
+        venv_py.write_text(_ASF_HEADER + '"""Third-party."""\n')
+        files = collect_tool_python_files(tmp_path)
+        assert venv_py not in files
+
+    def test_collect_tool_python_files_excludes_empty_stubs(self, tmp_path: Path) -> None:
+        """Truly empty __init__.py stubs are excluded (below the size threshold)."""
+        (tmp_path / "tools" / "my-tool" / "tests").mkdir(parents=True)
+        stub = tmp_path / "tools" / "my-tool" / "tests" / "__init__.py"
+        stub.write_text("")  # empty
+        files = collect_tool_python_files(tmp_path)
+        assert stub not in files
+
+    def test_collect_tool_python_files_returns_empty_when_no_tools_dir(self, tmp_path: Path) -> None:
+        assert collect_tool_python_files(tmp_path) == []
+
+    # ------------------------------------------------------------------ #
+    # Integration: real repo passes                                       #
+    # ------------------------------------------------------------------ #
+
+    def test_real_repo_tool_python_files_all_have_headers(self) -> None:
+        """Every non-trivial tool Python file in the real repo carries a license header."""
+        from skill_and_tool_validator import _LICENSE_PY_MARKERS
+
+        repo_root = find_repo_root()
+        missing = [
+            p
+            for p in collect_tool_python_files(repo_root)
+            if not any(marker in p.read_text(encoding="utf-8") for marker in _LICENSE_PY_MARKERS)
+        ]
+        assert missing == [], f"{len(missing)} tool Python file(s) missing any license header:\n" + "\n".join(
+            f"  {p.relative_to(repo_root)}" for p in missing
+        )
+
+
+# ---------------------------------------------------------------------------
 # SOFT category exposure
 # ---------------------------------------------------------------------------
 
@@ -1920,7 +2055,9 @@ def _make_valid_skill(root: Path, name: str) -> Path:
     skill_dir = root / "skills" / name
     skill_dir.mkdir(parents=True, exist_ok=True)
     (skill_dir / "SKILL.md").write_text(
-        f"---\nname: magpie-{name}\ndescription: A test skill.\ncapability: capability:setup\nlicense: Apache-2.0\n---\n# Body\nSome content.\n"
+        f"---\nname: magpie-{name}\ndescription: A test skill.\ncapability: capability:setup\nlicense: Apache-2.0\n---\n"
+        "<!-- SPDX-License-Identifier: Apache-2.0\n     https://www.apache.org/licenses/LICENSE-2.0 -->\n"
+        "# Body\nSome content.\n"
     )
     # Inject a row into the skill table of the seeded doc.
     doc = root / "docs" / "labels-and-capabilities.md"
@@ -1970,7 +2107,10 @@ class TestMain:
         root = _skill_root(tmp_path)
         skill_dir = root / "skills" / "bad-skill"
         skill_dir.mkdir(parents=True)
-        (skill_dir / "SKILL.md").write_text("# No frontmatter\n")
+        (skill_dir / "SKILL.md").write_text(
+            "<!-- SPDX-License-Identifier: Apache-2.0\n     https://www.apache.org/licenses/LICENSE-2.0 -->\n"
+            "# No frontmatter\n"
+        )
         monkeypatch.chdir(root)
 
         # Frontmatter violations use the "general" default category.
@@ -1990,6 +2130,7 @@ class TestMain:
             "description: A test skill.\n"
             "capability: capability:setup\nlicense: Apache-2.0\n"
             "---\n"
+            "<!-- SPDX-License-Identifier: Apache-2.0\n     https://www.apache.org/licenses/LICENSE-2.0 -->\n"
             "```bash\n"
             'gh pr comment 1 --body "attacker content"\n'
             "```\n"

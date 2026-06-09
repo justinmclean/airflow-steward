@@ -17,7 +17,7 @@
 
 """Validate framework skill definitions.
 
-This module validates seven aspects of every skill under
+This module validates eight aspects of every skill under
 skills/:
 
 1. YAML frontmatter — every SKILL.md must have a valid frontmatter
@@ -44,6 +44,11 @@ skills/:
 7. Trigger-phrase preservation (SOFT) — quoted phrases inside
    when_to_use must not be dropped vs the base ref (default
    origin/main), preventing routing-recall regressions.
+8. License-header presence (HARD) — every non-trivial Python source
+   file under ``tools/`` must carry the SPDX one-liner or the full
+   Apache Software Foundation license preamble.  Skill ``.md`` files
+   declare their license via the required ``license:`` frontmatter key
+   (checked by aspect 1), so they need no separate header.
 
 SOFT categories surface as advisory warnings (stderr) without
 failing the run unless ``--strict`` is passed.
@@ -242,6 +247,9 @@ LOWERCASE_F_FIELD_CATEGORY = "lowercase_f_field"
 # Every framework skill is installed under a `magpie-` namespace prefix, so its
 # SKILL.md `name:` must be `magpie-<directory-name>` (see skills/setup/SKILL.md).
 NAME_CONVENTION_CATEGORY = "name_convention"
+# License-header check: every skill .md and non-trivial tool Python file must
+# carry the Apache-2.0 SPDX identifier or the full ASF preamble.
+LICENSE_HEADER_CATEGORY = "license_header"
 
 # The `magpie-` namespace prefix every installed framework skill carries.
 SKILL_NAME_PREFIX = "magpie-"
@@ -263,6 +271,7 @@ HARD_CATEGORIES: frozenset[str] = frozenset(
         CAPABILITY_SYNC_CATEGORY,
         INJECTION_GUARD_CATEGORY,
         NAME_CONVENTION_CATEGORY,
+        LICENSE_HEADER_CATEGORY,
     }
 )
 ALL_CATEGORIES = HARD_CATEGORIES | SOFT_CATEGORIES
@@ -1584,6 +1593,80 @@ def validate_lowercase_f_field(path: Path, text: str) -> Iterable[Violation]:
         )
 
 
+# ---------------------------------------------------------------------------
+# License-header check
+# ---------------------------------------------------------------------------
+
+# Acceptable license markers for Python source files: either the SPDX
+# one-liner or the full Apache Software Foundation license preamble URL.
+_LICENSE_PY_MARKERS: tuple[str, ...] = (
+    "SPDX-License-Identifier: Apache-2.0",
+    "apache.org/licenses/LICENSE-2.0",
+)
+
+# Files smaller than this threshold (bytes / characters) are treated as
+# empty placeholder stubs and exempted from the license-header check.
+_MIN_LICENSE_FILE_SIZE = 50
+
+# Path components that mark generated or vendored subtrees that must not
+# be checked (venv, installed packages, etc.).
+_LICENSE_SKIP_PATH_PARTS: frozenset[str] = frozenset(
+    {".venv", "site-packages", "node_modules", "__pycache__"}
+)
+
+
+def collect_tool_python_files(root: Path | None = None) -> list[Path]:
+    """Return non-trivial Python source files owned by this framework under tools/.
+
+    Excludes generated / vendored subtrees (``.venv``, ``site-packages``,
+    ``node_modules``, ``__pycache__``) and empty placeholder files whose
+    content is shorter than ``_MIN_LICENSE_FILE_SIZE`` characters.
+    """
+    base = (root or find_repo_root()) / TOOLS_DIR
+    if not base.exists():
+        return []
+    result: list[Path] = []
+    for path in base.rglob("*.py"):
+        if any(part in _LICENSE_SKIP_PATH_PARTS for part in path.parts):
+            continue
+        try:
+            if path.stat().st_size < _MIN_LICENSE_FILE_SIZE:
+                continue
+        except OSError:
+            continue
+        result.append(path)
+    return sorted(result)
+
+
+def validate_license_header(path: Path, text: str) -> Iterable[Violation]:
+    """Check that a tool ``.py`` file carries a license header.
+
+    **Python files** (``tools/**/*.py``, non-trivial): must contain either the
+    SPDX one-liner (``# SPDX-License-Identifier: Apache-2.0``) or the full
+    Apache Software Foundation license preamble URL
+    (``apache.org/licenses/LICENSE-2.0``).
+
+    Skill ``.md`` files are exempt — they declare their license via the
+    required ``license:`` frontmatter key (validated by the frontmatter
+    check), so a separate SPDX comment would be redundant.
+
+    A missing header is a HARD failure — caught at validation time rather
+    than in code review.
+    """
+    if path.suffix.lower() == ".py" and not any(
+        marker in text for marker in _LICENSE_PY_MARKERS
+    ):
+        yield Violation(
+            path,
+            1,
+            "missing license header — Python source files must carry either "
+            "'# SPDX-License-Identifier: Apache-2.0' or the Apache Software "
+            "Foundation license preamble (URL: apache.org/licenses/LICENSE-2.0); "
+            "see AGENTS.md § Commit and PR conventions",
+            category=LICENSE_HEADER_CATEGORY,
+        )
+
+
 def collect_skill_dirs(root: Path | None = None) -> set[Path]:
     """Return the set of skill directories (immediate children of skills)."""
     base = (root or find_repo_root()) / SKILLS_DIR
@@ -1666,12 +1749,21 @@ def run_validation(root: Path | None = None) -> list[Violation]:
             violations.extend(validate_privacy_patterns(path, text))
             violations.extend(validate_trigger_preservation(path, text, repo_root=repo_root))
 
-        # All skill files get link + placeholder + security-pattern validation
+        # All skill files get link + placeholder + security-pattern checks
         violations.extend(validate_links(path, text, skill_dirs, doc_files))
         violations.extend(validate_placeholders(path, text))
         violations.extend(validate_security_patterns(path, text))
         violations.extend(validate_gh_list_limit(path, text))
         violations.extend(validate_lowercase_f_field(path, text))
+
+    # License-header check for tool Python source files.
+    for py_path in collect_tool_python_files(repo_root):
+        try:
+            py_text = py_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            violations.append(Violation(py_path, None, f"cannot read file: {exc}"))
+            continue
+        violations.extend(validate_license_header(py_path, py_text))
 
     # Tool-level checks: every tools/<name>/ has a README that declares its capability.
     violations.extend(validate_tools(repo_root))

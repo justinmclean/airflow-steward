@@ -1,0 +1,10 @@
+<\!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
+`.apache-magpie.lock` is present:
+  method: git-branch
+  url: https://github.com/apache/airflow-steward.git
+  ref: v1.2.3
+
+`.apache-magpie.local.lock` is NOT present on this machine.
+The snapshot directory `.apache-magpie/` appears to be present on disk.

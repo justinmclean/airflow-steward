@@ -33,6 +33,7 @@ Suites are currently implemented for:
 - **optimize-skill** — 5 cases across 1 step (step-diagnose)
 - **committer-onboarding** — 20 cases across 4 steps (step-0-validate-vote, step-1-icla-comms, step-2-checklist, step-3-completion-summary)
 - **ci-runner-audit** — 6 cases across 2 steps (step-scope-selection, step-reporting)
+- **setup-status** — 14 cases across 4 steps (step-0-preflight, step-1-command, step-2-present, step-3-adjust-decision)
 
 ## Run
 

@@ -179,3 +179,17 @@ repos:
         entry: uv run --project tools/skill-and-tool-validator skill-and-tool-validate
         files: ^(skills/.*\.md|tools/[^/]+/README\.md|docs/labels-and-capabilities\.md|tools/skill-and-tool-validator/(src|pyproject\.toml))
         pass_filenames: false
+
+  # Validate `tools/spec-loop/specs/` frontmatter and required body sections
+  # via the `spec-validate` CLI. Re-fires on spec-source changes so rule
+  # updates get re-applied. `--project` (not `--directory`) so CWD stays at
+  # repo root; the directory argument is passed directly to the CLI so it
+  # scans the full specs tree even when only one file changed.
+  - repo: local
+    hooks:
+      - id: spec-validate
+        name: spec-validate (spec-loop specs frontmatter + sections)
+        language: system
+        entry: uv run --project tools/spec-validator spec-validate tools/spec-loop/specs/
+        files: ^(tools/spec-loop/specs/.*\.md|tools/spec-validator/(src|pyproject\.toml))
+        pass_filenames: false

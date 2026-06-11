@@ -115,7 +115,8 @@ The canonical list lives in
 Walk each in order:
 
 1. Project `.claude/settings.json` shape — `sandbox.enabled: true`,
-   `permissions.deny`, `permissions.ask`, `sandbox.network.allowedDomains`.
+   `permissions.deny`, `permissions.ask`, `sandbox.network.allowedDomains`,
+   and the `sandbox.filesystem` allowlist (`allowRead`/`allowWrite`).
 2. User-scope `~/.claude/settings.json` wiring — `PreToolUse`
    `Bash` matcher → `sandbox-bypass-warn.sh`, `PostToolUse`
    `Bash` matcher → `sandbox-error-hint.sh`, `statusLine` →

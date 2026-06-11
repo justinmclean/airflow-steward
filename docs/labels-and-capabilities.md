@@ -162,6 +162,7 @@ Capabilities for every skill currently in
 | `release-promote` | `capability:resolve` *(emits the backend-shaped promotion command set that moves a passed-vote RC to the release distribution area; never runs the command itself)* |
 | `release-keys-sync` | `capability:resolve` *(drafts the KEYS file diff and paste-ready `svn` command sequence to add the RM's public key; validates key strength against the ASF floor)* |
 | `release-rc-cut` | `capability:resolve` *(emits the paste-ready tag, build, sign, checksum, and staging command sequences for an RC)* |
+| `release-vote-draft` | `capability:resolve` *(drafts the `[VOTE]` email and planning-issue comment that advance the release to the vote stage)* |
 | `security-cve-allocate` | `capability:resolve` |
 | `security-issue-invalidate` | `capability:resolve` |
 | `security-issue-deduplicate` | `capability:resolve` |

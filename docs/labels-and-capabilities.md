@@ -141,6 +141,7 @@ Capabilities for every skill currently in
 | `pairing-multi-agent-review` | `capability:review` |
 | `pr-management-mentor` | `capability:review` |
 | `good-first-issue-author` | `capability:review` *(authors a newcomer-ready good first issue — contributor mentoring on the supply side)* |
+| `mentoring-welcome` | `capability:review` *(drafts a first-contact orientation comment for first-time contributors on issues and PRs)* |
 | `issue-fix-workflow` | `capability:fix` |
 | `audit-finding-fix` | `capability:fix` |
 | `security-issue-fix` | `capability:fix` + `capability:resolve` *(opens the PR that closes the tracker — both phases)* |

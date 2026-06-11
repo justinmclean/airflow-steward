@@ -1,0 +1,2 @@
+skill: magpie-mentoring-welcome
+skill_path: skills/mentoring-welcome/SKILL.md

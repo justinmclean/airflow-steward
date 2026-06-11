@@ -1,0 +1,5 @@
+{
+  "result": "soft_fail",
+  "rule": 9,
+  "offending_text": "BODY exceeds 8 sentences"
+}

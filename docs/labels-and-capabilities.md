@@ -60,7 +60,7 @@ What part of the framework does this touch?
 | `area:pr-management` | `pr-management-*` skills |
 | `area:security` | `security-*` skills, `security-tracker-stats-dashboard` |
 | `area:setup` | `setup-*` skills, framework adoption, agent-sandbox setup |
-| `area:issue` | `issue-*` skills (`issue-triage`, `issue-fix-workflow`, `issue-reassess`, `issue-reassess-stats`, `issue-reproducer`) |
+| `area:issue` | `issue-*` skills (`issue-triage`, `issue-fix-workflow`, `issue-reassess`, `issue-reassess-stats`, `issue-reproducer`, `issue-stale-sweep`) |
 | `area:tools` | Substrate tools under `tools/*` (CLI bridges, agent-runtime adapters, mail-source backends) |
 | `area:ci` | `.github/` workflows, prek, validators |
 | `area:docs` | `docs/`, `MISSION.md`, READMEs |
@@ -133,6 +133,7 @@ Capabilities for every skill currently in
 |---|---|
 | `pr-management-triage` | `capability:triage` |
 | `issue-triage` | `capability:triage` |
+| `issue-stale-sweep` | `capability:triage` |
 | `security-issue-triage` | `capability:triage` |
 | `ci-runner-audit` | `capability:triage` |
 | `pr-management-quick-merge` | `capability:triage` + `capability:review` *(screens the ready-for-review queue for trivial, all-gates-green PRs — triage; submits the maintainer's approve on per-PR confirmation — review)* |

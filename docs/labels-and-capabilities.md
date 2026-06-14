@@ -60,7 +60,7 @@ What part of the framework does this touch?
 | `area:pr-management` | `pr-management-*` skills |
 | `area:security` | `security-*` skills, `security-tracker-stats-dashboard` |
 | `area:setup` | `setup-*` skills, framework adoption, agent-sandbox setup |
-| `area:issue` | `issue-*` skills (`issue-triage`, `issue-fix-workflow`, `issue-reassess`, `issue-reassess-stats`, `issue-reproducer`, `issue-stale-sweep`, `issue-deduplicate`) |
+| `area:issue` | `issue-*` skills (`issue-triage`, `issue-fix-workflow`, `issue-reassess`, `issue-reassess-stats`, `issue-reproducer`, `issue-stale-sweep`, `issue-deduplicate`, `issue-backlog-stats`) |
 | `area:tools` | Substrate tools under `tools/*` (CLI bridges, agent-runtime adapters, mail-source backends) |
 | `area:ci` | `.github/` workflows, prek, validators |
 | `area:docs` | `docs/`, `MISSION.md`, READMEs |
@@ -166,6 +166,7 @@ Capabilities for every skill currently in
 | `issue-reproducer` | `capability:reassess` |
 | `pr-management-stats` | `capability:stats` |
 | `issue-reassess-stats` | `capability:stats` |
+| `issue-backlog-stats` | `capability:stats` |
 | `security-tracker-stats-dashboard` | `capability:stats` |
 | `contributor-nomination` | `capability:stats` |
 | `contributor-activity-sweep` | `capability:stats` |

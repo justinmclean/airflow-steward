@@ -137,6 +137,7 @@ Capabilities for every skill currently in
 | `security-issue-triage` | `capability:triage` |
 | `ci-runner-audit` | `capability:triage` |
 | `dependency-audit` | `capability:triage` |
+| `workflow-security-audit` | `capability:triage` |
 | `pr-management-quick-merge` | `capability:triage` + `capability:review` *(screens the ready-for-review queue for trivial, all-gates-green PRs — triage; submits the maintainer's approve on per-PR confirmation — review)* |
 | `pr-management-code-review` | `capability:review` |
 | `pairing-self-review` | `capability:review` |

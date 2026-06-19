@@ -82,9 +82,10 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
 
 ## Known gaps
 
-- **Eval coverage is incomplete** — the harness has ~15 suites but the
-  repo has more skills than that; skills added before the per-skill-eval
-  convention have no suite. Back-filling one suite per uncovered skill is
-  a tracked work item.
-- Other gaps appear as new quality checks worth adding (e.g. a spec
-  validator analogous to the skill validator) — recorded by the plan pass.
+- **Eval coverage is complete.** All 44 shipped skills have a matching
+  suite in `tools/skill-evals/evals/`; the soft eval-coverage check in
+  `skill-and-tool-validator` (check #8) warns when a newly added skill
+  has no suite, keeping coverage complete going forward.
+- Other gaps appear as new quality checks worth adding — recorded by the
+  plan pass. The spec validator (analogous to the skill validator) and
+  the ASF-coupling advisory lint are two recent additions to this surface.

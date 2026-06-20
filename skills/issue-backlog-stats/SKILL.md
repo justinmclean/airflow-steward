@@ -291,7 +291,10 @@ Sort areas by pressure score descending; render the top 8.
 
 ### Health rating
 
-Apply thresholds to the TOTAL row:
+Apply thresholds to the TOTAL row. **"Untriaged non-stale" means issues
+that are `UNTRIAGED` AND have `is_stale_candidate == false`** — exclude
+every stale candidate from this count, even untriaged ones. Do NOT use the
+plain total-untriaged figure here.
 
 | Condition | Issue points |
 |---|---|

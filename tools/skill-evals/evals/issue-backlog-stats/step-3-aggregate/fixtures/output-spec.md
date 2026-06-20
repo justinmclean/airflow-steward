@@ -18,5 +18,6 @@ Return ONLY valid JSON with this structure:
 counts issues where `is_stale_candidate` is true (orthogonal to triage class).
 `health_rating` is computed from Step 4 thresholds applied to the TOTAL row.
 `top_pressure_area` is the area label with the highest pressure score, or null if
-no area labels are present.
+no area labels are present. Use the full label including the `area:` prefix
+(e.g., `area:scheduler`).
 Do not include any text outside the JSON object.

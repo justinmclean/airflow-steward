@@ -242,6 +242,12 @@ curl -s <keys-url> | gpg --import
 gpg --verify <artefact>.asc <artefact>
 ```
 
+The `paste_recipe` must be directly runnable: resolve every placeholder
+to a concrete value before emitting it. Substitute `<keys-url>` with the
+project KEYS URL from `<project-config>/release-management-config.md` and
+`<artefact>` with each real artefact filename. Never leave a bracketed
+placeholder such as `<keys-url>` or `<artefact>` in the recipe.
+
 Classify each artefact as:
 
 - `PASS` — `gpg --verify` exits 0 and the signing key appears in the
@@ -420,9 +426,20 @@ scan command:
 ```bash
 # Example: find compiled Java class files and native shared libraries
 find <unpacked-dir> -type f \( -name "*.class" -o -name "*.jar" \
-  -o -name "*.so" -o -name "*.dylib" -o -name "*.dll" -o -name "*.exe" \) \
-  | grep -v -f <(cat rat-excludes.txt)   # project excludes
+  -o -name "*.so" -o -name "*.dylib" -o -name "*.dll" -o -name "*.exe" \)
 ```
+
+Emit the bare `find` with no `grep` post-filtering: the recipe must
+surface every matching file so nothing is hidden from the voter. The
+binary-exclude list from `release-build.md` is applied in the JSON
+classification below (matching files become `expected_binaries`, the
+rest `prohibited_found`), not by filtering the command.
+
+`<unpacked-dir>` is the source artefact filename with its archive
+extension removed: `apache-airflow-2.11.0-source-release.tar.gz` unpacks
+to `apache-airflow-2.11.0-source-release`. Do not drop the
+`-source-release` suffix or substitute a shortened name. Resolve
+`<unpacked-dir>` to this concrete directory before emitting the recipe.
 
 The default prohibited extensions are `.class`, `.jar`, `.so`,
 `.dylib`, `.dll`, `.exe`. The `release-build.md` binary-exclude list

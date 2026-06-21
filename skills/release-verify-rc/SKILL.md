@@ -166,8 +166,11 @@ non-blocking.
    path.
 4. **Staging URL derivable.** Substituting `<version>-rcN` into
    `release_dist_url_template` produces a well-formed URL.
-5. **Drift check** — see *Snapshot drift* above.
-6. **Override consultation** — see *Adopter overrides* above.
+5. **Staging URL reachable.** Fetch the derived staging URL. If it does
+   not resolve to a live listing (e.g. HTTP 404), the RC has not been
+   staged yet — this is a hard blocker. Record the URL and status code.
+6. **Drift check** — see *Snapshot drift* above.
+7. **Override consultation** — see *Adopter overrides* above.
 
 If any check fails, stop and surface what is missing with the exact
 key name or URL pattern that is absent.

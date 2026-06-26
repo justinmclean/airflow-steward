@@ -9,7 +9,7 @@ mode: Mentoring
 source: >
   MISSION.md § Technical scope (Mentoring) — "the highest-value
   project-side mode and the one off-the-shelf agent tooling skips".
-  docs/modes.md § Mentoring (experimental, 1 skill). Spec exists at
+  docs/modes.md § Mentoring (experimental, 2 skills). Spec exists at
   docs/mentoring/spec.md ahead of any skill code. MISSION.md names
   onboarding latency as one of the two loudest ecosystem complaints;
   authoring newcomer-ready good first issues targets it directly.
@@ -115,12 +115,11 @@ uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/good-first
   and readiness thresholds may shift once real backlog candidates run
   through it. The curation counterpart (relabeling the *existing* backlog
   as good-first-issue candidates) is still unspecced.
-- **The family is one shipped skill deep against a core MISSION stream.**
-  Mentoring is named as one of the four day-to-day work streams, but only
-  `pr-management-mentor` ships (plus the Mentoring-flagged
-  `good-first-issue-author`). Two newcomer-facing capabilities are
-  designed nowhere yet: a *first-contribution welcome / orientation* skill
-  that greets a contributor's first issue or PR with project-convention
+- **Two skills ship; the broader Mentoring stream still has open work.**
+  Both `pr-management-mentor` and `good-first-issue-author` are shipped
+  and `experimental`. Two newcomer-facing capabilities are designed
+  nowhere yet: a *first-contribution welcome / orientation* skill that
+  greets a contributor's first issue or PR with project-convention
   pointers and a clean hand-off, and a *contributor-to-committer path*
   tracker that reads the nomination-evidence signals
   `contributor-nomination` already gathers and surfaces when a contributor

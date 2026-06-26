@@ -39,11 +39,16 @@ suggestion the human signs off on.
   over `verdict.json` files produced by `issue-reassess` campaigns).
 - Contributor readiness: `contributor-nomination` (read-only brief for a
   named contributor — activity breadth, consistency, and nomination-
-  evidence prose for a committer or PMC thread).
-- Security inbound: `security-issue-import`, `-import-from-pr`,
-  `-import-from-md`, `security-issue-deduplicate`,
-  `security-issue-invalidate`, `security-issue-sync`,
-  `security-cve-allocate`.
+  evidence prose for a committer or PMC thread),
+  `contributor-activity-sweep` (read-only GitHub activity card over a
+  configurable window), `committer-onboarding` (post-vote onboarding:
+  ICLA check through welcome announcement for podlings and TLPs).
+- Security inbound: `security-issue-import` (+ `-from-pr`, `-from-md`,
+  `-via-forwarder`), `security-issue-triage`, `security-issue-deduplicate`,
+  `security-issue-invalidate`, `security-issue-sync`, `security-cve-allocate`.
+- Repo-health audits: `ci-runner-audit` (read-only audit of GitHub Actions
+  runner compatibility — obsolete labels, macOS arch mismatches — across
+  one repo, an explicit set, or the full Apache GitHub org).
 - Adapters it reads through: `tools/github`, `tools/jira`,
   `tools/ponymail`, `tools/gmail`, `tools/mail-source`.
 
@@ -90,15 +95,15 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
 - **The contributor-growth skills are not yet a formalised family.**
   `contributor-nomination`, `contributor-activity-sweep`,
   `committer-onboarding`, and `good-first-issue-author` (Mentoring) span
-  the contributor-to-committer path but are catalogued ad hoc;
-  `contributor-activity-sweep` and `committer-onboarding` are not yet
-  referenced by any spec. Missing members of that path: PMC-member
-  nomination (distinct from committer), emeritus / inactive-committer
-  handling, and contributor offboarding. Worth deciding whether this
-  becomes a named family.
+  the contributor-to-committer path but are catalogued ad hoc.
+  `contributor-activity-sweep` and `committer-onboarding` are now shipped
+  and referenced in `docs/modes.md`. Missing members of that path:
+  PMC-member nomination (distinct from committer), emeritus /
+  inactive-committer handling, and contributor offboarding. Worth
+  deciding whether this becomes a named family.
 - **Repo-health audits are a one-off with no family around them.**
-  `ci-runner-audit` is a standalone read-only audit (obsolete runner
-  labels, macOS arch mismatches) with no sibling skills. A repo-health
-  family is a candidate: GitHub Actions workflow security audit (the repo
-  already runs `zizmor` in pre-commit), dependency-update triage,
-  license / NOTICE compliance, and flaky-test detection.
+  `ci-runner-audit` is a shipped, read-only audit (obsolete runner
+  labels, macOS arch mismatches) referenced in `docs/modes.md`. A
+  repo-health family is a candidate: GitHub Actions workflow security
+  audit (the repo already runs `zizmor` in pre-commit), dependency-update
+  triage, license / NOTICE compliance, and flaky-test detection.

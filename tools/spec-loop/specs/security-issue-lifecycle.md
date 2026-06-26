@@ -29,8 +29,8 @@ publication, with a human gate and an audit-log entry at every step.
 
 ## Where it lives
 
-- Skills: `security-issue-import` (+ `-from-pr`, `-from-md`),
-  `security-issue-triage`, `security-issue-deduplicate`,
+- Skills: `security-issue-import` (+ `-from-pr`, `-from-md`,
+  `-via-forwarder`), `security-issue-triage`, `security-issue-deduplicate`,
   `security-cve-allocate`, `security-issue-fix`, `security-issue-sync`,
   `security-issue-invalidate`.
 - Tools: `tools/cve-tool-vulnogram/generate-cve-json` (CVE 5.x JSON),

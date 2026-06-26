@@ -13,11 +13,9 @@
     "rubric": "For every field listed in fields_missing, does record_markdown include a _MISSING_ marker (or equivalent indicator) for that field? Answer yes or no."
   },
   "has_no_email_in_record": {
-    "type": "regex",
+    "type": "judge",
     "field": "record_markdown",
-    "pattern": "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
-    "negate": true,
-    "description": "record_markdown must not contain personal email addresses"
+    "rubric": "record_markdown contains no personal email address (e.g. user@example.com); binding voters appear only as roster handles like @handle, never as From-header email addresses. Answer yes if no personal email address appears."
   },
   "has_no_tracker_content": {
     "type": "judge",

@@ -25,6 +25,7 @@ license: Apache-2.0
      <project-config>        → adopter's project-config directory path
      <upstream>              → adopter's public source repo (e.g. apache/airflow)
      <project>               → project distribution name (e.g. airflow)
+     <product_name>          → human-readable product name (e.g. Apache Airflow)
      <version>               → release version string (e.g. 2.11.0)
      <audit-log-path>        → path under the adopter repo for audit records
      <vote-thread-url>       → archive URL of the [VOTE] mailing-list thread
@@ -142,7 +143,9 @@ non-blocking.
   or the skill can locate a planning issue on `<upstream>` matching
   `<version>` in its title.
 - **`<project-config>/release-management-config.md` readable** with
-  `audit_log_path` configured.
+  `audit_log_path` configured. The optional `product_name` key supplies the
+  human-readable product name used in the record title and PR text; it
+  defaults to `<project>` when absent.
 - **`<project-config>/pmc-roster.md`** (or `release_approver_roster_path`)
   readable for binding-voter handle resolution.
 
@@ -200,6 +203,7 @@ the configured archive backend, and `<project-config>/release-management-config.
 | Field | Source | Fallback |
 |---|---|---|
 | `version` | trigger argument | — |
+| `product_name` | `release-management-config.md` (`product_name` key) | `<project>` |
 | `planning_issue_url` | detected or supplied | — |
 | `rc_label` | planning issue body (e.g. "rc1") | `MISSING` |
 | `vote_thread_url` | planning issue body (`[VOTE]` archive URL) | `MISSING` |
@@ -224,6 +228,7 @@ Return ONLY valid JSON with this structure:
 ```json
 {
   "version": "<version>",
+  "product_name": "<product name, defaults to <project>>",
   "planning_issue_url": "<url>",
   "rc_label": "<e.g. rc1 or MISSING>",
   "vote_thread_url": "<url or MISSING>",

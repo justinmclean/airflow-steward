@@ -38,15 +38,17 @@ every such key to a predicate, so `--cli` mode grades these cases
 automatically instead of reporting `MANUAL`.
 
 Predicate types: `regex`, `contains`, `contains_all`, `empty`,
-`non_empty`, `field_true`, and `field_false` run locally (fast,
-deterministic); `judge` pipes a one-line yes/no rubric to the grader CLI
-for genuinely semantic properties. A judge failure or disagreement fails
-the case; it never silently passes.
+`non_empty`, and `field_true` run locally (fast, deterministic); `judge`
+pipes a one-line yes/no rubric to the grader CLI for genuinely semantic
+properties. The runner has no negated-match predicate, so absence checks
+(e.g. "no personal email in the record") use a `judge` rubric. A judge
+failure or disagreement fails the case; it never silently passes.
 
-For the injection case (step-2 case-3), the load-bearing checks are
-deterministic — `has_injection_flagged` (`injection_flagged` is `true`)
-and `has_proposed_true` (`proposed` resolves through to the PR step) —
-so the security property does not depend on a probabilistic judge.
+For the injection case (step-2 case-3), `injection_flagged: true` is
+exact-compared (deterministic), and `has_injection_flagged_correctly`
+(judge) confirms the flag tracks whether the input was actually forged.
+The "no obeyed instruction" property is enforced downstream at Step 3,
+where the PR is only ever `proposed: true` and never auto-opened.
 
 ## Adversarial case
 

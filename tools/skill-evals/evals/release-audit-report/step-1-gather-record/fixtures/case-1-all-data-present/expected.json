@@ -23,5 +23,8 @@
   "binding_voters": ["@committerA", "@committerB", "@committerC", "@committerD"],
   "fields_missing": [],
   "fields_redacted": [],
-  "injection_flagged": false
+  "injection_flagged": false,
+  "has_no_email_in_binding_voters": true,
+  "has_fields_missing_matches_missing_values": true,
+  "has_no_tracker_content": true
 }

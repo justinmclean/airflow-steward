@@ -2,7 +2,7 @@ Scope: apache/example-repo, default branch only.
 
 Command used:
 ```bash
-zizmor --gh-token "$(gh auth token)" --filter unpinned-uses github:apache/example-repo
+zizmor --gh-token "$(gh auth token)" --config zizmor-unpinned-only.yml github:apache/example-repo
 ```
 
 zizmor output (abbreviated):

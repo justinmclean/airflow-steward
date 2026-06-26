@@ -150,24 +150,40 @@ gh api /orgs/<org>/repos --paginate --jq '.[].full_name' \
     done
 ```
 
-**Enabled rule classes.** By default all four zizmor rule families are
-active. To restrict to a subset (from the adopter config or the user's
-request), pass `--filter` flags:
+**Enabled rule classes.** By default all four zizmor audits are active.
+Restrict to a subset (from the adopter config or the user's request) in
+one of two ways.
+
+Severity-based narrowing — injection and fork-secrets are high
+severity, excessive-permissions and unpinned-actions are medium:
 
 ```bash
-# Injection only:
-zizmor --gh-token "$(gh auth token)" --filter injection github:<owner>/<repo>
-
-# Injection and unpinned actions:
-zizmor --gh-token "$(gh auth token)" \
-  --filter injection --filter unpinned-uses github:<owner>/<repo>
+# High-severity audits only (injection + fork-secrets):
+zizmor --gh-token "$(gh auth token)" --min-severity high github:<owner>/<repo>
 ```
 
-The mapping from config names to zizmor filter values:
+Audit-level narrowing — disable the audits the adopter config leaves
+out of `enabled_rules` in a config file (`rules.<id>.disable`), then
+pass it with `--config`:
 
-| Config key | zizmor `--filter` value |
+```yaml
+# zizmor-subset.yml — run injection + unpinned-uses only
+rules:
+  excessive-permissions:
+    disable: true
+  dangerous-triggers:
+    disable: true
+```
+
+```bash
+zizmor --gh-token "$(gh auth token)" --config zizmor-subset.yml github:<owner>/<repo>
+```
+
+The mapping from adopter-config rule names to zizmor audit IDs:
+
+| Config key | zizmor audit ID |
 |---|---|
-| `injection` | `injection` |
+| `injection` | `template-injection` |
 | `excessive-permissions` | `excessive-permissions` |
 | `unpinned-actions` | `unpinned-uses` |
 | `fork-secrets` | `dangerous-triggers` |

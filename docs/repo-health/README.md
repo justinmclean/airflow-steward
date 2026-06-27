@@ -5,12 +5,11 @@
 - [Repo-health audits — family overview](#repo-health-audits--family-overview)
   - [Current skills](#current-skills)
     - [`ci-runner-audit` (experimental)](#ci-runner-audit-experimental)
-  - [Candidate skills (not yet built)](#candidate-skills-not-yet-built)
-    - [`workflow-security-audit` (proposed)](#workflow-security-audit-proposed)
-    - [`dependency-audit` (proposed)](#dependency-audit-proposed)
-    - [`license-compliance-audit` (proposed)](#license-compliance-audit-proposed)
-    - [`flaky-test-triage` (proposed)](#flaky-test-triage-proposed)
-  - [Adopter contract (planned)](#adopter-contract-planned)
+    - [`workflow-security-audit` (experimental)](#workflow-security-audit-experimental)
+    - [`dependency-audit` (experimental)](#dependency-audit-experimental)
+    - [`license-compliance-audit` (experimental)](#license-compliance-audit-experimental)
+    - [`flaky-test-triage` (experimental)](#flaky-test-triage-experimental)
+  - [Adopter contract](#adopter-contract)
   - [Cross-references](#cross-references)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -52,46 +51,52 @@ Read-only; no workflow files are modified.
 
 ---
 
-## Candidate skills (not yet built)
+### `workflow-security-audit` (experimental)
 
-These are enumerated from the triage-mode.md Known Gaps. Each will become
-its own build item once the family shape is confirmed through
-`ci-runner-audit` pilot evaluations.
-
-### `workflow-security-audit` (proposed)
-
-Run [`zizmor`](https://woodruffw.github.io/zizmor/) — the GitHub Actions
+Runs [`zizmor`](https://woodruffw.github.io/zizmor/) — the GitHub Actions
 security scanner already wired into the framework's own pre-commit suite —
-across one repo or a named set and surface findings for human review.
+across one repository, an explicit repository set, or a whole GitHub org and
+surfaces findings for human review.
 
-Proposed finding classes:
+Finding classes surfaced:
 
-- Injection vulnerabilities (`run:` steps using `${{ github.event.* }}` or
-  `${{ github.head_ref }}` in untrusted contexts)
-- Excessive permissions (`permissions: write-all` or unnecessary `write`
-  scopes on workflow-level or job-level grants)
-- Unpinned external actions (floating `@main`, `@master`, or tag-only
-  references instead of a commit SHA)
-- Self-hosted runner scope leakage (secrets available to PRs from forks)
+- **Injection vulnerabilities** — `run:` steps consuming
+  `${{ github.event.* }}` or `${{ github.head_ref }}` in untrusted contexts.
+- **Excessive permissions** — `permissions: write-all` or unnecessary `write`
+  scopes at the workflow or job level.
+- **Unpinned external actions** — floating `@main`, `@master`, or tag-only
+  references instead of a commit SHA.
+- **Self-hosted runner fork-secret leaks** — secrets reachable from PRs
+  submitted by fork contributors via self-hosted runners.
 
-Each finding class maps to a concise prose description and a suggested
-remediation (scope reduction, SHA pinning, `${{ env.SAFE_VAR }}` pattern).
+Output is a grouped, prioritised finding report. Read-only; the skill never
+edits workflow files, opens PRs, or posts comments.
 
 **Adopter contract**: reads `<project-config>/repo-health-config.md`
-(planned) for which rule classes to enable and which repos to audit.
+(`workflow_security_audit.enabled_rules`) to select which rule classes to
+enable. All classes are enabled by default.
 
-### `dependency-audit` (proposed)
+---
 
-Check direct and transitive dependencies for known vulnerabilities (via
-`pip-audit` / `npm audit` / `trivy` depending on the project's language
-stack) and surface those that have available patches. One finding per
-dependency, formatted for maintainer triage. Does not open update PRs
-autonomously — proposes one per affected dependency.
+### `dependency-audit` (experimental)
 
-**Adopter contract**: reads `<project-config>/repo-health-config.md` for
-the dependency manager and audit tool to use.
+Detects the project's dependency manager(s), runs the appropriate audit
+tool (`pip-audit`, `npm audit`, `cargo audit`, or `trivy`), and surfaces
+patchable vulnerability findings grouped by severity for maintainer triage.
 
-### `license-compliance-audit` (proposed)
+- Works against one repository (`--repo owner/name`) or a local checkout
+  (`--path /path/to/checkout`).
+- Differentiates CVE-rated vulnerabilities (those with a CVE ID) from
+  advisory-only findings.
+- Proposes one upgrade per affected dependency; never modifies manifests,
+  lock files, or opens update PRs autonomously.
+
+**Adopter contract**: reads `<project-config>/repo-health-config.md`
+(`dependency_audit.managers`) to select the dependency manager adapter(s).
+
+---
+
+### `license-compliance-audit` (experimental)
 
 Verify that:
 
@@ -107,16 +112,16 @@ suggested correction) without modifying any file.
 **Adopter contract**: reads `<project-config>/repo-health-config.md` for
 the required SPDX expression and which source paths to audit.
 
-### `flaky-test-triage` (proposed)
+### `flaky-test-triage` (experimental)
 
 Parse GitHub Actions run history for a named repo over a configurable window,
-compute per-test failure rates (differentiating consistent failures from
-intermittent ones), and produce a prioritised triage list: tests failing
+compute per-job failure rates (differentiating consistent failures from
+intermittent ones), and produce a prioritised triage list: jobs failing
 above a configurable threshold that are likely flaky rather than
 deterministically broken.
 
 Signals used: run outcome (`success` / `failure`), re-run count on the same
-SHA, test-name patterns across runs. No test code is modified.
+SHA, job-name patterns across runs. No test code is modified.
 
 **Adopter contract**: reads `<project-config>/repo-health-config.md` for
 the audit window, the failure-rate threshold, and which test-name patterns
@@ -124,10 +129,12 @@ to include or exclude.
 
 ---
 
-## Adopter contract (planned)
+## Adopter contract
 
-A future `projects/_template/repo-health-config.md` will declare per-skill
-switches:
+`projects/_template/repo-health-config.md` provides the per-project
+configuration scaffold for all repo-health skills. Copy it into your
+`<project-config>/` directory and fill in the `TODO` fields for each skill
+you enable:
 
 ```yaml
 repo_health:
@@ -160,9 +167,6 @@ repo_health:
     # Minimum failure rate (fraction) to flag a test as candidate flaky.
     failure_rate_threshold: 0.1
 ```
-
-The config file will land in a separate build item once at least one
-candidate skill reaches the planning stage.
 
 ---
 

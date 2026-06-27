@@ -117,9 +117,10 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
   and `flaky-test-triage` have all shipped (read-only, `experimental`, each
   with an eval suite). No further candidate skills remain designed; the
   family is complete pending adopter-pilot evaluation.
-- **No adopter-config scaffold yet.** `projects/_template/repo-health-config.md`
-  is planned alongside the first candidate skill; the keys are sketched in
-  `docs/repo-health/README.md § Adopter contract`.
-- **`ci-runner-audit` eval suite exists but no adopter pilot has run.**
-  The skill is `experimental`; behaviour may change as cross-org run
-  volumes expose edge cases in runner-label classification.
+- **Adopter-config scaffold exists.** `projects/_template/repo-health-config.md`
+  covers all five skills; adopters copy it into their `<project-config>/`
+  and fill in the relevant keys.
+- **No adopter pilot has run any family skill end-to-end.** All five
+  shipped skills are `experimental`; behaviour may change as cross-org run
+  volumes expose edge cases in classification, runner-label handling, and
+  dependency-manager detection.

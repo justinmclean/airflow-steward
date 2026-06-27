@@ -141,6 +141,13 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
   forwarder relay, CNA tool, allocation gate, and new
   `disclosure_governance` flags). Skills read these flags in follow-on
   updates as each flag is wired in.
-- **Contributor intake capability flags** (ICLA vs DCO vs none, governance
-  model) are documented in `projects/_template/committer-onboarding-config.md`
-  (added by the `capability-flags-committer-intake` work item).
+- **Contributor intake and governance capability flags are now declared**
+  in `projects/_template/committer-onboarding-config.md` (`icla` / `dco`
+  / `no-cla` for intake; `asf-pmc` / `github-codeowners` /
+  `maintainer-roster` for governance), added by the
+  `capability-flags-committer-intake` work item. The `committer-onboarding`
+  skill currently defaults to ASF-PMC / ICLA; a follow-on update will wire
+  it to read these flags at run time. Remaining coupling in the live
+  catalogue (bare `PMC`, `ICLA`, `announce@apache.org`) is surfaced by the
+  advisory lint (check #10 in `skill-and-tool-validator`) for human
+  judgement.

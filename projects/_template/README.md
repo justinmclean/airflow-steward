@@ -11,6 +11,7 @@
     - [CVE-allocation mechanics](#cve-allocation-mechanics)
     - [Remediation workflow](#remediation-workflow)
     - [Editorial + reporter-facing](#editorial--reporter-facing)
+    - [Contributor growth](#contributor-growth)
     - [Issue management](#issue-management)
     - [Repo-health audits](#repo-health-audits)
     - [PR triage and review](#pr-triage-and-review)
@@ -90,6 +91,18 @@ the rest.
 |---|---|
 | [`naming-conventions.md`](naming-conventions.md) | Project-specific editorial rules. Keep only the ones that differ from the generic rules in `../../AGENTS.md`. |
 | [`canned-responses.md`](canned-responses.md) | Reusable reporter-facing reply templates. |
+
+### Contributor growth
+
+These files configure the contributor-nomination, committer-onboarding,
+and contributor-to-committer skill family. Adopters that do not use
+these skills can delete this group.
+
+| File | Purpose |
+|---|---|
+| [`contributor-nomination-config.md`](contributor-nomination-config.md) | Nomination-brief thresholds and assessment window. Used by `contributor-nomination`. |
+| [`committer-onboarding-config.md`](committer-onboarding-config.md) | **Capability-flag vocabulary for committer intake and governance models** (`icla`/`dco`/`no-cla`; `asf-pmc`/`github-codeowners`/`maintainer-roster`). Used by `committer-onboarding`. |
+| `committer-readiness.md` | Activity thresholds the `contributor-to-committer` readiness tracker compares against. Added by the `contributor-to-committer` skill. |
 
 ### Issue management
 

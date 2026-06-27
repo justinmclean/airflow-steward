@@ -124,25 +124,30 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
 
 ## Known gaps
 
-- **No automated ASF-coupling lint exists.** The sweep above is a manual
-  grep; a deterministic advisory check (analogous to the
-  `skill-and-tool-validator` warnings, with an allowlist for legitimate
-  ASF-default strings) is a candidate work item.
+- **ASF-coupling lint is advisory only.** Check #10 in
+  `tools/skill-and-tool-validator` (SOFT category `asf_coupling`) now
+  surfaces coupled tokens automatically on every validator run.  The 86
+  advisory hits in the current catalogue are real candidates for
+  generalisation (mostly bare `PMC` and a few `announce@apache.org` /
+  `dist/dev/` hits); a human judges which warrant a placeholder or
+  capability-flag change.  No remaining tooling gap — the lint exists.
 - **No non-ASF adopter profile fixture exists** to run the catalogue
   against. A `projects/_template` non-ASF profile plus a smoke eval that
   drives a representative skill through it would turn acceptance #3 into a
   measurable gate.
-- **The capability-flag vocabulary now spans three families.** Security
-  intake (`security_inbox.kind`: mailing-list, ghsa-inbox, hackerone,
-  …) and CVE allocation (`cve_authority.tool`: vulnogram, ghsa, none,
-  …) are declared in `projects/_template/project.md`'s security
-  workflow configuration block. Contributor intake and governance are
-  now declared in
-  `projects/_template/committer-onboarding-config.md` (`icla` / `dco`
+- **The capability-flag vocabulary for security intake and CVE allocation
+  is now documented** in
+  `projects/_template/security-intake-config.md` (intake channel,
+  forwarder relay, CNA tool, allocation gate, and new
+  `disclosure_governance` flags). Skills read these flags in follow-on
+  updates as each flag is wired in.
+- **Contributor intake and governance capability flags are now declared**
+  in `projects/_template/committer-onboarding-config.md` (`icla` / `dco`
   / `no-cla` for intake; `asf-pmc` / `github-codeowners` /
-  `maintainer-roster` for governance). The `committer-onboarding`
-  skill currently defaults to ASF-PMC / ICLA; a follow-on update will
-  wire it to read these flags at run time. Remaining coupling in the
-  live catalogue (bare `PMC`, `ICLA`, `announce@apache.org`) is
-  surfaced by the advisory lint (check #10 in
-  `skill-and-tool-validator`) for human judgement.
+  `maintainer-roster` for governance), added by the
+  `capability-flags-committer-intake` work item. The `committer-onboarding`
+  skill currently defaults to ASF-PMC / ICLA; a follow-on update will wire
+  it to read these flags at run time. Remaining coupling in the live
+  catalogue (bare `PMC`, `ICLA`, `announce@apache.org`) is surfaced by the
+  advisory lint (check #10 in `skill-and-tool-validator`) for human
+  judgement.

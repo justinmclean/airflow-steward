@@ -50,7 +50,7 @@ sequencing commitments behind them.
 
 | Mode | Purpose | Status | Skill count |
 |---|---|---|---|
-| **Triage** | Issues, security reports, PRs: spot, classify, route, surface duplicates. Every output is a suggestion the human signs off on. | stable (security) / experimental (pr-management, issue-management, contributor-nomination) / proposed (release-management) | 19 + 4 proposed |
+| **Triage** | Issues, security reports, PRs: spot, classify, route, surface duplicates. Every output is a suggestion the human signs off on. | stable (security) / experimental (pr-management, issue-management, contributor-nomination, repo-health, release-management) | 30 |
 | **Mentoring** | Joins issue and PR threads in a teaching register: clarifying questions, pointers to project conventions, paired examples from prior PRs, hand-off to a human when scope exceeds the agent. Also authors net-new good first issues to lower onboarding latency. | experimental | 3 |
 | **Drafting** | Agent drafts a fix for a well-scoped problem and opens a PR; every PR is reviewed and merged by a human committer. | stable (security-only); experimental (issue-management, audit-findings, release-management family) | 9 |
 | **Pairing** | Developer-side dev-cycle skills with mentorship intrinsic — multi-agent review pipelines, self-review and pre-flight patterns, scoped fix drafting under the developer's driver's seat. | experimental | 2 |
@@ -75,6 +75,8 @@ do not act without human review.
 | [`issue-triage`](../skills/issue-triage/SKILL.md) | General-issue-tracker triage (per-issue classification + disposition proposal). | experimental |
 | [`issue-reassess`](../skills/issue-reassess/SKILL.md) | Pool-level sweep of resolved / EOL issues for re-assessment. | experimental |
 | [`issue-stale-sweep`](../skills/issue-stale-sweep/SKILL.md) | Sweep open issues for inactivity past a configurable threshold; proposes a nudge (`REQUEST-UPDATE`) or a pre-close notice (`CLOSE-STALE`); waits for maintainer confirmation before posting. | experimental |
+| [`issue-backlog-stats`](../skills/issue-backlog-stats/SKILL.md) | Read-only maintainer dashboard for the open general-issue backlog: health rating, age/staleness breakdowns, area pressure ranking, and triage-funnel summary. | experimental |
+| [`issue-deduplicate`](../skills/issue-deduplicate/SKILL.md) | Merge two open `<issue-tracker>` issues that describe the same root cause, preserving both reporters' context; proposes closure comment on the duplicate and a cross-reference on the kept issue. | experimental |
 | [`contributor-nomination`](../skills/contributor-nomination/SKILL.md) | Nomination-readiness brief for a named contributor — activity breadth, consistency, and evidence prose for a committer or PMC thread. | experimental |
 | [`security-issue-import`](../skills/security-issue-import/SKILL.md) | Inbound security-report classification + initial routing. | stable |
 | [`security-issue-import-from-pr`](../skills/security-issue-import-from-pr/SKILL.md) | Open a tracker from a security-relevant public PR. | stable |
@@ -89,10 +91,14 @@ do not act without human review.
 | [`contributor-activity-sweep`](../skills/contributor-activity-sweep/SKILL.md) | Read-only GitHub activity card for a named contributor: PR authorship, code-review participation, issues, and comments over a configurable window. | experimental |
 | [`pr-management-quick-merge`](../skills/pr-management-quick-merge/SKILL.md) | Identify trivial, low-risk PRs in the `ready for maintainer review` queue that pass every quality gate and touch only supplementary areas (docs, changelog, translations, tests); surfaces candidates with diff summaries and the exact merge command. | experimental |
 | [`ci-runner-audit`](../skills/ci-runner-audit/SKILL.md) | Read-only audit of GitHub Actions workflow runner compatibility across one repo, an explicit set, one Apache project's repos, or the full Apache GitHub org. | experimental |
-| `release-verify-rc` | Read-only pre-flight on a staged RC: signatures against project KEYS, checksums, license headers (Apache RAT), NOTICE/LICENSE diff, no prohibited binaries, version-string consistency. Doubles as a Pairing-mode skill voters run in their own dev loop. | proposed |
-| `release-vote-tally` | Parse a `[VOTE]` thread, classify each reply (+1 / 0 / -1) binding vs non-binding against the PMC roster, propose `[RESULT] [VOTE]`. Conservative on ambiguous votes, refuses to count. | proposed |
-| `release-archive-sweep` | Scan `dist/release/<project>/`, identify releases past retention, propose the `svn mv` sequence to `archive.apache.org`. | proposed |
-| `release-audit-report` | Per-release structured report (RM, voters with binding flags, artefacts with sigs and checksums, promote revision, `[ANNOUNCE]` archive URL) appended to the project's audit log. | proposed |
+| [`dependency-audit`](../skills/dependency-audit/SKILL.md) | Read-only dependency vulnerability audit: detects the project's dependency manager(s), runs the appropriate audit tool, surfaces patchable findings grouped by severity, and proposes upgrades for maintainer review. | experimental |
+| [`workflow-security-audit`](../skills/workflow-security-audit/SKILL.md) | Read-only GitHub Actions workflow security audit powered by `zizmor`: surfaces injection vulnerabilities, excessive permissions, unpinned external actions, and self-hosted-runner fork-secret leaks. | experimental |
+| [`license-compliance-audit`](../skills/license-compliance-audit/SKILL.md) | Read-only license-compliance audit: LICENSE presence, NOTICE completeness when required, and SPDX-header consistency across source files; proposes remedies for maintainer review. | experimental |
+| [`flaky-test-triage`](../skills/flaky-test-triage/SKILL.md) | Read-only flaky-test detection from CI run history: per-job failure-rate analysis over a configurable window, separating intermittent (flaky) from deterministic failures. | experimental |
+| [`release-verify-rc`](../skills/release-verify-rc/SKILL.md) | Read-only pre-flight on a staged RC: signatures against project KEYS, checksums, license headers (Apache RAT), NOTICE/LICENSE diff, no prohibited binaries, version-string consistency. Doubles as a Pairing-mode skill voters run in their own dev loop. | experimental |
+| [`release-vote-tally`](../skills/release-vote-tally/SKILL.md) | Fetch the approval signal for an RC, classify each reply (+1 / 0 / -1) binding vs non-binding against the configured roster, produce the tally summary, and draft the `[RESULT] [VOTE]` email. Conservative on ambiguous votes, refuses to count. | experimental |
+| [`release-archive-sweep`](../skills/release-archive-sweep/SKILL.md) | Scan `dist/release/<project>/`, identify releases past retention, propose the `svn mv` sequence to `archive.apache.org`. | experimental |
+| [`release-audit-report`](../skills/release-audit-report/SKILL.md) | Per-release structured report (RM, voters with binding flags, artefacts with sigs and checksums, promote revision, `[ANNOUNCE]` archive URL) appended to the project's audit log. | experimental |
 
 Three notes on the boundaries:
 
@@ -159,11 +165,11 @@ the agent never merges its own work.
 | [`security-issue-fix`](../skills/security-issue-fix/SKILL.md) | Draft a fix PR in `<upstream>` from a triaged, CVE-allocated tracker. | stable (security-only) |
 | [`issue-fix-workflow`](../skills/issue-fix-workflow/SKILL.md) | Draft a fix for a triaged general-issue-tracker issue (BUG or FEATURE-REQUEST). | experimental |
 | [`audit-finding-fix`](../skills/audit-finding-fix/SKILL.md) | Draft fixes for non-security audit-tool findings (lint violations, type errors, CodeQL alerts, doc-coverage gaps); re-runs the tool after each batch to confirm findings are cleared. | experimental |
-| `release-prepare` | Planning issue + version-bump / changelog / NOTICE / LICENSE prep PR (Steps 1-2). Also the post-release `-SNAPSHOT` bump (Step 14). | proposed |
-| `release-keys-sync` | Draft the `KEYS` diff for a new Release Manager (Step 3). Agent never holds the private key. | proposed |
-| `release-rc-cut` | Paste-ready command sequence: signed tag, build, detached signatures, checksums, `svn import` to `dist/dev/` (Steps 4-5). Agent never signs and never imports. | proposed |
-| `release-vote-draft` | Draft the `[VOTE]` email body to `dev@<project>` (Step 7). Agent never sends. | proposed |
-| `release-promote` | Paste-ready `svn mv dist/dev → dist/release` command set after a passing vote (Step 10). Agent never moves; the human commit is the act of release. | proposed |
+| [`release-prepare`](../skills/release-prepare/SKILL.md) | Planning issue + version-bump / changelog / NOTICE / LICENSE prep PR (Steps 1-2). Also the post-release `-SNAPSHOT` bump (Step 14). | experimental |
+| [`release-keys-sync`](../skills/release-keys-sync/SKILL.md) | Draft the `KEYS` diff for a new Release Manager (Step 3). Agent never holds the private key. | experimental |
+| [`release-rc-cut`](../skills/release-rc-cut/SKILL.md) | Paste-ready command sequence: signed tag, build, detached signatures, checksums, `svn import` to `dist/dev/` (Steps 4-5). Agent never signs and never imports. | experimental |
+| [`release-vote-draft`](../skills/release-vote-draft/SKILL.md) | Draft the `[VOTE]` email body to `dev@<project>` (Step 7). Agent never sends. | experimental |
+| [`release-promote`](../skills/release-promote/SKILL.md) | Emit the backend-shaped promotion command set for a release that has passed its vote; proposes the `promoted` label. Agent never runs the promotion command and never publishes the release. | experimental |
 | [`release-announce-draft`](../skills/release-announce-draft/SKILL.md) | Draft the `[ANNOUNCE]` email body for `announce@apache.org` and the site-bump PR (Step 11). Agent never sends mail and never merges the PR. | experimental |
 
 [`audit-finding-fix`](../skills/audit-finding-fix/SKILL.md)
@@ -176,12 +182,12 @@ gaps. It is the generic-Drafting companion to
 (security-class findings). Failing tests with an obvious cause
 remain proposed.
 
-The `release-*` Drafting skills form a single family
-([`docs/release-management/README.md`](release-management/README.md)).
-`release-announce-draft` shipped experimental; the remaining five
-are proposed. They share the security family's discipline that
-every state-changing action is a *proposal* the human executes —
-see
+The `release-*` skills form a single family
+([`docs/release-management/README.md`](release-management/README.md))
+spanning Drafting (Steps 1–5, 7, 10–11, 14) and Triage (Steps 6, 9,
+12–13). All ten have now shipped `experimental`. They share the
+security family's discipline that every state-changing action is a
+*proposal* the human executes — see
 [`docs/release-management/spec.md` § Cross-cutting commitments](release-management/spec.md#cross-cutting-commitments).
 
 For security-class Drafting PRs, the public surface strips CVE

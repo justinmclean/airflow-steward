@@ -216,11 +216,21 @@ it, and you pick the `--cli` model per run:
 | Qwen3.5 9B | `qwen3.5:9b` | **Apache-2.0** | Recommended for ASF adopters: the license matches the framework's open / vendor-neutral posture. ~6.6 GB (Q4_K_M). |
 | Llama 3.1 8B | `llama3.1:8b` | Llama Community License (not an OSI/open license) | The historical reference target the current `local-smoke` set was first baselined against. ~4.7 GB. |
 
-`local-smoke` marks cases that pass on a local model. `qwen3.5:9b` and
-`llama3.1:8b` are interchangeable targets; pick one per run with `--cli`.
-Pin temperature for reproducibility, the runner sets none, so model
-defaults (llama ~0.8, qwen ~1.0) make single runs stochastic. Run the set
-against whichever you have installed:
+The `local-smoke` set is **only cases actually verified on a local model**
+(originally the 26 confirmed against `llama3.1:8b` when local support was
+added). Cases that carried the old `llama` tag but were never run on a
+local model, they were tagged at skill-creation time, where "passing"
+meant `claude -p`, not a local model, have been demoted to
+`local-smoke-candidate` (see below). That is why `local-smoke` is a small,
+trustworthy set rather than the whole suite: an 8-9B model will not pass
+the aggregation, multi-rule, or nuanced-classification steps, and those do
+not belong in a local smoke set even though a frontier model passes them.
+
+`qwen3.5:9b` is the license-aligned alternative; a case stays `local-smoke`
+when it is confirmed there too (the tag spans both targets). Pin
+temperature for reproducibility, the runner sets none, so model defaults
+(temperature ~0.8) make single runs stochastic. Run the set against
+whichever you have installed:
 
 ```bash
 PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --tag local-smoke \
@@ -228,6 +238,34 @@ PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --tag local-smoke
     tools/skill-evals/evals/
 # or: --cli "ollama run llama3.1:8b --nowordwrap --format json"
 ```
+
+#### Expanding `local-smoke` coverage: the `local-smoke-candidate` workflow
+
+`local-smoke-candidate` marks a case that *looks* like a good local smoke
+signal (deterministic decision fields, short output, a happy-path or
+clear-cancel variant of a step whose siblings already pass locally) but
+has **not yet been confirmed** against a local model. The tag exists so
+the candidate set is a one-command run, not a guess that quietly inflates
+the verified `local-smoke` count.
+
+To grow `local-smoke` coverage, run the candidates against a real local
+model and promote the passers:
+
+```bash
+# 1. Run only the unconfirmed candidates against a local model.
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --tag local-smoke-candidate \
+    --cli "ollama run qwen3.5:9b --nowordwrap --format json" \
+    tools/skill-evals/evals/
+
+# 2. For each case that PASSES, promote it: change its case-meta.json
+#    tag from "local-smoke-candidate" to ["local-smoke", "smoke"]
+#    (or ["local-smoke"]). Leave a failing case as a candidate, or drop
+#    the tag if it is a poor fit for small local models.
+```
+
+Promotion is the only thing that moves a case into the verified
+`local-smoke` set; nothing is tagged `local-smoke` on the strength of
+structure alone.
 
 ## Structure
 

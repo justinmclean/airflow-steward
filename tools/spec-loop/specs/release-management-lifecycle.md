@@ -12,10 +12,10 @@ source: >
   § Skill families (release-management, proposed). Designed spec-first in
   docs/release-management/ (README.md, process.md, spec.md) plus the
   adopter scaffold projects/_template/release-management-config.md.
-  Eight of the ten skills have since shipped (release-prepare,
+  Nine of the ten skills have since shipped (release-prepare,
   release-keys-sync, release-rc-cut, release-vote-draft,
-  release-announce-draft, release-verify-rc, release-vote-tally,
-  release-promote).
+  release-archive-sweep, release-announce-draft, release-verify-rc,
+  release-vote-tally, release-promote).
 acceptance:
   - The family's design (14-step process, per-skill state-change
     boundaries, adopter contract) is reviewable independently of any
@@ -58,7 +58,7 @@ code lands.
   `projects/_template/release-build.md`, `projects/_template/pmc-roster.md`,
   `projects/_template/site-repo.md`, and the shared
   `projects/_template/release-trains.md`.
-- Skills (eight shipped, all `experimental`): `release-prepare`
+- Skills (nine shipped, all `experimental`): `release-prepare`
   (`mode: Drafting`) drafts the planning issue (Step 1), the prep PR with
   version bump / changelog / NOTICE / LICENSE (Step 2), and the
   post-release development-version bump PR (Step 14), never marking ready,
@@ -82,8 +82,10 @@ code lands.
   +1/0/-1 binding vs non-binding once the window closes and drafts the
   `[RESULT]` (Step 9); `release-promote` (`mode: Drafting`) emits the
   backend-shaped staging→release promotion command set for a vote-passed
-  release (Step 10). The remaining two skills (`release-archive-sweep`,
-  `release-audit-report`) are still `proposed`.
+  release (Step 10); `release-archive-sweep` (`mode: Triage`) scans the
+  dist area and proposes the command set to move past-retention releases
+  to the archive, read-only on the dist surface (Step 12). The remaining
+  skill (`release-audit-report`) is still `proposed`.
 - Adapters it will read/draft through: `tools/github`, `tools/ponymail`
   (vote threads), `tools/gmail` (announce/vote drafts), plus the project's
   `svn` dist tree as a distribution backend.
@@ -145,6 +147,7 @@ test -f .claude/skills/magpie-release-prepare/SKILL.md
 test -f .claude/skills/magpie-release-keys-sync/SKILL.md
 test -f .claude/skills/magpie-release-rc-cut/SKILL.md
 test -f .claude/skills/magpie-release-vote-draft/SKILL.md
+test -f .claude/skills/magpie-release-archive-sweep/SKILL.md
 test -f .claude/skills/magpie-release-announce-draft/SKILL.md
 test -f .claude/skills/magpie-release-verify-rc/SKILL.md
 test -f .claude/skills/magpie-release-vote-tally/SKILL.md
@@ -155,11 +158,11 @@ uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/release-an
 
 ## Known gaps
 
-- **Eight of ten skills have shipped** (`release-prepare`,
+- **Nine of ten skills have shipped** (`release-prepare`,
   `release-keys-sync`, `release-rc-cut`, `release-vote-draft`,
-  `release-announce-draft`, `release-verify-rc`, `release-vote-tally`,
-  `release-promote`), all `experimental` with eval suites. **Two remain
-  `proposed`** (`release-archive-sweep`, `release-audit-report`).
+  `release-archive-sweep`, `release-announce-draft`, `release-verify-rc`,
+  `release-vote-tally`, `release-promote`), all `experimental` with eval
+  suites. **One remains `proposed`** (`release-audit-report`).
   The plan pass turns each un-implemented skill in the
   `docs/release-management/` table into a work item.
 - **Health-evidence promotion criteria are unmeasured.** No adopter has

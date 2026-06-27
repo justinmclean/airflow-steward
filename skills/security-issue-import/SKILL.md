@@ -19,7 +19,8 @@ when_to_use: |
   skill is cheap to run against the default 14-day Gmail window and a
   no-op when every recent thread is already tracked or already
   answered-and-closed on-thread. Use `import last 30d` / `import all`
-  (= 90d) for a wider backlog sweep when genuinely warranted.
+  (= disclosure_governance.window_days, default 90d) for a wider backlog
+  sweep when genuinely warranted.
 argument-hint: "[import] [last Nd|all] [skip threadId]"
 capability: capability:intake
 license: Apache-2.0
@@ -307,6 +308,21 @@ Before touching any candidate thread, verify:
    when (and only when) the draft references a third-party
    identifier.
 
+5. **Disclosure governance from `<project-config>/security-intake-config.md`.**
+   If the file exists, read the `disclosure_governance` block and load these
+   two keys into the observed-state bag for use in Step 7:
+
+   - `reporter_acknowledgement_model` — `manual` | `auto` | `none`. Controls
+     whether and how the receipt-of-confirmation reply is drafted (Step 7.4).
+   - `window_days` — integer; the CVD window in calendar days, used as the
+     disclosure deadline hint when composing the acknowledgement draft.
+
+   If the file does not exist or the `disclosure_governance` block is absent,
+   silently default to `reporter_acknowledgement_model: manual` and
+   `window_days: 90`. A missing file is **not** a stop condition — adopters
+   who have not yet created this config receive the same ASF defaults the
+   skill has always applied.
+
 If a `mandatory: yes` mail-source backend or the `gh` check fails,
 do **not** proceed — the skill would fail mid-flow otherwise,
 leaving half-built state (a draft on the wrong thread, or a tracker
@@ -328,7 +344,7 @@ candidate Gmail threads:
 | `import new` (default) | every security@ thread received in the last **14 days** that has not yet been imported as an <tracker> issue and has not already been answered-and-closed on-thread |
 | `import since:YYYY-MM-DD` | every security@ thread received since the given date that is not yet imported |
 | `import thread:<id>` | the single Gmail thread with that `threadId` — useful for re-importing after a manual discard, or for picking up a single message the automatic scan missed |
-| `import last 30d` / `import all` / `import last 90d` (explicit request only) | a wider sweep — use when the skill has not been run in a while or the user is doing a backlog catch-up. The `all` alias is 90 days. |
+| `import last 30d` / `import all` / `import last Nd` (explicit request only) | a wider sweep — use when the skill has not been run in a while or the user is doing a backlog catch-up. The `all` alias spans `disclosure_governance.window_days` days (default 90) from `<project-config>/security-intake-config.md`. |
 
 If the user supplies no selector, default to `import new` (14-day window).
 
@@ -1721,6 +1737,33 @@ For each confirmed `Report` or forwarder-relayed candidate:
      draft is skipped because the bundle covers it. Cross-link
      the consolidated draft's `<draftId>` in this tracker's
      rollup entry.
+   - `reporter_acknowledgement_model` is `none` (from the
+     observed-state bag populated in Step 0, default `manual`) —
+     skip the draft entirely. Record
+     `acknowledgement_model=none: receipt-of-confirmation draft
+     suppressed per <project-config>/security-intake-config.md
+     disclosure_governance` in this tracker's rollup entry
+     (Step 7.5 below). Surface a one-line note in the Step 8
+     recap for each suppressed candidate.
+
+   **Acknowledgement model** (when a draft is created): read
+   `reporter_acknowledgement_model` from the observed-state bag:
+
+   - **`manual` (default)**: Draft the receipt-of-confirmation
+     reply for triager review. When composing or customising the
+     canned body, substitute `window_days` (from the observed-
+     state bag, default 90) wherever the canned response
+     references the CVD deadline — e.g. "we expect to have this
+     resolved within `window_days` days".
+   - **`auto`**: Draft the same receipt, but prepend `[auto-ack]`
+     to the draft summary line and add a note in the Step 5
+     proposal: *"acknowledgement_model=auto — this is the
+     standard receipt template and may be sent without further
+     triager review per your project's security-intake-config.md
+     disclosure_governance"*. The **Never send** hard rule still
+     applies — the skill creates a draft; `[auto-ack]` is a
+     triager hint, not an auto-dispatch instruction. `window_days`
+     substitution applies as in `manual`.
 
    When a draft is created (the default path), **apply the
    reveal-before-send protocol if (and only if) the rendered

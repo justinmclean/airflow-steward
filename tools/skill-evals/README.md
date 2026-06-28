@@ -81,11 +81,11 @@ PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --cli "claude -p"
     tools/skill-evals/evals/issue-triage/step-3-classify/fixtures/case-1-clear-bug
 
 # Run only cases tagged as useful smoke tests for a local model.
-# Either supported local target works; swap the --cli model as you like.
+# Baselined on llama3.1:8b; run a deterministic (temp 0) variant — see
+# "Supported local models" below for why and how to build it.
 PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --tag local-smoke \
-    --cli "ollama run qwen3.5:9b --nowordwrap --format json" \
+    --cli "ollama run llama31-t0 --nowordwrap --format json" \
     tools/skill-evals/evals/
-# (or --cli "ollama run llama3.1:8b --nowordwrap --format json")
 ```
 
 **JSON extraction** tries three strategies in order: parse the whole
@@ -208,13 +208,16 @@ re-tag.
 
 #### Supported local models
 
-Two local targets are supported for the `local-smoke` set; either can run
-it, and you pick the `--cli` model per run:
+Two local targets are usable for the `local-smoke` set. The set is
+**baselined and verified on `llama3.1:8b`** (it passes 48/48 there at
+pinned temperature). `qwen3.5:9b` is a license-aligned alternative you can
+also run, but it does **not** pass the full set, so treat it as best-effort
+rather than a gate. Pick the `--cli` model per run:
 
 | Model | Ollama tag | License | Notes |
 |---|---|---|---|
-| Qwen3.5 9B | `qwen3.5:9b` | **Apache-2.0** | Recommended for ASF adopters: the license matches the framework's open / vendor-neutral posture. ~6.6 GB (Q4_K_M). |
-| Llama 3.1 8B | `llama3.1:8b` | Llama Community License (not an OSI/open license) | The historical reference target the current `local-smoke` set was first baselined against. ~4.7 GB. |
+| Llama 3.1 8B | `llama3.1:8b` | Llama Community License (not an OSI/open license) | The verified baseline target: the `local-smoke` set passes in full here at pinned temperature. ~4.7 GB. |
+| Qwen3.5 9B | `qwen3.5:9b` | **Apache-2.0** | License-aligned alternative, preferred by ASF adopters on license grounds. Passes most but not all cases (a handful of nuanced-classification, item-count, and output-hygiene steps differ); use it as a secondary signal, not a pass/fail gate. ~6.6 GB (Q4_K_M). |
 
 The `local-smoke` set is **only cases actually verified on a local model**
 (originally the 26 confirmed against `llama3.1:8b` when local support was
@@ -226,17 +229,27 @@ trustworthy set rather than the whole suite: an 8-9B model will not pass
 the aggregation, multi-rule, or nuanced-classification steps, and those do
 not belong in a local smoke set even though a frontier model passes them.
 
-`qwen3.5:9b` is the license-aligned alternative; a case stays `local-smoke`
-when it is confirmed there too (the tag spans both targets). Pin
-temperature for reproducibility, the runner sets none, so model defaults
-(temperature ~0.8) make single runs stochastic. Run the set against
-whichever you have installed:
+**Pin temperature, or the set is flaky.** The runner sets no temperature,
+so at the model default (~0.8) single runs are stochastic: cases pass and
+fail at random and the failure set shifts run to run. Always run against a
+deterministic variant (temperature 0 + a fixed seed). Create one once with
+a Modelfile:
 
 ```bash
+# One-time: build a deterministic variant of the baseline target.
+printf 'FROM llama3.1:8b\nPARAMETER temperature 0\nPARAMETER seed 42\n' > Modelfile.llama-t0
+ollama create llama31-t0 -f Modelfile.llama-t0
+
+# Run the verified set (expect 48/48).
 PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --tag local-smoke \
-    --cli "ollama run qwen3.5:9b --nowordwrap --format json" \
+    --cli "ollama run llama31-t0 --nowordwrap --format json" \
     tools/skill-evals/evals/
-# or: --cli "ollama run llama3.1:8b --nowordwrap --format json"
+
+# Optional secondary signal against the license-aligned alternative
+# (will report a few known failures — not a gate):
+#   printf 'FROM qwen3.5:9b\nPARAMETER temperature 0\nPARAMETER seed 42\n' > Modelfile.qwen-t0
+#   ollama create qwen35-t0 -f Modelfile.qwen-t0
+#   ... --cli "ollama run qwen35-t0 --nowordwrap --format json" ...
 ```
 
 #### Expanding `local-smoke` coverage: the `local-smoke-candidate` workflow
@@ -248,19 +261,24 @@ has **not yet been confirmed** against a local model. The tag exists so
 the candidate set is a one-command run, not a guess that quietly inflates
 the verified `local-smoke` count.
 
-To grow `local-smoke` coverage, run the candidates against a real local
-model and promote the passers:
+To grow `local-smoke` coverage, run the candidates against the
+deterministic baseline target and promote the passers:
 
 ```bash
-# 1. Run only the unconfirmed candidates against a local model.
+# 1. Run only the unconfirmed candidates against the baseline (temp 0).
+#    A single high-temperature run is not enough — re-run 2-3 times and
+#    only trust a case that passes every time (default ~0.8 produces
+#    false passes that don't hold up).
 PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --tag local-smoke-candidate \
-    --cli "ollama run qwen3.5:9b --nowordwrap --format json" \
+    --cli "ollama run llama31-t0 --nowordwrap --format json" \
     tools/skill-evals/evals/
 
-# 2. For each case that PASSES, promote it: change its case-meta.json
-#    tag from "local-smoke-candidate" to ["local-smoke", "smoke"]
-#    (or ["local-smoke"]). Leave a failing case as a candidate, or drop
-#    the tag if it is a poor fit for small local models.
+# 2. For each case that PASSES consistently, promote it: change its
+#    case-meta.json tag from "local-smoke-candidate" to
+#    ["local-smoke", "smoke"] (or ["local-smoke"]). Leave a failing case
+#    as a candidate, or drop the tag if it is a poor fit for small local
+#    models. MANUAL (structural) and ERROR (timeout) results are not
+#    passes — do not promote them.
 ```
 
 Promotion is the only thing that moves a case into the verified

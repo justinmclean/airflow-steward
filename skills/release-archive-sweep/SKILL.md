@@ -10,8 +10,8 @@ description: |
 when_to_use: |
   Invoke when a Release Manager says "run the archive sweep", "clean up old
   releases from dist", "archive past-retention releases for <project>", or
-  similar. Appropriate after Step 11 (`release-announce-draft`) confirms a
-  new release is promoted and announced. Safe to run periodically on any
+  similar. Appropriate after the announcement phase (`release-announce-draft`)
+  confirms a new release is promoted and announced. Safe to run periodically on any
   schedule; it is a no-op when nothing is past retention.
 argument-hint: "[--planning-issue <url>]"
 capability: capability:resolve

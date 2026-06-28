@@ -6,8 +6,8 @@ description: |
   project's KEYS file (`<keys-file-url>`), emit a paste-ready `svn`
   (or backend-equivalent) command sequence, remind the RM to upload to
   the configured keyserver, and validate the key meets the ASF strength
-  floor. Never commits, never holds or reads the private key. Step 3 of
-  the release-management lifecycle.
+  floor. Never commits, never holds or reads the private key. Runs during
+  release preparation, before RC signing begins.
 when_to_use: |
   Invoke when a Release Manager says "add my key to KEYS", "sync my
   signing key for the release", "run release-keys-sync", or any variation

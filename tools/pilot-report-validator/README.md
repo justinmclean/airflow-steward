@@ -38,7 +38,10 @@ For every `.md` file that carries a YAML frontmatter block:
 1. **Required frontmatter keys** — `skill`, `date`, `target_repo`,
    `profile`.
 2. **Valid `profile` value** — `asf` | `non-asf` | `custom`.
-3. **Required body sections** — `## Skill or family`,
+3. **No unfilled placeholders** — frontmatter values must not contain
+   un-substituted `<...>` tokens, and `date` must be a real ISO 8601
+   date (`YYYY-MM-DD`).
+4. **Required body sections** — `## Skill or family`,
    `## Target repo and profile`, `## Blocked preflights`,
    `## False positives`, `## Confirmation points`,
    `## Privacy and adapter notes`, `## Proposed spec changes`.
@@ -46,8 +49,9 @@ For every `.md` file that carries a YAML frontmatter block:
 The frontmatter block must be at the very top of the file — YAML
 frontmatter placed lower in the document is not detected. Files without
 a top-of-file frontmatter block (e.g. README files) are silently
-skipped. `docs/pilot-report-template.md` carries a top-of-file
-frontmatter skeleton and so validates as a clean report.
+skipped. `docs/pilot-report-template.md` ships with placeholder
+frontmatter values, so running the validator on the unedited template
+reports those placeholders until you fill them in.
 
 ## Usage
 

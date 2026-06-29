@@ -21,15 +21,19 @@ Checks every .md file that carries a YAML frontmatter block for:
 
 1. Required frontmatter keys — skill, date, target_repo, profile.
 2. Valid ``profile`` value — asf | non-asf | custom.
-3. Required body sections — Skill or family, Target repo and profile,
+3. No unfilled placeholders — frontmatter values must not contain
+   un-substituted ``<...>`` tokens, and ``date`` must be a real ISO 8601
+   date (YYYY-MM-DD).
+4. Required body sections — Skill or family, Target repo and profile,
    Blocked preflights, False positives, Confirmation points,
    Privacy and adapter notes, Proposed spec changes.
 
 The frontmatter block must be at the top of the file; YAML frontmatter
 placed lower in the document is not detected. Files without a
 top-of-file frontmatter block (e.g. README.md) are skipped silently.
-``docs/pilot-report-template.md`` carries a top-of-file frontmatter
-skeleton and so validates as a clean report.
+``docs/pilot-report-template.md`` ships with placeholder frontmatter
+values, so running the validator on the unedited template reports those
+placeholders until they are filled in.
 
 Run from repo root::
 
@@ -64,6 +68,11 @@ REQUIRED_SECTIONS: tuple[str, ...] = (
 
 _HTML_COMMENT_RE = re.compile(r"<!--[\s\S]*?-->")
 _YAML_BLOCK_SCALAR_HEADERS: frozenset[str] = frozenset({"|", ">", "|-", "|+", ">-", ">+"})
+
+# An un-substituted template placeholder, e.g. "<skill-name>" or "<owner>/<repo>".
+_ANGLE_PLACEHOLDER_RE = re.compile(r"<[^<>\n]+>")
+# ISO 8601 calendar date (YYYY-MM-DD); also rejects the "YYYY-MM-DD" placeholder.
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -187,6 +196,23 @@ def validate_frontmatter(path: Path, text: str) -> list[Violation]:
                 1,
                 f"invalid profile '{fm['profile']}' — must be one of {sorted(ALLOWED_PROFILES)}",
             )
+        )
+
+    # Un-substituted template placeholders left in any frontmatter value.
+    for key in sorted(fm):
+        if _ANGLE_PLACEHOLDER_RE.search(fm[key]):
+            violations.append(
+                Violation(
+                    path,
+                    1,
+                    f"frontmatter key '{key}' still contains an un-substituted placeholder: {fm[key]!r}",
+                )
+            )
+
+    # Date value must be a real ISO 8601 date (also catches the 'YYYY-MM-DD' placeholder).
+    if fm.get("date") and not _ISO_DATE_RE.match(fm["date"]):
+        violations.append(
+            Violation(path, 1, f"invalid date '{fm['date']}' — must be ISO 8601 format YYYY-MM-DD")
         )
 
     return violations

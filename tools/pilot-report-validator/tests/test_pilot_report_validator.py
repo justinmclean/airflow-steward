@@ -213,6 +213,30 @@ class TestValidateFrontmatter:
         violations = validate_frontmatter(p, text)
         assert all(v.line == 1 for v in violations)
 
+    def test_angle_bracket_placeholder_flagged(self, tmp_path: Path) -> None:
+        text = _make_report(skill="<skill-name>")
+        p = tmp_path / "report.md"
+        violations = [v.message for v in validate_frontmatter(p, text)]
+        assert any("placeholder" in m and "skill" in m for m in violations), violations
+
+    @pytest.mark.parametrize("bad_date", ["YYYY-MM-DD", "2026/06/29", "29-06-2026", "not-a-date"])
+    def test_non_iso_date_flagged(self, tmp_path: Path, bad_date: str) -> None:
+        text = _make_report(date=bad_date)
+        p = tmp_path / "report.md"
+        violations = [v.message for v in validate_frontmatter(p, text)]
+        assert any("must be ISO 8601" in m for m in violations), violations
+
+    def test_iso_date_passes(self, tmp_path: Path) -> None:
+        text = _make_report(date="2026-06-29")
+        p = tmp_path / "report.md"
+        date_violations = [v.message for v in validate_frontmatter(p, text) if "date" in v.message]
+        assert date_violations == []
+
+    def test_filled_values_no_violations(self, tmp_path: Path) -> None:
+        text = _make_report(skill="pairing-self-review", date="2026-06-29", target_repo="example/myproject")
+        p = tmp_path / "report.md"
+        assert validate_frontmatter(p, text) == []
+
 
 # ---------------------------------------------------------------------------
 # validate_body
@@ -378,11 +402,21 @@ class TestTemplate:
             f"template frontmatter is missing required keys: {sorted(REQUIRED_FRONTMATTER_KEYS - set(fm))}"
         )
 
-    def test_template_validates_clean(self) -> None:
-        template = self._find_template()
-        assert run_validation(template) == [], "the shipped template should validate with no violations"
+    def test_template_flags_unfilled_placeholders(self) -> None:
+        """The unfilled template reports its placeholder values, and nothing else.
 
-    def test_filled_report_from_template_validates(self) -> None:
+        Every violation must be a placeholder / date-format finding — not a
+        missing key, bad profile, or missing section — which proves the
+        frontmatter and body are structurally complete and only the values
+        remain to be filled in.
+        """
+        template = self._find_template()
+        messages = [v.message for v in run_validation(template)]
+        assert messages, "unfilled template should report its placeholder values as violations"
+        for m in messages:
+            assert "placeholder" in m or "must be ISO 8601" in m, f"unexpected violation: {m}"
+
+    def test_filled_report_from_template_validates(self, tmp_path: Path) -> None:
         """A user copying the template and filling in real values gets a clean run."""
         text = self._find_template().read_text(encoding="utf-8")
         filled = (
@@ -391,10 +425,7 @@ class TestTemplate:
             .replace("<owner>/<repo>", "example/myproject")
             .replace("<github-handle>", "jdoe")
         )
-        fm = parse_frontmatter(filled)
-        assert fm is not None
-        assert fm["skill"] == "pairing-self-review"
-        assert fm["profile"] == "asf"
-        headings = extract_section_headings(filled)
-        for section in REQUIRED_SECTIONS:
-            assert section in headings, f"filled report missing required section '{section}'"
+        report = tmp_path / "filled-report.md"
+        report.write_text(filled, encoding="utf-8")
+        violations = [str(v) for v in run_validation(report)]
+        assert violations == [], f"filled report should validate clean, got: {violations}"

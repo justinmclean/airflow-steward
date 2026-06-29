@@ -15,7 +15,7 @@
 
 # pilot-report-validator
 
-**Capability:** capability:setup
+**Capability:** substrate:framework-dev
 
 Validates adopter pilot-report files against the required schema defined
 in [`docs/pilot-report-template.md`](../../docs/pilot-report-template.md).

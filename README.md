@@ -173,7 +173,7 @@ means and which modes are still proposed vs. shipping today.
 | [**mentoring**](docs/mentoring/README.md) | Mentoring | Contributor mentoring — first-contact welcome, teaching-register PR/issue comments, and net-new good-first-issue authoring. **Experimental** — shape may change as adopter pilots and contributor-sentiment evaluation land. | 3 skills, [`docs/mentoring/`](docs/mentoring/README.md) |
 | [**issue**](docs/issue-management/README.md) | Triage, Drafting | General-issue lifecycle: triage, reproduction, fix drafting, stale-sweep, deduplication, and backlog reporting. | 8 skills, [`docs/issue-management/`](docs/issue-management/README.md) |
 | [**contributor-growth**](docs/contributor-growth/README.md) | Triage, Mentoring | Skills spanning the contributor-to-committer path: first-contact welcome, on-ramp issue authoring, activity tracking, nomination brief, post-vote onboarding. | 5 skills, [`docs/contributor-growth/`](docs/contributor-growth/README.md) |
-| [**repo-health**](docs/repo-health/README.md) | Triage | Read-only repository-health audits: obsolete runner labels, Actions workflow security, dependency vulnerabilities, license/NOTICE compliance, flaky-test patterns. | 5 skills, [`docs/repo-health/`](docs/repo-health/README.md) |
+| [**repo-health**](docs/repo-health/README.md) | Triage | Read-only repository-health audits: obsolete runner labels, Actions workflow security, dependency vulnerabilities, license/NOTICE compliance, flaky-test patterns. | 5 skills, [`docs/repo-health/`](docs/repo-health/) |
 | **utilities** | (meta) | Framework meta-skills: author or update skills (`write-skill`), restructure existing skills (`optimize-skill`), print a live index of all available skills (`list-skills`). | 3 skills |
 
 ## Maintenance

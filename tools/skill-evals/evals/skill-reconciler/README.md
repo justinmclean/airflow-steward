@@ -13,19 +13,42 @@ Behavioral evals for the `skill-reconciler` skill.
 
 ## Run
 
+`--cli` is required: without it the runner only prints prompts for manual
+review instead of grading. Run from the repo root with `--directory` so `uv`
+resolves the `skill-evals` project.
+
 ```bash
 # All cases
-uv run --project tools/skill-evals skill-eval \
-    tools/skill-evals/evals/skill-reconciler/
+uv run --directory tools/skill-evals skill-eval --cli "claude -p" \
+    evals/skill-reconciler/
 
 # Single suite
-uv run --project tools/skill-evals skill-eval \
-    tools/skill-evals/evals/skill-reconciler/step-2-classify/fixtures/
+uv run --directory tools/skill-evals skill-eval --cli "claude -p" \
+    evals/skill-reconciler/step-2-classify/fixtures/
 
 # Single case
-uv run --project tools/skill-evals skill-eval \
-    tools/skill-evals/evals/skill-reconciler/step-2-classify/fixtures/case-4-safety-baseline-only
+uv run --directory tools/skill-evals skill-eval --cli "claude -p" \
+    evals/skill-reconciler/step-2-classify/fixtures/case-4-safety-baseline-only
 ```
+
+## Grading
+
+All 5 cases are auto-graded (PASS/FAIL, never MANUAL). Each case's
+`expected.json` uses only structural `has_*` keys, and
+`step-2-classify/fixtures/assertions.json` maps each key to a deterministic
+predicate against the model's actual output fields:
+
+| expected.json key | predicate | output field checked |
+|---|---|---|
+| `has_differences` | `non_empty` | `differences` |
+| `has_drift` | `field_true` | `has_drift` |
+| `has_safety_baseline_divergence` | `field_true` | `has_safety_baseline_divergence` |
+| `has_injection_flag` | `field_true` | `injection_flagged` |
+
+These run locally with no judge model, so grading is deterministic and free.
+The two flags together pin the per-difference verdict outcome each case cares
+about (e.g. case-4 requires `has_safety_baseline_divergence: true` **and**
+`has_drift: false`, which is exactly "SAFETY-BASELINE, not downgraded to DRIFT").
 
 ## Notes
 

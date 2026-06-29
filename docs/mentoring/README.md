@@ -20,9 +20,10 @@
 > Apache-Software-Foundation-specific assumptions baked in.
 
 Maintainer-facing skills that join contributor threads in a teaching
-register, author newcomer-ready issues, orient first-time contributors, and
-track a contributor's readiness path to committer nomination.
-Four skills shipped at `experimental`.
+register, author newcomer-ready issues, curate the existing backlog for
+newcomers, orient first-time contributors, and track a contributor's
+readiness path to committer nomination.
+Five skills shipped at `experimental`.
 
 MISSION names Agentic Mentoring as the highest-value project-side mode and the one
 off-the-shelf agent tooling skips. The framework lands the spec — tone guide,
@@ -38,8 +39,9 @@ behaviour and can be evolved without editing the skill body.
 | [`good-first-issue-author`](../../skills/good-first-issue-author/SKILL.md) | Draft one net-new good first issue from a supplied gap or small task; a suitability gate and R1–R9 readiness checklist gate the draft; waits for maintainer confirmation before filing via `gh`. | experimental |
 | [`mentoring-welcome`](../../skills/mentoring-welcome/SKILL.md) | Draft a first-contact orientation comment for a first-time contributor on a newly opened issue or PR; detects first-time authorship via the GitHub `author_association` field; skips repeat contributors. | experimental |
 | [`contributor-to-committer`](../../skills/contributor-to-committer/SKILL.md) | Read-only readiness tracker that maps a contributor's GitHub activity against the adopter's declared committer/PMC thresholds; surfaces a traffic-light brief (Not yet / Approaching / Ready to nominate) plus the specific evidence gaps that remain. | experimental |
+| [`good-first-issue-sweep`](../../skills/good-first-issue-sweep/SKILL.md) | Sweep the open issue backlog for existing issues that could be labelled as good first issues; scores each against the G1–G7 suitability rubric and classifies as READY / NEAR-MISS / SKIP; proposes labels only after explicit maintainer confirmation. | experimental |
 
-All four skills are read-only on tracker state or draft-then-confirm: no
+All five skills are read-only on tracker state or draft-then-confirm: no
 skill posts, labels, closes, or files anything without explicit maintainer
 confirmation in-session.
 
@@ -69,6 +71,15 @@ confirmation in-session.
   Approaching / Ready to nominate) plus a gap table showing exactly what
   evidence the contributor still needs. Read-only; never opens a nomination
   thread, sends a message, or modifies any record.
+- **`good-first-issue-sweep`** — the backlog-curation skill. Sweeps the
+  open issue backlog and scores each issue against the G1–G7 suitability
+  rubric (scope, self-containment, code pointer, small effort, no security
+  sensitivity, no architectural decision, no deprecation decision).
+  Classifies each as READY (propose the GFI label), NEAR-MISS (surface
+  specific edits that would make it GFI-ready), or SKIP (not suitable).
+  Complements `good-first-issue-author`: the sweep stocks the on-ramp queue
+  from existing work; the author creates net-new issues from supplied gaps.
+  Read-only; proposes labels only after explicit maintainer confirmation.
 
 ## Adopter contract
 
@@ -78,7 +89,7 @@ The skills resolve project-specific content from these files in the adopter's
 | File | Used by |
 |---|---|
 | [`mentoring-config.md`](../../projects/_template/mentoring-config.md) | `pr-management-mentor` (tone knobs, hand-off team, footer, `max_agent_turns`) |
-| [`good-first-issue-config.md`](../../projects/_template/good-first-issue-config.md) | `good-first-issue-author` (candidate-scope rules, R1–R9 threshold, filing target) |
+| [`good-first-issue-config.md`](../../projects/_template/good-first-issue-config.md) | `good-first-issue-author`, `good-first-issue-sweep` (candidate-scope rules, GFI-label name, suitability rubric threshold) |
 | [`mentoring-welcome-config.md`](../../projects/_template/mentoring-welcome-config.md) | `mentoring-welcome` (welcome-comment bodies, detection rules, contributing-guide URL) |
 | [`committer-readiness.md`](../../projects/_template/committer-readiness.md) | `contributor-to-committer` (committer/PMC threshold declarations: PR count, review count, issue participation, tenure window) |
 
@@ -87,7 +98,7 @@ required key documentation.
 
 ## Status
 
-**Experimental.** Four skills shipped. No adopter has run the full
+**Experimental.** Five skills shipped. No adopter has run the full
 contributor-to-committer interaction path under evaluation conditions yet;
 shape may change between framework versions.
 

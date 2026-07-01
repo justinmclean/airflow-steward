@@ -88,6 +88,13 @@ skills/:
     so each entry is validated individually.  Advisory only — the
     vocabulary check (aspect 1) already rejects the joined string, but
     this advisory gives a more actionable error message.
+15. Override-file contract (SOFT) — when a ``.apache-magpie-overrides/``
+    directory exists in the repo, every ``<skill>.md`` file inside it is
+    checked to ensure it carries the canonical ``apache-magpie agentic
+    override`` header comment and does not contain heuristic patterns that
+    attempt to weaken the framework's safety / confidentiality / privacy /
+    external-content-as-data baseline.  Advisory only — prose explanations
+    of what NOT to do can false-positive here.
 
 SOFT categories surface as advisory warnings (stderr) without
 failing the run unless ``--strict`` is passed.
@@ -117,6 +124,7 @@ DOCS_DIR = Path("docs")
 SKILL_EVALS_DIR = Path("tools/skill-evals/evals")
 PROJECTS_TEMPLATE_DIR = Path("projects/_template")
 MODES_DOC_PATH = Path("docs/modes.md")
+OVERRIDES_DIR = Path(".apache-magpie-overrides")
 
 # Categories for the tool-validator block. All HARD by default — every
 # tool must have a README that declares its capability and its prerequisites.
@@ -418,6 +426,9 @@ ADAPTER_AUTHORING_CATEGORY = "adapter-authoring"
 # SOFT advisory: docs/modes.md skill lists and claimed counts are checked against
 # live skill frontmatter — detects doc drift before review.
 MODES_DOC_CATEGORY = "modes-doc-consistency"
+# SOFT advisory: override files in .apache-magpie-overrides/ must not weaken the
+# framework's safety / confidentiality / privacy / data-not-instructions baseline.
+OVERRIDE_CONTRACT_CATEGORY = "override-contract"
 
 # The `magpie-` namespace prefix every installed framework skill carries.
 SKILL_NAME_PREFIX = "magpie-"
@@ -435,6 +446,7 @@ SOFT_CATEGORIES: frozenset[str] = frozenset(
         ADAPTER_AUTHORING_CATEGORY,
         MODES_DOC_CATEGORY,
         MULTI_CAPABILITY_CATEGORY,
+        OVERRIDE_CONTRACT_CATEGORY,
     }
 )
 HARD_CATEGORIES: frozenset[str] = frozenset(
@@ -2451,6 +2463,144 @@ def validate_modes_doc_consistency(root: Path | None = None) -> Iterable[Violati
 
 
 # ---------------------------------------------------------------------------
+# Override-file contract check (SOFT advisory)
+# ---------------------------------------------------------------------------
+
+# The canonical header marker that every scaffolded override file carries.
+# Its presence confirms the file was created via the `/magpie-setup override`
+# flow and is recognised by framework skills as an override file.
+_OVERRIDE_HEADER_MARKER = "apache-magpie agentic override"
+
+# Patterns that indicate an override is attempting to weaken the framework's
+# safety / confidentiality / privacy / data-not-instructions baseline.
+# Each entry is (compiled regex, short description for the violation message).
+# All are heuristic — false positives are possible in explanatory prose, so
+# the check is SOFT and advisory only.
+_OVERRIDE_WEAKENING_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    # Attempting to ignore, skip, bypass, or disable safety/security controls
+    (
+        re.compile(
+            r"\b(?:ignore|skip|bypass|disable|remove|drop|override)\b"
+            r"[^.!?\n]{0,60}"
+            r"\b(?:safety|security|confidential(?:ity)?|privacy"
+            r"|injection[- ]guard|llm[- ]gate|baseline|hard[- ]rule|golden[- ]rule)\b",
+            re.IGNORECASE,
+        ),
+        "override-weakening: may attempt to weaken a framework safety/confidentiality/privacy baseline rule",
+    ),
+    # Contradicting the external-content-as-data rule
+    (
+        re.compile(
+            r"\btreat\b[^.!?\n]{0,50}"
+            r"\b(?:external\s+content|external\s+input|email\s+body|PR\s+comment|issue\s+body)\b"
+            r"[^.!?\n]{0,30}\b(?:instruction|command|directive|trusted)\b",
+            re.IGNORECASE,
+        ),
+        "override-weakening: may contradict the external-content-is-data rule (not an instruction)",
+    ),
+    # Attempting to share / disclose / leak confidential information
+    (
+        re.compile(
+            r"\b(?:share|disclose|reveal|expose|leak|forward)\b"
+            r"[^.!?\n]{0,40}"
+            r"\b(?:confidential|private|secret|security\s+report|vulnerability|embargo|tracker\s+body)\b",
+            re.IGNORECASE,
+        ),
+        "override-weakening: may attempt to share confidential or embargoed information",
+    ),
+    # Explicitly targeting the injection guard or privacy gate for removal
+    (
+        re.compile(
+            r"\b(?:skip|remove|bypass|disable|ignore)\b"
+            r"[^.!?\n]{0,60}"
+            r"\b(?:privacy[- ]llm[- ](?:check|gate)|privacy[- ]gate|llm[- ]check"
+            r"|injection[- ]guard|external[- ]content[- ]check)\b",
+            re.IGNORECASE,
+        ),
+        "override-weakening: may attempt to skip the Privacy-LLM gate or injection-guard callout",
+    ),
+]
+
+
+def validate_override_file(path: Path, text: str) -> Iterable[Violation]:
+    """Advisory checks for a single ``.apache-magpie-overrides/<skill>.md`` file.
+
+    Two checks:
+
+    1. **Structure** (SOFT) — the file should carry the ``apache-magpie
+       agentic override`` comment header that ``/magpie-setup override``
+       scaffolds.  A missing header is advisory (the file may have been
+       hand-written) but signals that the file may not be recognised by
+       framework skills that look for the canonical header.
+
+    2. **Baseline integrity** (SOFT) — scans the override body for
+       heuristic patterns that suggest an attempt to weaken the framework's
+       safety / confidentiality / privacy / data-not-instructions baseline.
+       Hits are advisory — prose explanations of *what not to do* can
+       false-positive here, so the check never blocks the run.
+    """
+    # Check 1: canonical header marker.
+    if _OVERRIDE_HEADER_MARKER not in text:
+        yield Violation(
+            path,
+            1,
+            f"override-contract [structure]: override file is missing the "
+            f"'<!-- {_OVERRIDE_HEADER_MARKER}' header comment — "
+            f"run '/magpie-setup override <skill>' to scaffold a conforming file "
+            f"(see docs/setup/agentic-overrides.md)",
+            category=OVERRIDE_CONTRACT_CATEGORY,
+        )
+
+    # Check 2: baseline-weakening patterns.
+    lines = text.splitlines()
+    for line_no, line in enumerate(lines, start=1):
+        # Skip comment lines — prose explaining what NOT to do (or the header
+        # itself) should not trigger the heuristic.
+        stripped = line.strip()
+        if stripped.startswith("<!--") or stripped.startswith("-->"):
+            continue
+        for pattern, message in _OVERRIDE_WEAKENING_PATTERNS:
+            if pattern.search(line):
+                yield Violation(
+                    path,
+                    line_no,
+                    f"{message} (line: {stripped[:120]!r})",
+                    category=OVERRIDE_CONTRACT_CATEGORY,
+                )
+                break  # one violation per line is enough
+
+
+def validate_override_contract(root: Path | None = None) -> Iterable[Violation]:
+    """Scan ``.apache-magpie-overrides/`` for override files and validate each.
+
+    Silently skips when the directory is absent (not every repo has adopted
+    the framework or written overrides). When it exists, every ``.md`` file
+    in the directory is checked against the override-file contract:
+
+    - the canonical header comment is present, and
+    - the text does not attempt to weaken the framework baseline.
+
+    All violations are SOFT advisories.
+    """
+    repo_root = root or find_repo_root()
+    overrides_dir = repo_root / OVERRIDES_DIR
+    if not overrides_dir.is_dir():
+        return
+
+    for override_file in sorted(overrides_dir.glob("*.md")):
+        if override_file.name == "README.md":
+            continue  # scaffold README is informational, not an override
+        try:
+            text = override_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            yield Violation(
+                override_file, None, f"cannot read override file: {exc}", category=OVERRIDE_CONTRACT_CATEGORY
+            )
+            continue
+        yield from validate_override_file(override_file, text)
+
+
+# ---------------------------------------------------------------------------
 # Eval-coverage check (check #9, SOFT)
 # ---------------------------------------------------------------------------
 
@@ -2541,6 +2691,9 @@ def run_validation(root: Path | None = None) -> list[Violation]:
     # docs/modes.md consistency check: skill lists and counts match live frontmatter.
     violations.extend(validate_modes_doc_consistency(repo_root))
 
+    # Override-file contract check: .apache-magpie-overrides/*.md must not weaken baseline.
+    violations.extend(validate_override_contract(repo_root))
+
     return violations
 
 
@@ -2614,6 +2767,8 @@ _SOFT_RULE_PREFIXES: tuple[str, ...] = (
     "lowercase-f-field",
     "modes-doc:",
     "multi-capability declared",
+    "override-contract",
+    "override-weakening",
     "parenthetical rationale",
     "trigger phrase",
     "injection-guard TODO",

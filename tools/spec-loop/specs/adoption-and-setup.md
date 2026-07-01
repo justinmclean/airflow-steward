@@ -95,7 +95,3 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
 - `stable`; gaps appear as new agent targets to add to the registry
   ([`agents.md`](../../../skills/setup/agents.md)) or new override
   surfaces — recorded by the plan pass.
-- **Override-file contract tests are missing.** The docs describe
-  agentic overrides, but no smoke fixture proves that clean overrides are
-  additive or that an override attempting to relax safety/confidentiality
-  rules is flagged rather than applied.

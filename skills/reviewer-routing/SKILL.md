@@ -156,6 +156,10 @@ may defer.
   least one roster entry.
 - **`<project-config>/project.md`** for `upstream_repo` and
   `upstream_default_branch`.
+- **`<project-config>/privacy-llm.md`** — declares the project-approved
+  LLM endpoints. Required for the Privacy-LLM gate-check at Step 0.
+  Template at
+  [`projects/_template/privacy-llm.md`](../../projects/_template/privacy-llm.md).
 
 See
 [Prerequisites for running the agent skills](../../docs/prerequisites.md#prerequisites-for-running-the-agent-skills)
@@ -189,6 +193,45 @@ GitHub API call.
    exists, emit the NO ELIGIBLE REVIEWER signal above and stop.
 4. **Resolve the input** per the Inputs table. Validate format; stop on
    validation error.
+5. **Privacy-LLM contract.** Issue and PR bodies may contain
+   incidentally-disclosed PII (names, email addresses, contact details
+   embedded by contributors). Run the gate-check before any body content
+   is fetched or processed — non-zero exit is a hard stop:
+
+   ```bash
+   uv run --project <framework>/tools/privacy-llm/checker \
+     privacy-llm-check
+   ```
+
+   The checker auto-locates `<project-config>/privacy-llm.md` and
+   verifies every entry in *Currently configured LLM stack* is approved
+   per
+   [`tools/privacy-llm/models.md`](../../tools/privacy-llm/models.md#the-pre-flight-check).
+   A non-zero exit (unapproved endpoint or missing config) stops the
+   skill immediately. The maintainer must update `privacy-llm.md` or
+   run `privacy-llm-check --list` to see which endpoints require
+   approval before re-running.
+
+Return ONLY valid JSON with this structure:
+
+```json
+{
+  "verdict": "proceed" | "blocked",
+  "blockers": ["<string describing each hard blocker>"],
+  "privacy_gate_passed": true | false,
+  "roster_source": "release-trains" | "reviewer-roster" | null,
+  "item_type": "pr" | "issue",
+  "item_number": <integer>,
+  "upstream_repo": "<owner/name>"
+}
+```
+
+`verdict` is `"proceed"` only when all five checks above pass without
+error. `roster_source` is `null` only when neither roster file was
+found (and `verdict` will be `"blocked"`). `item_number` and
+`item_type` reflect the resolved input (after format validation in
+item 4); both are present even when `verdict` is `"blocked"` so long
+as the input was parseable before the block.
 
 ---
 
@@ -401,6 +444,7 @@ overloaded. Needs maintainer call.
 | Symptom | Likely cause | Remediation |
 |---|---|---|
 | `gh auth status` fails | Not authenticated | `gh auth login`; re-run |
+| `privacy-llm-check` exits non-zero | Unapproved endpoint or missing `privacy-llm.md` | Create/update `<project-config>/privacy-llm.md`; run `privacy-llm-check --list` to see required approvals |
 | Roster file missing | Config not set up | Create `reviewer-roster.md` or `release-trains.md` |
 | All roster members OVERLOADED | Every member's `max_reviews` met | Surface to maintainer; proposal is `NO ELIGIBLE REVIEWER` |
 | No area match after label/path analysis | Labels absent and no area mapping | All non-overloaded members treated as eligible; note in proposal |
@@ -425,3 +469,7 @@ overloaded. Needs maintainer call.
   issue-triage family; shares the roster reading contract.
 - [`tools/github/operations.md`](../../tools/github/operations.md) —
   `gh` command catalogue used in Steps 1–2.
+- [`tools/privacy-llm/`](../../tools/privacy-llm/) —
+  gate-check and wiring docs; `models.md` lists approved endpoints.
+- [`<project-config>/privacy-llm.md`](../../projects/_template/privacy-llm.md) —
+  per-project approved LLM endpoint declaration.

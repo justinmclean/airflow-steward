@@ -48,7 +48,7 @@ Return ONLY valid JSON with this structure:
 {
   "mode": "single-pr" | "my-reviews" | "area" | "ready" | "team",
   "pr_number": <N> | null,
-  "area_label": "<label>" | null,
+  "area_label": "<full GitHub label, including the area: prefix, e.g. area:scheduler>" | null,
   "collab": "collaborator" | "non-collaborator" | null,
   "team": "<name>" | null,
   "signals": ["review-requested", "touching-mine", "codeowner", "mentioned", "reviewed-before"],

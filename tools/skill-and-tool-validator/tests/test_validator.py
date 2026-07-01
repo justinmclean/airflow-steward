@@ -35,6 +35,7 @@ from skill_and_tool_validator import (
     ALLOWED_MODES,
     ASF_COUPLING_CATEGORY,
     BRANCH_CONFIDENTIALITY_CATEGORY,
+    CAPABILITY_TAXONOMY_CATEGORY,
     EVAL_COVERAGE_CATEGORY,
     FORBIDDEN_PATTERNS,
     GH_LIST_CATEGORY,
@@ -54,11 +55,14 @@ from skill_and_tool_validator import (
     PRINCIPLE_CATEGORY,
     PRIVACY_CATEGORY,
     SECURITY_PATTERN_CATEGORY,
+    SKILL_CAPABILITIES,
     SKILL_SOURCE_CATEGORY,
     SOFT_CATEGORIES,
     STATUS_CATEGORY,
     TEMPLATE_DRIFT_CATEGORY,
+    TOOL_CAPABILITIES,
     TRIGGER_PRESERVATION_CATEGORY,
+    _parse_capability_vocabulary_tables,
     _parse_modes_doc,
     _read_mode_table,
     collect_doc_files,
@@ -85,6 +89,7 @@ from skill_and_tool_validator import (
     validate_asf_coupling,
     validate_branch_name_confidentiality,
     validate_capability_sync,
+    validate_capability_taxonomy_coverage,
     validate_eval_coverage,
     validate_frontmatter,
     validate_gh_list_limit,
@@ -3207,6 +3212,228 @@ class TestValidateCapabilitySync:
         # The parenthetical capability:reconciliation must NOT be flagged as a doc-side declared capability;
         # the row's authoritative capability is just intake, which matches the live skill.
         assert violations == [], [v.message for v in violations]
+
+
+# ---------------------------------------------------------------------------
+# Capability taxonomy vocabulary parser
+# ---------------------------------------------------------------------------
+
+
+class TestParseCapabilityVocabularyTables:
+    """Tests for _parse_capability_vocabulary_tables."""
+
+    _AXIS1_HEADER = "**Axis 1 — skill capability**"
+    _AXIS2_HEADER = "**Axis 2 — tool capability**"
+
+    def _doc(self, axis1_rows: str = "", axis2_rows: str = "") -> str:
+        return (
+            f"### 2. capability\n\n"
+            f"{self._AXIS1_HEADER} (`capability:*`) — the workflow-lifecycle\n\n"
+            "| Label | Definition |\n"
+            "|---|---|\n"
+            f"{axis1_rows}\n"
+            f"{self._AXIS2_HEADER} (`contract:*` / `substrate:*`) — the interface:\n\n"
+            "| Label | Kind | Definition |\n"
+            "|---|---|---|\n"
+            f"{axis2_rows}\n"
+            "\n### 3. kind:* — change type\n"
+        )
+
+    def test_parses_skill_capabilities(self) -> None:
+        doc = self._doc(
+            axis1_rows=(
+                "| `capability:triage` | Sweep a queue. |\n| `capability:fix` | Implement a fix. |\n"
+            ),
+        )
+        skill_vocab, tool_vocab = _parse_capability_vocabulary_tables(doc)
+        assert "capability:triage" in skill_vocab
+        assert "capability:fix" in skill_vocab
+        assert tool_vocab == {}
+
+    def test_parses_tool_capabilities(self) -> None:
+        doc = self._doc(
+            axis2_rows=(
+                "| `contract:tracker` | contract | Issue backend. |\n"
+                "| `substrate:sandbox` | substrate | Agent isolation. |\n"
+            ),
+        )
+        skill_vocab, tool_vocab = _parse_capability_vocabulary_tables(doc)
+        assert skill_vocab == {}
+        assert "contract:tracker" in tool_vocab
+        assert "substrate:sandbox" in tool_vocab
+
+    def test_reserved_marker_sets_exempt_flag(self) -> None:
+        doc = self._doc(
+            axis1_rows="| `capability:future-thing` | Planned. *(future)* |\n",
+        )
+        skill_vocab, _ = _parse_capability_vocabulary_tables(doc)
+        assert skill_vocab.get("capability:future-thing") is True
+
+    def test_non_exempt_entry_has_false_flag(self) -> None:
+        doc = self._doc(
+            axis1_rows="| `capability:triage` | Sweep. |\n",
+        )
+        skill_vocab, _ = _parse_capability_vocabulary_tables(doc)
+        assert skill_vocab.get("capability:triage") is False
+
+    def test_missing_anchors_returns_empty(self) -> None:
+        skill_vocab, tool_vocab = _parse_capability_vocabulary_tables("No anchors here.")
+        assert skill_vocab == {}
+        assert tool_vocab == {}
+
+
+# ---------------------------------------------------------------------------
+# Capability taxonomy coverage check
+# ---------------------------------------------------------------------------
+
+
+def _seed_taxonomy_repo(
+    tmp_path: Path,
+    *,
+    axis1_rows: str = "",
+    axis2_rows: str = "",
+    mapping_skill_rows: str = "",
+    mapping_tool_rows: str = "",
+) -> Path:
+    """Build a minimal repo with docs/labels-and-capabilities.md for taxonomy tests."""
+    root = tmp_path / "repo"
+    (root / "docs").mkdir(parents=True)
+    (root / "skills").mkdir(parents=True)
+    (root / "tools").mkdir(parents=True)
+
+    doc = (
+        "# Labels and capabilities\n\n"
+        "### 2. capability\n\n"
+        "**Axis 1 — skill capability** (`capability:*`) — lifecycle phase:\n\n"
+        "| Label | Definition |\n"
+        "|---|---|\n"
+        f"{axis1_rows}\n"
+        "**Axis 2 — tool capability** (`contract:*` / `substrate:*`) — interface:\n\n"
+        "| Label | Kind | Definition |\n"
+        "|---|---|---|\n"
+        f"{axis2_rows}\n"
+        "\n### 3. kind:*\n\n"
+        "## Capability to skill map\n\n"
+        "| Skill | Capability / capabilities |\n"
+        "|---|---|\n"
+        f"{mapping_skill_rows}\n"
+        "## Capability to tool map\n\n"
+        "| Tool | Capability / capabilities | Role |\n"
+        "|---|---|---|\n"
+        f"{mapping_tool_rows}\n"
+    )
+    (root / "docs" / "labels-and-capabilities.md").write_text(doc)
+    return root
+
+
+class TestValidateCapabilityTaxonomyCoverage:
+    """Tests for validate_capability_taxonomy_coverage (check #17 — SOFT)."""
+
+    def test_fully_covered_passes(self, tmp_path: Path) -> None:
+        root = _seed_taxonomy_repo(
+            tmp_path,
+            axis1_rows="| `capability:triage` | Sweep. |\n",
+            mapping_skill_rows="| `alpha` | `capability:triage` |\n",
+        )
+        violations = list(validate_capability_taxonomy_coverage(root))
+        taxonomy_violations = [v for v in violations if v.category == CAPABILITY_TAXONOMY_CATEGORY]
+        # The only expected advisory is the SKILL_CAPABILITIES constant drift (test repo
+        # has a one-entry taxonomy while the real constant has ten). Filter to coverage-only.
+        coverage_violations = [v for v in taxonomy_violations if "has no implementation" in v.message]
+        assert coverage_violations == []
+
+    def test_uncovered_axis1_entry_flagged(self, tmp_path: Path) -> None:
+        root = _seed_taxonomy_repo(
+            tmp_path,
+            axis1_rows=("| `capability:triage` | Sweep. |\n| `capability:orphan` | Orphaned. |\n"),
+            mapping_skill_rows="| `alpha` | `capability:triage` |\n",
+        )
+        violations = list(validate_capability_taxonomy_coverage(root))
+        assert any("capability:orphan" in v.message and "Axis 1" in v.message for v in violations)
+
+    def test_uncovered_axis2_entry_flagged(self, tmp_path: Path) -> None:
+        root = _seed_taxonomy_repo(
+            tmp_path,
+            axis2_rows="| `contract:orphan-tool` | contract | Orphaned. |\n",
+            mapping_tool_rows="",
+        )
+        violations = list(validate_capability_taxonomy_coverage(root))
+        assert any("contract:orphan-tool" in v.message and "Axis 2" in v.message for v in violations)
+
+    def test_reserved_entry_is_exempt(self, tmp_path: Path) -> None:
+        root = _seed_taxonomy_repo(
+            tmp_path,
+            axis1_rows="| `capability:future-thing` | Planned. *(reserved)* |\n",
+            mapping_skill_rows="",
+        )
+        violations = list(validate_capability_taxonomy_coverage(root))
+        coverage_violations = [
+            v
+            for v in violations
+            if v.category == CAPABILITY_TAXONOMY_CATEGORY and "has no implementation" in v.message
+        ]
+        assert coverage_violations == []
+
+    def test_future_marker_also_exempt(self, tmp_path: Path) -> None:
+        root = _seed_taxonomy_repo(
+            tmp_path,
+            axis1_rows="| `capability:next-gen` | Next gen. *(future)* |\n",
+            mapping_skill_rows="",
+        )
+        violations = list(validate_capability_taxonomy_coverage(root))
+        coverage_violations = [
+            v
+            for v in violations
+            if v.category == CAPABILITY_TAXONOMY_CATEGORY and "has no implementation" in v.message
+        ]
+        assert coverage_violations == []
+
+    def test_code_constant_drift_flagged(self, tmp_path: Path) -> None:
+        # Axis 1 vocabulary has a token not in SKILL_CAPABILITIES.
+        root = _seed_taxonomy_repo(
+            tmp_path,
+            axis1_rows="| `capability:not-in-code` | New. |\n",
+            mapping_skill_rows="| `alpha` | `capability:not-in-code` |\n",
+        )
+        violations = list(validate_capability_taxonomy_coverage(root))
+        assert any("SKILL_CAPABILITIES constant has drifted" in v.message for v in violations)
+
+    def test_tool_constant_drift_flagged(self, tmp_path: Path) -> None:
+        root = _seed_taxonomy_repo(
+            tmp_path,
+            axis2_rows="| `contract:new-adapter` | contract | New. |\n",
+            mapping_tool_rows="| [`tools/new-adapter`](../tools/new-adapter/) | `contract:new-adapter` | role |\n",
+        )
+        violations = list(validate_capability_taxonomy_coverage(root))
+        assert any("TOOL_CAPABILITIES constant has drifted" in v.message for v in violations)
+
+    def test_category_is_soft(self) -> None:
+        assert CAPABILITY_TAXONOMY_CATEGORY in SOFT_CATEGORIES
+
+    def test_real_repo_passes_clean(self) -> None:
+        """Taxonomy coverage check must pass against the live repo with no violations."""
+        violations = list(validate_capability_taxonomy_coverage())
+        assert violations == [], [v.message for v in violations]
+
+    def test_vocabulary_constants_match_live_taxonomy(self) -> None:
+        """SKILL_CAPABILITIES and TOOL_CAPABILITIES must match the live taxonomy doc."""
+        from pathlib import Path
+
+        doc_path = Path("docs/labels-and-capabilities.md")
+        if not doc_path.exists():
+            pytest.skip("labels-and-capabilities.md not found — not in repo root")
+        doc_text = doc_path.read_text(encoding="utf-8")
+        skill_vocab, tool_vocab = _parse_capability_vocabulary_tables(doc_text)
+        assert set(skill_vocab.keys()) == SKILL_CAPABILITIES, (
+            f"SKILL_CAPABILITIES constant is out of sync with taxonomy. "
+            f"In code only: {SKILL_CAPABILITIES - set(skill_vocab.keys())}; "
+            f"In doc only: {set(skill_vocab.keys()) - SKILL_CAPABILITIES}"
+        )
+        assert set(tool_vocab.keys()) == TOOL_CAPABILITIES, (
+            f"TOOL_CAPABILITIES constant is out of sync with taxonomy. "
+            f"In code only: {TOOL_CAPABILITIES - set(tool_vocab.keys())}; "
+            f"In doc only: {set(tool_vocab.keys()) - TOOL_CAPABILITIES}"
+        )
 
 
 # ---------------------------------------------------------------------------

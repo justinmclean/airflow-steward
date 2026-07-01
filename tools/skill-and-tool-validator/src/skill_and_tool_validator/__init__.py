@@ -111,6 +111,15 @@ skills/:
     public branch names must not reveal embargo context.  Lines in
     explicit "bad example" contexts (containing ``**bad**`` or
     ``bad:``) are exempt.  Advisory only.
+18. Capability taxonomy coverage (SOFT) — reads the Axis 1 (skill) and
+    Axis 2 (tool) capability vocabulary tables from
+    ``docs/labels-and-capabilities.md`` and verifies that every taxonomy
+    entry appears in at least one row of the corresponding mapping table
+    (``## Capability to skill map`` / ``## Capability to tool map``).
+    Vocabulary entries marked ``*(reserved)*`` or ``*(future)*`` in their
+    Definition column are exempted.  Also cross-checks that the hardcoded
+    ``SKILL_CAPABILITIES`` and ``TOOL_CAPABILITIES`` code constants match
+    the parsed vocabulary so code and docs stay in sync.  Advisory only.
 
 SOFT categories surface as advisory warnings (stderr) without
 failing the run unless ``--strict`` is passed.
@@ -472,6 +481,10 @@ TEMPLATE_DRIFT_CATEGORY = "template-drift"
 # SOFT advisory: branch name examples in code blocks that contain embargo-breaking
 # terms (CVE IDs, security, vulnerability, advisory) before public disclosure.
 BRANCH_CONFIDENTIALITY_CATEGORY = "branch-name-confidentiality"
+# SOFT advisory: capability taxonomy vocabulary entry in docs/labels-and-capabilities.md
+# has no skill/tool implementation in the mapping tables, or the hardcoded
+# SKILL_CAPABILITIES / TOOL_CAPABILITIES constants have drifted from the doc.
+CAPABILITY_TAXONOMY_CATEGORY = "capability-taxonomy"
 
 # The `magpie-` namespace prefix every installed framework skill carries.
 SKILL_NAME_PREFIX = "magpie-"
@@ -492,6 +505,7 @@ SOFT_CATEGORIES: frozenset[str] = frozenset(
         OVERRIDE_CONTRACT_CATEGORY,
         TEMPLATE_DRIFT_CATEGORY,
         BRANCH_CONFIDENTIALITY_CATEGORY,
+        CAPABILITY_TAXONOMY_CATEGORY,
     }
 )
 HARD_CATEGORIES: frozenset[str] = frozenset(
@@ -2019,6 +2033,181 @@ def validate_capability_sync(root: Path | None = None) -> Iterable[Violation]:
 
 
 # ---------------------------------------------------------------------------
+# Capability taxonomy coverage check (aspect #18, SOFT)
+# ---------------------------------------------------------------------------
+
+# Section anchors for the Axis 1 and Axis 2 vocabulary tables.
+_AXIS1_ANCHOR = "**Axis 1 — skill capability**"
+_AXIS2_ANCHOR = "**Axis 2 — tool capability**"
+# Marker for reserved or future taxonomy entries in the Definition column.
+# Allows an elaborated parenthetical, e.g. ``*(future work)*`` or
+# ``*(reserved for #999)*`` — only the leading keyword is significant.
+_RESERVED_FUTURE_RE = re.compile(r"\*\((?:reserved|future)\b[^)]*\)\*", re.IGNORECASE)
+
+
+def _parse_capability_vocabulary_tables(
+    text: str,
+) -> tuple[dict[str, bool], dict[str, bool]]:
+    """Parse the Axis 1 and Axis 2 vocabulary tables from ``docs/labels-and-capabilities.md``.
+
+    Returns ``(skill_vocab, tool_vocab)`` where each dict maps a capability
+    token (e.g. ``capability:triage``, ``contract:tracker``) to a bool that
+    is ``True`` when the entry is marked ``*(reserved)*`` or ``*(future)*``
+    in its Definition column and therefore exempt from the coverage check.
+    """
+
+    def _extract_vocab(section_text: str) -> dict[str, bool]:
+        result: dict[str, bool] = {}
+        for line in section_text.splitlines():
+            if not line.startswith("|"):
+                continue
+            if "|---" in line:
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if not cells:
+                continue
+            first = cells[0]
+            # Vocabulary table: first cell contains the capability token itself.
+            m = _CAPABILITY_TOKEN_RE.search(first)
+            if not m:
+                continue
+            token = m.group(1)
+            rest = " ".join(cells[1:])
+            is_exempt = bool(_RESERVED_FUTURE_RE.search(rest))
+            result[token] = is_exempt
+        return result
+
+    axis1_start = text.find(_AXIS1_ANCHOR)
+    axis2_start = text.find(_AXIS2_ANCHOR)
+
+    if axis1_start == -1 or axis2_start == -1:
+        return {}, {}
+
+    axis1_section = text[axis1_start:axis2_start]
+    # Axis 2 ends at the next level-3 heading ("### 3.") or end of document.
+    axis2_end = re.search(r"\n###\s", text[axis2_start:])
+    axis2_section = text[axis2_start : axis2_start + axis2_end.start()] if axis2_end else text[axis2_start:]
+
+    return _extract_vocab(axis1_section), _extract_vocab(axis2_section)
+
+
+def validate_capability_taxonomy_coverage(root: Path | None = None) -> Iterable[Violation]:
+    """Check that every taxonomy vocabulary entry has at least one implementation.
+
+    Reads the Axis 1 (skill) and Axis 2 (tool) vocabulary tables from
+    ``docs/labels-and-capabilities.md``, then verifies that each capability
+    token appears in at least one row of the corresponding mapping table
+    (``## Capability to skill map`` / ``## Capability to tool map``).
+
+    Entries marked ``*(reserved)*`` or ``*(future)*`` in their Definition
+    column are exempted from the coverage requirement — they intentionally
+    have no current implementation.
+
+    Also cross-checks that ``SKILL_CAPABILITIES`` and ``TOOL_CAPABILITIES``
+    code constants match the parsed vocabulary so the two stay in sync.
+
+    All violations are SOFT advisories.
+    """
+    repo_root = root or find_repo_root()
+    doc_path = repo_root / DOCS_LABELS_AND_CAPABILITIES
+    if not doc_path.exists():
+        return
+
+    try:
+        doc_text = doc_path.read_text(encoding="utf-8")
+    except OSError:
+        return
+
+    skill_vocab, tool_vocab = _parse_capability_vocabulary_tables(doc_text)
+    if not skill_vocab and not tool_vocab:
+        yield Violation(
+            doc_path,
+            None,
+            "could not parse Axis 1 / Axis 2 vocabulary tables from "
+            "docs/labels-and-capabilities.md — check that the section anchors are present",
+            category=CAPABILITY_TAXONOMY_CATEGORY,
+        )
+        return
+
+    doc_skills = _parse_capability_doc_table(doc_text, _SKILL_TABLE_HEADER)
+    doc_tools = _parse_capability_doc_table(doc_text, _TOOL_TABLE_HEADER)
+
+    # Collect all capability tokens that appear in the mapping tables.
+    implemented_skill_caps: set[str] = set()
+    for caps in doc_skills.values():
+        implemented_skill_caps |= caps
+    implemented_tool_caps: set[str] = set()
+    for caps in doc_tools.values():
+        implemented_tool_caps |= caps
+
+    # Check Axis 1: every non-exempt vocabulary entry must appear in the skill map.
+    for token, is_exempt in sorted(skill_vocab.items()):
+        if is_exempt:
+            continue
+        if token not in implemented_skill_caps:
+            yield Violation(
+                doc_path,
+                None,
+                f"capability taxonomy entry '{token}' (Axis 1) has no implementation in "
+                f"'## Capability to skill map' — add a skill row or mark the entry "
+                f"*(reserved)* / *(future)* in the vocabulary table",
+                category=CAPABILITY_TAXONOMY_CATEGORY,
+            )
+
+    # Check Axis 2: every non-exempt vocabulary entry must appear in the tool map.
+    for token, is_exempt in sorted(tool_vocab.items()):
+        if is_exempt:
+            continue
+        if token not in implemented_tool_caps:
+            yield Violation(
+                doc_path,
+                None,
+                f"capability taxonomy entry '{token}' (Axis 2) has no implementation in "
+                f"'## Capability to tool map' — add a tool row or mark the entry "
+                f"*(reserved)* / *(future)* in the vocabulary table",
+                category=CAPABILITY_TAXONOMY_CATEGORY,
+            )
+
+    # Cross-check: SKILL_CAPABILITIES code constant vs parsed vocabulary.
+    parsed_skill_set = set(skill_vocab.keys())
+    if parsed_skill_set != SKILL_CAPABILITIES:
+        extra_in_code = SKILL_CAPABILITIES - parsed_skill_set
+        extra_in_doc = parsed_skill_set - SKILL_CAPABILITIES
+        parts = []
+        if extra_in_code:
+            parts.append(f"in code but not in taxonomy: {sorted(extra_in_code)}")
+        if extra_in_doc:
+            parts.append(f"in taxonomy but not in code: {sorted(extra_in_doc)}")
+        yield Violation(
+            doc_path,
+            None,
+            "SKILL_CAPABILITIES constant has drifted from the Axis 1 vocabulary in "
+            f"docs/labels-and-capabilities.md — {'; '.join(parts)}; "
+            "update the constant to match the taxonomy",
+            category=CAPABILITY_TAXONOMY_CATEGORY,
+        )
+
+    # Cross-check: TOOL_CAPABILITIES code constant vs parsed vocabulary.
+    parsed_tool_set = set(tool_vocab.keys())
+    if parsed_tool_set != TOOL_CAPABILITIES:
+        extra_in_code = TOOL_CAPABILITIES - parsed_tool_set
+        extra_in_doc = parsed_tool_set - TOOL_CAPABILITIES
+        parts = []
+        if extra_in_code:
+            parts.append(f"in code but not in taxonomy: {sorted(extra_in_code)}")
+        if extra_in_doc:
+            parts.append(f"in taxonomy but not in code: {sorted(extra_in_doc)}")
+        yield Violation(
+            doc_path,
+            None,
+            "TOOL_CAPABILITIES constant has drifted from the Axis 2 vocabulary in "
+            f"docs/labels-and-capabilities.md — {'; '.join(parts)}; "
+            "update the constant to match the taxonomy",
+            category=CAPABILITY_TAXONOMY_CATEGORY,
+        )
+
+
+# ---------------------------------------------------------------------------
 # Lowercase -f field check (Pattern 2)
 # ---------------------------------------------------------------------------
 
@@ -3269,6 +3458,9 @@ def run_validation(root: Path | None = None) -> list[Violation]:
         except OSError:
             continue
         violations.extend(validate_branch_name_confidentiality(doc_path, doc_text))
+
+    # Capability taxonomy coverage: every vocab entry has an implementation or is reserved.
+    violations.extend(validate_capability_taxonomy_coverage(repo_root))
 
     return violations
 

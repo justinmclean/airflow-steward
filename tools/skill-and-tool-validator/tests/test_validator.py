@@ -33,6 +33,7 @@ from skill_and_tool_validator import (
     ALL_CATEGORIES,
     ALLOWED_MODES,
     ASF_COUPLING_CATEGORY,
+    BRANCH_CONFIDENTIALITY_CATEGORY,
     EVAL_COVERAGE_CATEGORY,
     FORBIDDEN_PATTERNS,
     GH_LIST_CATEGORY,
@@ -74,6 +75,7 @@ from skill_and_tool_validator import (
     slugify,
     validate_adapter_authoring,
     validate_asf_coupling,
+    validate_branch_name_confidentiality,
     validate_capability_sync,
     validate_eval_coverage,
     validate_frontmatter,
@@ -3938,3 +3940,107 @@ class TestProjectTemplateDrift:
         violations = list(validate_project_template_drift(tmp_path))
         for v in violations:
             assert v.category == TEMPLATE_DRIFT_CATEGORY
+
+
+# ---------------------------------------------------------------------------
+# validate_branch_name_confidentiality
+# ---------------------------------------------------------------------------
+
+
+class TestValidateBranchNameConfidentiality:
+    """Tests for the SOFT branch-name confidentiality check (#17)."""
+
+    def _md(self, code_block: str) -> str:
+        """Wrap code block in minimal markdown with a fenced block."""
+        return f"# doc\n\n```bash\n{code_block}\n```\n"
+
+    # --- CVE IDs are flagged ---
+
+    def test_cve_id_in_checkout_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b CVE-2024-12345-patch")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+        assert any("CVE-2024-12345" in v.message for v in violations)
+
+    def test_cve_id_in_switch_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git switch -c cve-2023-99999-fix")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    def test_cve_id_switch_create_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git switch --create CVE-2025-1001-workaround")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    # --- Security framing is flagged ---
+
+    def test_security_prefix_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b security-fix-218")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    def test_vulnerability_in_name_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b vulnerability-patch")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    def test_advisory_in_name_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b advisory-2024-001")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    # --- Placeholder names are skipped ---
+
+    def test_placeholder_branch_not_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b <fix-slug>")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert not violations
+
+    def test_placeholder_branch_with_variable_not_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b $BRANCH_NAME")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert not violations
+
+    # --- Neutral branch names are not flagged ---
+
+    def test_neutral_branch_not_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b fix-input-validation")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert not violations
+
+    def test_fix_slug_not_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b tighten-assets-graph-dag-permission-check")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert not violations
+
+    # --- "Bad example" lines are exempt ---
+
+    def test_bad_example_marker_exempts_line(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("# **bad**: git checkout -b CVE-2024-12345-patch")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert not any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    def test_bad_colon_marker_exempts_line(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("bad: git checkout -b security-fix-218")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert not any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    # --- Category is SOFT ---
+
+    def test_category_is_soft(self) -> None:
+        assert BRANCH_CONFIDENTIALITY_CATEGORY in SOFT_CATEGORIES
+
+    def test_category_in_all_categories(self) -> None:
+        assert BRANCH_CONFIDENTIALITY_CATEGORY in ALL_CATEGORIES

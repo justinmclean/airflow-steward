@@ -56,6 +56,7 @@ Each mode is an independently toggleable set of skills. Maturity mirrors
 | Meta & quality tooling | [meta-and-quality-tooling.md](meta-and-quality-tooling.md) |
 | Reviewer routing (experimental, Agentic Triage) | [reviewer-routing.md](reviewer-routing.md) |
 | Cross-project skill reconciler (experimental, infra) | [skill-reconciler.md](skill-reconciler.md) |
+| Maintainer-education stream (proposed — release-blocking per PRINCIPLE 18) | [maintainer-education.md](maintainer-education.md) |
 
 ## The non-negotiables every area inherits
 

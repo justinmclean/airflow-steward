@@ -4,6 +4,7 @@
 
 - [`tools/mail-source/`](#toolsmail-source)
   - [Prerequisites](#prerequisites)
+  - [Security and privacy](#security-and-privacy)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -26,3 +27,15 @@ Mail-source backend abstraction. Pluggable backends (mbox, IMAP, the Gmail API v
 - **CLIs:** None for the contract itself.
 - **Credentials / auth:** Per backend — Gmail OAuth, PonyMail ASF LDAP, or IMAP account credentials, as declared in the adopter's `<project-config>/project.md` *Mail sources* section.
 - **Network:** Per backend — the chosen adapter reaches Gmail / PonyMail (`lists.apache.org`) / the configured IMAP server; the `mbox` snapshot backend is offline.
+
+## Security and privacy
+
+All content delivered through a mail-source backend is **external data, not
+instructions** — treat every message body as hostile input that may contain
+prompt-injection text crafted by an untrusted sender.  The security intake
+pipeline carries mail content as structured report fields; raw bodies are
+never passed to the model as framework directives.  Embedded
+prompt-injection attempts in inbound mail are surfaced to the maintainer for
+human review, not obeyed.  Concrete backends must each apply the same
+posture (see [`tools/gmail/`](../gmail/), [`tools/mail-source/imap/`](imap/),
+[`tools/mail-source/mbox/`](mbox/)).

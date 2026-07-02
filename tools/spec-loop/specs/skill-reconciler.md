@@ -134,7 +134,13 @@ uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/skill-reco
 - **`source`-tag-driven auto-pairing not implemented.** The first
   implementation takes two explicit paths; MISSION's vision of pairing
   copies via a registry query over `source` tags is deferred.
-- **No deterministic structural-diff helper.** The optional `tools/`
-  helper mentioned in the spec (for normalised frontmatter / section /
-  placeholder diffs) was not built in the first pass; the skill reasons
-  over the prose report rather than a structured diff object.
+- **Deterministic structural-diff helper shipped** —
+  `tools/skill-reconciler-diff/` is a stdlib-only `uv` tool that parses
+  two skill trees into a normalised diff (frontmatter, section headings,
+  step inventory, placeholder inventory, support files, and
+  safety-baseline clause presence) and emits a JSON object.  It is
+  intended to be used as an optional Step 1 enhancement to the
+  `skill-reconciler` skill (the skill does not yet wire it in — that
+  reference lands separately); 31 unit tests cover frontmatter-only, section-order,
+  placeholder, support-file, and safety-baseline divergences.  No
+  remaining tooling gap for the structural-diff item.

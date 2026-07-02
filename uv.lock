@@ -34,6 +34,7 @@ members = [
     "security-tracker-stats-dashboard",
     "skill-and-tool-validator",
     "skill-evals",
+    "skill-reconciler-diff",
     "spec-inventory",
     "spec-status-index",
     "spec-validator",
@@ -1127,6 +1128,21 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.15.18" },
 ]
+
+[[package]]
+name = "skill-reconciler-diff"
+version = "0.1.0"
+source = { editable = "tools/skill-reconciler-diff" }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.0" }]
 
 [[package]]
 name = "spec-inventory"

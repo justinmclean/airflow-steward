@@ -115,6 +115,7 @@ members = [
   "tools/skill-evals",
   "tools/pilot-report-validator",
   "tools/spec-inventory",
+  "tools/skill-reconciler-diff",
   "tools/spec-status-index",
   "tools/spec-validator",
   "tools/symlink-lint",

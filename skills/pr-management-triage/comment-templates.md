@@ -247,7 +247,7 @@ for the **`draft`**, **`comment`** (deterministic-flag only), and
 exact same body is **folded into the PR description** as a managed,
 marker-delimited block. Editing a PR body does not notify
 subscribers, so this keeps the maintainer mailbox quiet — the
-denoise change motivated by the dev@ thread with Elad (see
+denoise change (see
 [`rationale.md#why-fold-feedback-into-the-pr-body-denoise`](rationale.md#why-fold-feedback-into-the-pr-body-denoise)).
 
 The other contributor-facing templates (`security-language`,
@@ -358,7 +358,7 @@ form: `- [location]: "[matched text]"` where location is one of
 `PR title`, `PR body`, or `commit <SHA7>`.
 
 ```markdown
-@<author> This PR's title, body, or commit messages contain language that may indicate a security fix. Under the [ASF vulnerability-handling process for committers](https://www.apache.org/security/committers.html), references to the security nature of a fix must not appear in public-facing content until the CVE is formally announced:
+@<author> This PR's title, body, or commit messages contain language that may indicate a security fix. Under your project's security vulnerability-handling policy, references to the security nature of a fix must not appear in public-facing content until the CVE is formally announced:
 
 > _"Messages associated with any commits should not make any reference to the security nature of the commit."_
 
@@ -372,7 +372,7 @@ form: `- [location]: "[matched text]"` where location is one of
 
 **(b) Confirm disclosure is complete** — if the CVE for this fix is already publicly announced, reply with a link to the announcement. A maintainer will then proceed with normal review.
 
-If you haven't already followed the [ASF security reporting process](https://www.apache.org/security/committers.html), please report the vulnerability privately to `security@apache.org` (or the project's security list) before continuing.
+If you haven't already reported this privately, please do so now via `<security-list>` before continuing.
 
 [Pull Request quality criteria](<quality_criteria_url>)
 

@@ -33,8 +33,9 @@ Two modes:
    ``mention_*`` lists) assert properties of the model's prose rather than
    exact field values. When the fixtures dir provides an ``assertions.json``
    mapping each such key to a predicate (``regex`` / ``contains`` /
-   ``contains_all`` / ``empty`` / ``non_empty`` / ``field_true`` run locally;
-   ``judge`` piped to the grader CLI), those cases are graded automatically.
+   ``contains_all`` / ``empty`` / ``non_empty`` / ``field_true`` /
+   ``max_length`` run locally; ``judge`` piped to the grader CLI), those
+   cases are graded automatically.
    Any predicate may carry ``"negate": true`` to assert the absence of a
    match. A structural case with no ``assertions.json`` falls back to MANUAL
    and prints prompts for manual review.
@@ -644,7 +645,7 @@ def compare_with_grader(
 # down.
 
 _DETERMINISTIC_ASSERTION_TYPES: frozenset[str] = frozenset(
-    {"regex", "contains", "contains_all", "empty", "non_empty", "field_true"}
+    {"regex", "contains", "contains_all", "empty", "non_empty", "field_true", "max_length"}
 )
 _VALID_ASSERTION_TYPES: frozenset[str] = _DETERMINISTIC_ASSERTION_TYPES | {"judge"}
 
@@ -734,6 +735,17 @@ def _evaluate_deterministic_assertion_raw(spec: dict, actual: object) -> tuple[b
         return (present and value not in ([], "", None, {})), ""
     if atype == "field_true":
         return (present and value is True), ""
+    if atype == "max_length":
+        limit = spec.get("max")
+        if not isinstance(limit, int) or isinstance(limit, bool):
+            return None, "type 'max_length' requires an integer 'max'"
+        if not present:
+            return False, f"field {field!r} not present in output"
+        try:
+            length = len(value)  # type: ignore[arg-type]
+        except TypeError:
+            return None, f"field {field!r} value has no length"
+        return (length <= limit), ("" if length <= limit else f"len={length} > max={limit}")
 
     # Text predicates need a string. Non-string values are JSON-serialised so
     # a list/number field can still be substring/regex-matched if a spec asks.

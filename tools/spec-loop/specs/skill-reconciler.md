@@ -131,9 +131,11 @@ uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/skill-reco
   future improvement is to extract those three clauses into a single
   authoritative checklist file the skill and a deterministic linter can
   both reference.
-- **`source`-tag-driven auto-pairing not implemented.** The first
-  implementation takes two explicit paths; MISSION's vision of pairing
-  copies via a registry query over `source` tags is deferred.
+- **`capability`-tag auto-pairing shipped; `source`-tag registry not yet used.**
+  `--discover <skills-dir>` now groups by `capability:` frontmatter and
+  presents a bounded candidate list. The MISSION vision of a registry query
+  over explicit `source:` tags is deferred until that tag is in use in
+  production skill frontmatter.
 - **Deterministic structural-diff helper shipped** —
   `tools/skill-reconciler-diff/` is a stdlib-only `uv` tool that parses
   two skill trees into a normalised diff (frontmatter, section headings,

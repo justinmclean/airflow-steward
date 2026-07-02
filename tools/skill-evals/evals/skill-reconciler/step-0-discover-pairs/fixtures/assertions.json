@@ -1,0 +1,4 @@
+{
+  "has_pairs": {"type": "non_empty", "field": "candidate_pairs"},
+  "has_bounded_candidate_pairs": {"type": "max_length", "field": "candidate_pairs", "max": 20}
+}

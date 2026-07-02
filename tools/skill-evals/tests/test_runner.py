@@ -1605,6 +1605,26 @@ def test_assert_field_true():
     assert evaluate_deterministic_assertion(spec, {})[0] is False
 
 
+def test_assert_max_length():
+    spec = {"field": "pairs", "type": "max_length", "max": 20}
+    assert evaluate_deterministic_assertion(spec, {"pairs": list(range(20))})[0] is True
+    assert evaluate_deterministic_assertion(spec, {"pairs": list(range(19))})[0] is True
+    holds, note = evaluate_deterministic_assertion(spec, {"pairs": list(range(21))})
+    assert holds is False
+    assert "len=21" in note
+    # absent field is not satisfied; a non-int 'max' is a loud spec error
+    assert evaluate_deterministic_assertion(spec, {})[0] is False
+    assert (
+        evaluate_deterministic_assertion({"field": "pairs", "type": "max_length"}, {"pairs": []})[0] is None
+    )
+    assert (
+        evaluate_deterministic_assertion(
+            {"field": "pairs", "type": "max_length", "max": True}, {"pairs": []}
+        )[0]
+        is None
+    )
+
+
 def test_assert_missing_field_for_text_predicate_is_false():
     spec = {"field": "body", "type": "contains", "substring": "x"}
     holds, note = evaluate_deterministic_assertion(spec, {})

@@ -61,37 +61,91 @@ slugs, not numbers (numbering implies an order the specs don't carry).
    Spec: [`specs/adapters.md`](specs/adapters.md).
    Branch `mail-privacy-boundary-readme-compliance`.
 
-2. **Ship the maintainer-education stream (MISSION v1 release-blocker).**
-   The spec is already drafted on the `maintainer-education-stream` branch
-   (`specs/maintainer-education.md`); this item is the `docs/` deliverable it
-   describes, which is not built on any branch yet.
-   PRINCIPLE 18 and MISSION § Maintainer education make the education stream a
-   release-blocking part of v1, but nothing in `docs/` delivers it yet — the
-   only pointer is a dangling `RFC-AI-0004` back-reference. Stand up
-   `docs/education/` with the four MISSION-named pieces: a **pattern catalogue**
-   of skill/prompt/tool-use patterns with war stories (distinct from the PII
-   catalogue in `tools/privacy-llm/pii.md`), a **"your first skill" path**
-   (zero-to-merged onboarding for a first agentic skill, distinct from the
-   `write-skill` authoring reference), **eval-driven-development examples** drawn
-   from real Magpie skills and wired to the framework's shared eval methodology,
-   and **workshop / office-hours material**. Link the landing page from
-   `docs/index.md` and resolve the RFC-AI-0004 reference. Keep every page
-   project-agnostic (placeholders, PRINCIPLE 12) and Apache-2.0 (PRINCIPLE 17).
+   The maintainer-education stream (MISSION v1 release-blocker, PRINCIPLE 18) is
+   split across work items 2–6 below — one landing page plus one per MISSION-named
+   piece — so each is a single branch/PR under the loop's one-item rule. The spec
+   is already drafted on the `maintainer-education-stream` branch
+   (`specs/maintainer-education.md`); none of the `docs/education/` pages are
+   built yet. Every page keeps SPDX headers, project-agnostic placeholders
+   (PRINCIPLE 12), and Apache-2.0 licensing (PRINCIPLE 17), and passes
+   markdownlint / link checks. Build order: item 2 first (it creates the
+   directory and the index); items 3–6 each add their own row to that index as
+   they land, so no link check ever breaks.
+
+2. **Education stream — landing page and index.**
+   Create `docs/education/README.md`: what the stream is, who it is for, and an
+   index that starts by listing only itself and grows as items 3–6 land. Link it
+   from `docs/index.md` and resolve the dangling `RFC-AI-0004` back-reference so
+   it points at the new landing page.
    Validation:
    ```bash
    test -f docs/education/README.md
-   test -f docs/education/your-first-skill.md
+   grep -q "education" docs/index.md
+   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
+   ```
+   Spec: [`specs/maintainer-education.md`](specs/maintainer-education.md).
+   Branch `education-landing-page`.
+
+3. **Education stream — pattern catalogue.**
+   Create `docs/education/pattern-catalogue.md`: copy-pasteable skill / prompt /
+   tool-use patterns with war stories (what worked, what did not, and why),
+   inheriting the framework posture (data-not-instructions, privacy/sandbox).
+   Distinct from the PII redaction reference at `tools/privacy-llm/pii.md`. Add
+   its row to the `docs/education/README.md` index.
+   Validation:
+   ```bash
    test -f docs/education/pattern-catalogue.md
+   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
+   ```
+   Spec: [`specs/maintainer-education.md`](specs/maintainer-education.md).
+   Branch `education-pattern-catalogue`.
+
+4. **Education stream — "your first skill" path.**
+   Create `docs/education/your-first-skill.md`: a beginner zero-to-merged path for
+   landing a first working skill (the agentic equivalent of a "your first PR"
+   doc), cross-linked to but distinct from the `write-skill` authoring reference.
+   Add its row to the index.
+   Validation:
+   ```bash
+   test -f docs/education/your-first-skill.md
+   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
+   ```
+   Spec: [`specs/maintainer-education.md`](specs/maintainer-education.md).
+   Branch `education-your-first-skill`.
+
+5. **Education stream — eval-driven-development examples.**
+   Create `docs/education/eval-driven-development.md`: how to think about
+   correctness when "correct" is a distribution, with worked examples drawn from
+   real Magpie skills and wired to the framework's shared eval methodology and
+   in-repo harness (`tools/skill-evals/`) rather than a parallel approach. Add its
+   row to the index.
+   Validation:
+   ```bash
    test -f docs/education/eval-driven-development.md
+   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
+   ```
+   Spec: [`specs/maintainer-education.md`](specs/maintainer-education.md).
+   Branch `education-eval-driven-development`.
+
+6. **Education stream — workshop / office-hours material.**
+   Create `docs/education/workshops.md`: the office-hours / pairing-session
+   format and where recordings are published (the page ships the format, not the
+   PMC's calendar). Add its row to the index. This item closes the stream, so its
+   validation asserts every MISSION-named page is present.
+   Validation:
+   ```bash
    test -f docs/education/workshops.md
+   test -f docs/education/pattern-catalogue.md
+   test -f docs/education/your-first-skill.md
+   test -f docs/education/eval-driven-development.md
    uv run --project tools/spec-validator --group dev pytest
    uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
    ```
    Spec: [`specs/maintainer-education.md`](specs/maintainer-education.md).
-   Branch `maintainer-education-stream`.
+   Branch `education-workshops`.
 
-3. **Package the education stream as an Apache Training curriculum module.**
-   Building on the maintainer-education stream (work item 2), repackage the
+7. **Package the education stream as an Apache Training curriculum module.**
+   Building on the maintainer-education stream (work items 2–6), repackage the
    `docs/education/` material as a reusable, LMS-neutral **Apache Training**
    module so any project — ASF or not — can *teach* it, not just read it. Add
    `docs/education/apache-training/` with per-lesson **learning objectives**,
@@ -100,7 +154,7 @@ slugs, not numbers (numbering implies an order the specs don't carry).
    skill" path, eval-driven development, workshops). Shape the module to Apache
    Training conventions so it can be contributed upstream there. Keep it
    project-agnostic (placeholders, PRINCIPLE 12) and Apache-2.0 (PRINCIPLE 17).
-   Blocked until the education stream (work item 2) lands, since it repackages
+   Blocked until the education stream (work items 2–6) lands, since it repackages
    those pages.
    **This is an epic, not a single PR.** It sits at the bottom by priority (not
    dependency) and must be **decomposed into many work items before building** —

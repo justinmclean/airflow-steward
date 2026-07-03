@@ -120,6 +120,12 @@ skills/:
     Definition column are exempted.  Also cross-checks that the hardcoded
     ``SKILL_CAPABILITIES`` and ``TOOL_CAPABILITIES`` code constants match
     the parsed vocabulary so code and docs stay in sync.  Advisory only.
+19. Mail-adapter privacy-boundary (SOFT) — ``contract:mail-source``
+    and ``contract:mail-archive`` adapter READMEs must declare that
+    fetched mail content is external data (not instructions) and must
+    mention the prompt-injection risk in embedded mail content. Both
+    are advisories — the check warns without failing the run so legacy
+    adapters can be brought into compliance deliberately.
 
 SOFT categories surface as advisory warnings (stderr) without
 failing the run unless ``--strict`` is passed.
@@ -209,6 +215,27 @@ _ADAPTER_CONFIG_RE = re.compile(
     r")",
     re.MULTILINE,
 )
+
+# ---------------------------------------------------------------------------
+# Mail-adapter privacy-boundary patterns (aspect #19, SOFT advisory)
+# ---------------------------------------------------------------------------
+
+# Capabilities that indicate an adapter fetches external mail content which
+# may contain prompt-injection text embedded by untrusted senders.
+_MAIL_CONTENT_CAPABILITIES: frozenset[str] = frozenset({"contract:mail-source", "contract:mail-archive"})
+
+# Phrases that satisfy the data-boundary posture requirement.  The README
+# must state that fetched mail content is treated as external data, not as
+# framework instructions.
+_MAIL_DATA_PHRASE_RE = re.compile(
+    r"(?:external data|data[,\s]+not instructions|hostile input"
+    r"|redact(?:ed|ion|ing)?|privacy[- ]llm[- ]gate|privacy gate)",
+    re.IGNORECASE,
+)
+
+# The README must also mention prompt-injection risk so adopters understand
+# that embedded injection text in mail bodies must not be obeyed.
+_MAIL_INJECTION_PHRASE_RE = re.compile(r"prompt.inject", re.IGNORECASE)
 
 # Sub-field regexes for the standard four-line Prerequisites layout:
 #   **Runtime:** ...
@@ -485,6 +512,9 @@ BRANCH_CONFIDENTIALITY_CATEGORY = "branch-name-confidentiality"
 # has no skill/tool implementation in the mapping tables, or the hardcoded
 # SKILL_CAPABILITIES / TOOL_CAPABILITIES constants have drifted from the doc.
 CAPABILITY_TAXONOMY_CATEGORY = "capability-taxonomy"
+# SOFT advisory: contract:mail-source and contract:mail-archive adapter READMEs must
+# declare the data-not-instructions posture and prompt-injection risk for fetched mail.
+MAIL_PRIVACY_CATEGORY = "mail-privacy-boundary"
 
 # The `magpie-` namespace prefix every installed framework skill carries.
 SKILL_NAME_PREFIX = "magpie-"
@@ -506,6 +536,7 @@ SOFT_CATEGORIES: frozenset[str] = frozenset(
         TEMPLATE_DRIFT_CATEGORY,
         BRANCH_CONFIDENTIALITY_CATEGORY,
         CAPABILITY_TAXONOMY_CATEGORY,
+        MAIL_PRIVACY_CATEGORY,
     }
 )
 HARD_CATEGORIES: frozenset[str] = frozenset(
@@ -1841,6 +1872,70 @@ def validate_adapter_authoring(root: Path | None = None) -> Iterable[Violation]:
                 f"document adopter config keys so the adapter is self-contained "
                 f"(see docs/adapters.md § Adapter READMEs are contracts)",
                 category=ADAPTER_AUTHORING_CATEGORY,
+            )
+
+
+def validate_mail_privacy_boundary(root: Path | None = None) -> Iterable[Violation]:
+    """Advisory (SOFT) checks for mail-adapter README privacy declarations.
+
+    Mail adapters that provide ``contract:mail-source`` or
+    ``contract:mail-archive`` capabilities fetch external content that may
+    contain prompt-injection text embedded by untrusted senders.  Each such
+    adapter README should make two declarations explicit:
+
+    1. **Data-boundary posture** — the README must state that fetched mail
+       content is external data, never instructions (accepted phrases:
+       ``external data``, ``data, not instructions``, ``hostile input``,
+       ``redact*``, ``privacy-llm-gate``, ``privacy gate``).
+    2. **Prompt-injection risk** — the README must mention ``prompt injection``
+       or ``prompt-injection`` so adopters understand that embedded injection
+       text in mail bodies must not be obeyed.
+
+    Both checks are SOFT advisories — they warn without failing the run so
+    legacy adapters can be brought into compliance deliberately.
+    ``contract:mail-draft`` is excluded; it handles outbound drafting and
+    does not fetch untrusted external mail content.
+    """
+    for tool_dir in collect_tool_dirs(root):
+        readme = tool_dir / "README.md"
+        if not readme.exists():
+            continue
+        try:
+            text = readme.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        cap_match = TOOL_CAPABILITY_RE.search(text)
+        if cap_match is None:
+            continue
+        raw_cap = cap_match.group(1).strip()
+        entries = {e.strip() for e in raw_cap.split("+") if e.strip()}
+        if not (entries & _MAIL_CONTENT_CAPABILITIES):
+            continue
+
+        if _MAIL_DATA_PHRASE_RE.search(text) is None:
+            yield Violation(
+                readme,
+                1,
+                f"mail-privacy-boundary [data-posture] adapter '{tool_dir.name}' "
+                f"README does not declare that fetched mail content is external data "
+                f"(not instructions) — add a note that mail bodies are 'external "
+                f"data, not instructions' / 'hostile input' and are routed through "
+                f"the Privacy-LLM gate or redacted before model-facing use "
+                f"(see docs/adapters.md § Private mail is hostile input)",
+                category=MAIL_PRIVACY_CATEGORY,
+            )
+
+        if _MAIL_INJECTION_PHRASE_RE.search(text) is None:
+            yield Violation(
+                readme,
+                1,
+                f"mail-privacy-boundary [injection-risk] adapter '{tool_dir.name}' "
+                f"README does not mention prompt-injection risk in fetched mail — "
+                f"add a note that embedded prompt-injection text in mail bodies is "
+                f"carried as report data only, never as instructions "
+                f"(see docs/adapters.md § Private mail is hostile input)",
+                category=MAIL_PRIVACY_CATEGORY,
             )
 
 
@@ -3431,6 +3526,10 @@ def run_validation(root: Path | None = None) -> list[Violation]:
     # operations, and config keys (SOFT advisory).
     violations.extend(validate_adapter_authoring(repo_root))
 
+    # Mail-adapter privacy-boundary: contract:mail-source and contract:mail-archive
+    # READMEs must declare data-not-instructions posture and prompt-injection risk (SOFT).
+    violations.extend(validate_mail_privacy_boundary(repo_root))
+
     # Capability-sync check: the doc tables and the source must agree.
     violations.extend(validate_capability_sync(repo_root))
 
@@ -3533,6 +3632,7 @@ _SOFT_RULE_PREFIXES: tuple[str, ...] = (
     "criteria-source",
     "distinct-from",
     "lowercase-f-field",
+    "mail-privacy-boundary",
     "modes-doc:",
     "multi-capability declared",
     "override-contract",

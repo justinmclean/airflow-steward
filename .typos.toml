@@ -9,6 +9,10 @@
 # Run in CI: see `.github/workflows/doc-validation.yml`.
 
 [default]
+# Ignore git commit hashes (backtick-wrapped hex, 7-40 chars) — they
+# routinely contain letter runs typos reads as words (e.g. `9331fb2ba`
+# → `ba`). Matches the `In-flight` table's `Implemented by` column.
+extend-ignore-re = ["`[0-9a-f]{7,40}`"]
 
 [default.extend-words]
 # Domain terms typos' default dictionary flags as misspellings.

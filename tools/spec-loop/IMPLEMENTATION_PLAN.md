@@ -15,34 +15,29 @@ one PR** (the branch-per-feature constraint).
 
 ---
 
-## What's been built
+Shipped state is not tracked here — it lives in `specs/`, the code
+(`skills/`, `tools/`, `docs/`), and git history. This plan lists only the
+open gaps. Confirm whether something is already built by the artifact it
+would produce, not by branch ancestry (squash-merged branches still read as
+ahead of `main`).
 
-- **Spec set** — `specs/`: overview plus one functional spec per area (modes, security lifecycle, release management, privacy-LLM gate, sandbox, CVE tooling, adoption/setup, adapters, project-agnosticism, meta/quality tooling).
-- **Loop scaffolding** — `loop.sh`, `PROMPT_plan.md`, `PROMPT_build.md`, `PROMPT_consolidate.md`, `AGENTS.md`, and this plan; branch-collision guard inline.
-- **Agentic Pairing** — `pairing-self-review` and `pairing-multi-agent-review` shipped with eval suites; `docs/modes.md` updated.
-- **Agentic Mentoring** — `pr-management-mentor`, `good-first-issue-author`, `mentoring-welcome`, and `contributor-to-committer` shipped with eval suites.
-- **Contributor skills** — `contributor-nomination`, `contributor-activity-sweep`, and `committer-onboarding` shipped with eval suites.
-- **Agentic Drafting** — `issue-fix-workflow` and `audit-finding-fix` shipped with eval suites.
-- **Docs — mode economics page** — `docs/mode-economics.md` exists (per-mode token-cost shape, vendor-neutral).
-- **Meta — spec-status index** — `tools/spec-status-index/` exists as a `uv` tool.
-- **Meta — spec validator** — `tools/spec-validator/` exists with `pyproject.toml` and `tests/`.
-- **Agent isolation** — `tools/agent-isolation/` has `pyproject.toml`, `src/`, and `tests/` with pytest coverage.
-- **Eval coverage** — every `skills/*/SKILL.md` has a matching eval suite; coverage includes setup-family and non-skill smoke suites.
-- **Release-management family** — all ten `release-*` skills shipped with eval suites.
-- **Agentic Triage** — `issue-stale-sweep`, `issue-deduplicate`, and `issue-backlog-stats` shipped with eval suites.
-- **Repo-health family** — `ci-runner-audit`, `workflow-security-audit`, `dependency-audit`, `license-compliance-audit`, and `flaky-test-triage` shipped.
-- **Reviewer routing** — `reviewer-routing` shipped with eval suite.
-- **Skill reconciler** — `skill-reconciler` shipped with eval suite.
-- **Project-agnosticism** — high-confidence ASF-coupling advisories cleared; capability-flag vocabulary, organization metadata, governance vocabulary, source-control abstraction, and disclosre-governance flags landed.
-- **Good-first-issue-sweep** — skill and eval suite on `origin/good-first-issue-sweep`; tracked as in-flight until PR lands.
+## In-flight (implemented on a branch, not yet merged — not available to build)
 
----
+These work items are already built on branches (verified by the feature
+commit, not by branch ancestry) but are not on `main`, so the working tree
+and validator still show the gap. Keep them out of the build queue until they
+merge or are abandoned.
 
-## In-flight (local branches and open PRs — not available to build)
+| Branch slug | Where | Implemented by | Description |
+|---|---|---|---|
+| `modes-doc-reviewer-routing-row` | `origin` (open PR) | `9331fb2ba` | Adds the `reviewer-routing` row to the `## Triage` table in `docs/modes.md`. |
+| `adapter-readme-authoring-compliance` | `origin` (open PR) | `b31732578` | Documents the missing adapter-authoring README fields (config-keys / operations). |
+| `skill-reconciler-structural-diff` | local | `ae8961e90` | Adds the deterministic `tools/skill-reconciler-diff` structural-diff helper. |
+| `skill-reconciler-source-pairing` | local | `a4f76e369` | Adds `--discover` capability-tag auto-pairing to `skill-reconciler`. |
 
-| Branch slug | PR | Description |
-|---|---|---|
-| `good-first-issue-sweep` | open | `good-first-issue-sweep` skill + eval suite; keep out of the build queue until the PR lands or is explicitly abandoned. |
+The `maintainer-education-stream` branch carries only the spec draft
+(`specs/maintainer-education.md`); the `docs/education/` deliverable is still a
+work item below.
 
 ---
 
@@ -51,401 +46,98 @@ one PR** (the branch-per-feature constraint).
 Priority order. Each maps to one branch and one PR. Branch names are
 slugs, not numbers (numbering implies an order the specs don't carry).
 
-1. **Sync shipped-state specs after the recent merge train.**
-   Several specs still carry pre-merge language even though the code has
-   shipped. Update `specs/reviewer-routing.md` and
-   `specs/skill-reconciler.md` so their **Where it lives** and **Known gaps**
-   sections describe the shipped skills instead of saying "proposed, not
-   implemented"; update `specs/overview.md` so reviewer routing and the
-   reconciler are listed as `experimental`; refresh
-   `specs/meta-and-quality-tooling.md`'s shipped-skill/eval count; and verify
-   `specs/project-agnosticism.md` / `specs/issue-management-family.md` no longer
-   advertise already-cleared gaps (high-confidence ASF-coupling backlog,
-   unwired governance-member terminology, missing issue-management rows in
-   `docs/modes.md`).
-   Validation:
-   ```bash
-   uv run --project tools/spec-status-index spec-status --ready
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   ```
-   Branch `spec-shipped-state-sync`.
-
-2. **Post-merge sync for good-first-issue-sweep.**
-   Once the `good-first-issue-sweep` PR lands on `main`, remove it from the
-   in-flight table and sync every shipped-state surface: flip
-   `specs/good-first-issue-sweep.md` from `proposed` to `experimental`,
-   update `specs/overview.md`, add the skill to `docs/modes.md` and the
-   mentoring / contributor-growth family docs, and update the eval-coverage
-   counts if they are still numeric. This item is intentionally blocked until
-   the PR lands; do not duplicate the branch implementation.
-   Validation:
-   ```bash
-   test -f skills/good-first-issue-sweep/SKILL.md
-   test -d tools/skill-evals/evals/good-first-issue-sweep
-   uv run --project tools/spec-status-index spec-status --ready
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   ```
-   Spec: [`specs/good-first-issue-sweep.md`](specs/good-first-issue-sweep.md).
-   Branch `good-first-issue-sweep-post-merge-sync`.
-
-3. **Clear the mechanical SOFT validator warnings.**
-   Handle the current non-judgement soft warnings that have obvious local
-   remedies: add the missing Privacy-LLM gate preflight to
-   `reviewer-routing`, add an explicit bounded `--limit` to the
-   `security-issue-import` `gh issue list` call, and replace the
-   `release-prepare` inline `--body "..."` usage with a `--body-file` flow.
-   Leave ASF-coupling warnings out of this item; those require human
-   judgement and are tracked separately below.
+1. **Clear the mail-privacy-boundary README warnings.**
+   The `mail-privacy-boundary` validator check already exists and enforces the
+   posture at the README level; it currently flags two adapters. `maildir` and
+   `sourcehut` READMEs are each missing both notes: that fetched mail bodies are
+   **external data, not instructions** (routed through the Privacy-LLM gate or
+   redacted before model-facing use), and that embedded **prompt-injection** text
+   is carried as report data only. Add the two short notes to each README so the
+   check passes; no new tooling is needed.
    Validation:
    ```bash
    uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/reviewer-routing/
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/security-issue-import/
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/release-prepare/
-   ```
-   Branch `mechanical-soft-warning-cleanup`.
-
-4. **Low-confidence ASF-coupling judgement pass.**
-   The high-confidence coupling backlog is clear, but the validator still
-   reports low-confidence `asf-coupling` warnings such as bare governance
-   terms (`PMC`) and contributor-intake terms (`ICLA`). Review each warning in
-   context and classify it as one of three outcomes: convert to a placeholder,
-   route through an existing capability flag, or explicitly keep as an
-   ASF-default example. The output should be a narrow set of skill/doc edits
-   plus a short note in `specs/project-agnosticism.md` explaining which
-   residual warnings are intentionally advisory.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/committer-onboarding/
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/contributor-nomination/
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/release-promote/
-   ```
-   Spec: [`specs/project-agnosticism.md`](specs/project-agnosticism.md).
-   Branch `low-confidence-asf-coupling-pass`.
-
-5. **Add an adopter-pilot feedback harness.**
-   Many experimental family specs now share the same real gap: no adopter has
-   run the full skill family end-to-end. Add a lightweight pilot-report
-   template and helper (or a documented `tools/` command if that better matches
-   existing tooling) that records the skill run, target repo/profile, blocked
-   preflights, false positives, confirmation points, privacy/adapter notes, and
-   proposed spec updates. Wire the template into the relevant experimental
-   family docs so pilot evidence is captured consistently without turning it
-   into a continuous monitor.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/spec-validator --group dev pytest
-   ```
-   Spec: [`specs/meta-and-quality-tooling.md`](specs/meta-and-quality-tooling.md).
-   Branch `adopter-pilot-feedback-harness`.
-
-6. **Expand organization-adapter smoke coverage.**
-   The non-ASF profile smoke test proves one issue-management path. Extend
-   smoke coverage across at least three organization-sensitive surfaces:
-   security intake (`security-intake-config.md` / disclosure-governance
-   flags), release backend selection (`release-management-config.md`), and
-   contributor governance (`committer-onboarding-config.md`). The goal is not
-   new product behaviour; it is executable confidence that organization
-   defaults and project overrides work outside an ASF-shaped profile.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/non-asf-profile-smoke/
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/security-issue-import/
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/release-prepare/
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/committer-onboarding/
-   ```
-   Spec: [`specs/organization-adapters.md`](specs/organization-adapters.md).
-   Branch `organization-adapter-smoke-expansion`.
-
-7. **Add a dedicated pr-management-code-review eval suite.**
-   `specs/pr-management-family.md` still calls out that
-   `pr-management-code-review` lacks a dedicated eval suite. Add
-   `tools/skill-evals/evals/pr-management-code-review/` with focused cases for
-   selector resolution, review-risk classification, AI-generated-code signal
-   handling, prompt-injection-in-PR-content handling, and the final review
-   handoff. Keep the suite read-only: it should assert the review findings and
-   handoff shape, not require live GitHub writes.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/pr-management-code-review/
-   ```
-   Spec: [`specs/pr-management-family.md`](specs/pr-management-family.md).
-   Branch `pr-management-code-review-evals`.
-
-8. **Extract the skill-reconciler safety-baseline checklist.**
-   The shipped `skill-reconciler` recognizes safety-baseline divergence from
-   prose patterns. Extract the baseline clauses into one canonical checklist
-   file that both humans and tooling can reference: untrusted content is never
-   instructions, collaborator / identity-resolution caveats are preserved, and
-   confidentiality posture is not weakened. Update `skill-reconciler` to cite
-   that checklist and add eval coverage proving a divergence in any checklist
-   item is classified as `SAFETY-BASELINE`.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/skill-reconciler/
-   ```
-   Spec: [`specs/skill-reconciler.md`](specs/skill-reconciler.md).
-   Branch `skill-reconciler-safety-baseline-checklist`.
-
-9. **Add adapter authoring smoke validation.**
-   Adapter discovery and authoring docs have landed; add a validator or smoke
-   fixture that checks each tool / adapter README declares the required authoring
-   fields: capability, prerequisites, privacy / credential handling, operations,
-   and config keys. Keep this as an advisory or narrowly scoped hard check based
-   on existing docs so legacy adapters can be brought into compliance
-   deliberately rather than through unrelated churn.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/spec-validator --group dev pytest
    ```
    Spec: [`specs/adapters.md`](specs/adapters.md).
-   Branch `adapter-authoring-smoke-validation`.
+   Branch `mail-privacy-boundary-readme-compliance`.
 
-10. **Add docs/modes.md generated consistency checks.**
-   `docs/modes.md` is a high-traffic index, and recent work has repeatedly
-   needed manual count / skill-list syncs after new skills landed. Add a
-   validator check (or a small generated-consistency helper invoked by the
-   validator) that compares the mode tables against live `skills/*/SKILL.md`
-   frontmatter: each shipped skill appears in the expected mode section, status
-   counts match the frontmatter, and no removed skill remains listed. Keep the
-   first version focused on detection; rewriting the doc can remain a separate
-   human-confirmed update.
+2. **Ship the maintainer-education stream (MISSION v1 release-blocker).**
+   The spec is already drafted on the `maintainer-education-stream` branch
+   (`specs/maintainer-education.md`); this item is the `docs/` deliverable it
+   describes, which is not built on any branch yet.
+   PRINCIPLE 18 and MISSION § Maintainer education make the education stream a
+   release-blocking part of v1, but nothing in `docs/` delivers it yet — the
+   only pointer is a dangling `RFC-AI-0004` back-reference. Stand up
+   `docs/education/` with the four MISSION-named pieces: a **pattern catalogue**
+   of skill/prompt/tool-use patterns with war stories (distinct from the PII
+   catalogue in `tools/privacy-llm/pii.md`), a **"your first skill" path**
+   (zero-to-merged onboarding for a first agentic skill, distinct from the
+   `write-skill` authoring reference), **eval-driven-development examples** drawn
+   from real Magpie skills and wired to the framework's shared eval methodology,
+   and **workshop / office-hours material**. Link the landing page from
+   `docs/index.md` and resolve the RFC-AI-0004 reference. Keep every page
+   project-agnostic (placeholders, PRINCIPLE 12) and Apache-2.0 (PRINCIPLE 17).
    Validation:
    ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-and-tool-validator --group dev pytest
-   ```
-   Spec: [`specs/meta-and-quality-tooling.md`](specs/meta-and-quality-tooling.md).
-   Branch `modes-doc-consistency-check`.
-
-11. **Normalize tool README prerequisites consistency.**
-   Tool README prerequisites are now part of the authoring contract, but older
-   tool docs may still vary in section shape and required credential / runtime
-   detail. Sweep `tools/*/README.md` for the Prerequisites section, normalize
-   the expected headings and wording where the existing tool behaviour is
-   clear, and tighten the validator only after the tree is brought into
-   compliance. Keep adapter-specific privacy / credential checks in the
-   adapter-authoring smoke item above; this item is the general README
-   prerequisite contract.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-and-tool-validator --group dev pytest
-   ```
-   Spec: [`specs/meta-and-quality-tooling.md`](specs/meta-and-quality-tooling.md).
-   Branch `tool-readme-prerequisites-consistency`.
-
-12. **Tighten skill frontmatter schema validation.**
-   Strengthen the validator's frontmatter contract for `mode`, `status`,
-   `capability`, `organization`, and `source`: modes and statuses must be from
-   the documented vocabulary; organizations must exist under `organizations/`;
-   multi-capability skills must use a YAML list consistently; and every shipped
-   experimental skill must have a matching eval suite unless it is explicitly
-   exempted with a documented reason. Keep the first pass focused on fields the
-   current tree can satisfy after local cleanup.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-and-tool-validator --group dev pytest
-   ```
-   Spec: [`specs/meta-and-quality-tooling.md`](specs/meta-and-quality-tooling.md).
-   Branch `skill-frontmatter-schema-tightening`.
-
-13. **Add project-template drift checks.**
-   Add a validator or smoke tool that compares `projects/_template/` with
-   `projects/non-asf-example/` for structural drift: required config files are
-   present, documented keys exist in both profiles when applicable, template-only
-   keys are either copied or intentionally explained, and organization-inherited
-   defaults do not hide missing adopter-required values. The check should catch
-   stale template docs without forcing the example to mirror ASF-specific values.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-and-tool-validator --group dev pytest
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/non-asf-profile-smoke/
-   ```
-   Spec: [`specs/project-agnosticism.md`](specs/project-agnosticism.md).
-   Branch `project-template-drift-check`.
-
-14. **Add override-file contract tests.**
-   Document and test the `.apache-magpie-overrides/<skill>.md` contract: override
-   files are additive project guidance, agent-readable Markdown, and never a
-   replacement for the framework safety / confidentiality baseline. Add a
-   validator or smoke fixture that flags override text attempting to weaken the
-   baseline and confirms a clean override can be discovered and surfaced to a
-   skill without editing the upstream skill body.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-and-tool-validator --group dev pytest
-   ```
-   Spec: [`specs/adoption-and-setup.md`](specs/adoption-and-setup.md).
-   Branch `override-file-contract-tests`.
-
-15. **Add capability taxonomy coverage checks.**
-   Validate that every `capability` declared in skill frontmatter and tool
-   READMEs is documented in `docs/labels-and-capabilities.md`, and that every
-   capability in the taxonomy maps to at least one skill/tool or is explicitly
-   marked reserved / future. The check should catch misspellings and stale
-   taxonomy rows without requiring every capability to have both a skill and a
-   tool implementation.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-and-tool-validator --group dev pytest
-   ```
-   Spec: [`specs/meta-and-quality-tooling.md`](specs/meta-and-quality-tooling.md).
-   Branch `capability-taxonomy-coverage-check`.
-
-16. **Define the release audit report schema.**
-   `release-audit-report` exists, but downstream review would benefit from a
-   structured audit-record schema. Add a template/schema for the required audit
-   fields (release version, RC artefacts, vote thread, tally outcome, promotion
-   revision, announcement URL, archive state, and any follow-up notes), update
-   the skill to reference it, and add eval fixtures that reject incomplete audit
-   records while preserving the human-reviewed nature of the report.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/release-audit-report/
-   ```
-   Spec: [`specs/release-management-lifecycle.md`](specs/release-management-lifecycle.md).
-   Branch `release-audit-report-schema`.
-
-17. **Add mail-adapter privacy-boundary tests.**
-   Add smoke tests or validator fixtures for Gmail, PonyMail, `mail-archive`,
-   and any `mail-source` adapter path proving private mail content is redacted,
-   summarized, or routed through the Privacy-LLM gate before it enters
-   model-facing skill context. The test should treat fetched mail as external
-   data and include at least one prompt-injection-in-email fixture to preserve
-   the repository's data-not-instructions rule.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
+   test -f docs/education/README.md
+   test -f docs/education/your-first-skill.md
+   test -f docs/education/pattern-catalogue.md
+   test -f docs/education/eval-driven-development.md
+   test -f docs/education/workshops.md
    uv run --project tools/spec-validator --group dev pytest
-   ```
-   Spec: [`specs/adapters.md`](specs/adapters.md).
-   Branch `mail-adapter-privacy-boundary-tests`.
-
-18. **Add branch-name confidentiality validation.**
-   Add a validator check or deterministic helper that scans generated branch
-   name examples in skills/docs and rejects embargo-breaking terms: CVE IDs,
-   `security`, `vulnerability`, `advisory`, and tracker-private title fragments.
-   Align the check with the existing security-fix workflow guidance so public
-   branch names stay neutral before disclosure.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-and-tool-validator --group dev pytest
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/security-issue-fix/
-   ```
-   Spec: [`specs/privacy-llm-gate.md`](specs/privacy-llm-gate.md).
-   Branch `branch-name-confidentiality-validation`.
-
-19. **Add the deterministic structural-diff helper for skill-reconciler.**
-   The shipped `skill-reconciler` reasons over a prose comparison report.
-   Add the optional `tools/` helper sketched in
-   `specs/skill-reconciler.md`: parse two skill trees into a normalized
-   structural diff (frontmatter, section headings, step inventory,
-   placeholder inventory, and linked support files) so the skill can ground
-   `ALLOWED` / `DRIFT` / `SAFETY-BASELINE` decisions in a deterministic
-   object. Keep the reconciler read-only; the helper emits data only.
-   Include unit tests for frontmatter-only, section-order, placeholder, and
-   support-file divergences, plus one safety-baseline fixture that proves the
-   helper preserves the clauses the skill must classify.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/skill-reconciler/
-   uv run --project tools/skill-reconciler-diff --group dev pytest
-   ```
-   Spec: [`specs/skill-reconciler.md`](specs/skill-reconciler.md).
-   Branch `skill-reconciler-structural-diff`.
-
-20. **Add source-tag auto-pairing to skill-reconciler.**
-   The first implementation takes two explicit paths. Extend the skill so
-   a maintainer can ask it to discover near-duplicate skills by `source`
-   tag / capability metadata and present a bounded candidate pair list
-   before running the comparison. Preserve explicit-path mode as the
-   default and require confirmation before comparing any discovered pair,
-   so the skill remains read-only and predictable.
-   Validation:
-   ```bash
-   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
-   uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/skill-reconciler/
-   ```
-   Spec: [`specs/skill-reconciler.md`](specs/skill-reconciler.md).
-   Branch `skill-reconciler-source-pairing`.
-
-21. **Bring legacy adapter READMEs into adapter-authoring compliance.**
-   The adapter-authoring smoke check (work item 9, shipped on
-   `adapter-authoring-smoke-validation`) now flags 10 SOFT advisories across 9
-   `contract:*` adapter READMEs that are missing a required authoring field.
-   Bring each into compliance by adding the missing section/reference (or
-   documenting why the field legitimately does not apply, once an opt-out
-   convention exists). Missing **config-keys** (a `## Configuration` section,
-   a `project-config` / `*-config.md` reference, or an inline
-   `tools.<adapter>.<key>` knob): `apache-projects`, `cve-org`, `github`,
-   `github-body-field`, `github-rollup`, `ponymail`, `vcs`, and
-   `cve-tool-vulnogram`. Missing **operations** (an `## Operations` /
-   `## Interface` / `## Invocation` / `## How to use` section or a `tool.md`
-   reference): `cve-tool-vulnogram` and `mail-source`. Several are thin
-   backend adapters whose real docs live in their contract README, so prefer a
-   one-line pointer to the contract over duplicating prose. The two former
-   false positives (`cve-tool` credential delegation, `gmail` inline config
-   key) are already resolved by broadening the validator matchers and are not
-   part of this item.
-   Validation:
-   ```bash
-   uv run --directory tools/skill-and-tool-validator skill-and-tool-validate
-   uv run --directory tools/skill-and-tool-validator --group dev pytest
-   ```
-   Spec: [`specs/adapters.md`](specs/adapters.md).
-   Branch `adapter-readme-authoring-compliance`.
-
-22. **Reconcile docs/modes.md with the modes-doc detection.**
-   The `modes-doc-consistency-check` item added detection only; running the
-   validator now surfaces two real gaps it was meant to catch. `reviewer-routing`
-   carries `mode: Triage` in frontmatter but has no row in the `## Triage`
-   table, and `good-first-issue-sweep` carries `mode: Mentoring` but has no row
-   in the `## Mentoring` section. Add the missing `reviewer-routing` Triage row
-   (with its current status), then re-run the validator to confirm the doc is
-   clean. The `good-first-issue-sweep` row is already owned by the post-merge
-   sync item above and stays blocked until that PR lands, so do not add it here
-   unless that PR has merged; just confirm the only remaining `modes-doc`
-   warning is the blocked one. Detection-only stays as the validator's job;
-   this item is the human-confirmed doc update it was designed to trigger.
-   Validation:
-   ```bash
    uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
    ```
-   Spec: [`specs/meta-and-quality-tooling.md`](specs/meta-and-quality-tooling.md).
-   Branch `modes-doc-reviewer-routing-row`.
+   Spec: [`specs/maintainer-education.md`](specs/maintainer-education.md).
+   Branch `maintainer-education-stream`.
+
+3. **Package the education stream as an Apache Training curriculum module.**
+   Building on the maintainer-education stream (work item 2), repackage the
+   `docs/education/` material as a reusable, LMS-neutral **Apache Training**
+   module so any project — ASF or not — can *teach* it, not just read it. Add
+   `docs/education/apache-training/` with per-lesson **learning objectives**,
+   hands-on **exercises**, and **self-check** questions, plus a module index
+   mapping each lesson back to its source page (pattern catalogue, "your first
+   skill" path, eval-driven development, workshops). Shape the module to Apache
+   Training conventions so it can be contributed upstream there. Keep it
+   project-agnostic (placeholders, PRINCIPLE 12) and Apache-2.0 (PRINCIPLE 17).
+   Blocked until the education stream (work item 2) lands, since it repackages
+   those pages.
+   **This is an epic, not a single PR.** It sits at the bottom by priority (not
+   dependency) and must be **decomposed into many work items before building** —
+   the loop's one-item-one-branch rule means no single branch should carry the
+   whole module. Likely split, each its own branch/PR when it reaches the top:
+   - one **lesson-module** item per source page (pattern catalogue, "your first
+     skill" path, eval-driven development, workshops), each carrying its learning
+     objectives, content, and self-checks;
+   - a hands-on **exercise / fixture** item per lesson, reusing
+     `tools/skill-evals` fixtures where possible;
+   - an **instructor / facilitator guide** so any PMC (ASF or not) can teach the
+     module themselves;
+   - an **upstream-contribution** item coordinating the module shape and hand-off
+     with the Apache Training project.
+   The first build step when this reaches the top is a planning pass that
+   replaces this umbrella entry with the concrete sub-items above.
+   Validation (per sub-item, once decomposed):
+   ```bash
+   uv run --project tools/spec-validator --group dev pytest
+   uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-validate
+   ```
+   Spec: [`specs/maintainer-education.md`](specs/maintainer-education.md).
+   Branches: per sub-item (decomposed before build); umbrella slug
+   `education-apache-training-module`.
 
 ---
 
 ## Notes & discoveries
 
-- The general Ralph-loop technique pushes after every iteration. That
-  step is intentionally **removed** here: `git push` and `gh pr create`
-  are in the repo's `ask` permission list and are the human's step.
-- Validation per work item lives in the relevant spec's **Validation**
-  section; the build prompt runs it as backpressure before committing.
+- `git push` and `gh pr create` are intentionally **not** run by the loop —
+  they are in the repo's `ask` permission list and are the human's step.
+- Validation per work item lives in the relevant spec's **Validation** section;
+  the build prompt runs it as backpressure before committing. When a build
+  creates a new skill, its eval suite is part of that same work item.
 - Agentic Autonomous is deliberately off and has no work items — building toward
   it would skip the proof MISSION requires.
-- When a build iteration creates a new skill, its eval suite is part of
-  that same work item — not a separate one.
-- **Agentic Triage contributor-growth gaps** (PMC-member nomination,
-  emeritus-committer handling, contributor offboarding) noted in
-  `triage-mode.md` Known Gaps are intentionally deferred: they are
-  vague enough that a spec-RFC conversation is more appropriate than
-  a direct build item.
-- **Project-agnosticism:** remaining low-confidence advisories (bare governance
-  terms that may be legitimate ASF defaults) stay human-judgement items unless
-  a future spec turns them into a hard rule.
+- Deferred by design (not build items): Agentic Triage contributor-growth gaps
+  (PMC-member nomination, emeritus handling, offboarding) and the remaining
+  low-confidence ASF-coupling advisories — both stay human-judgement until a
+  spec turns them into a rule.

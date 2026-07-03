@@ -2,7 +2,7 @@
      https://www.apache.org/licenses/LICENSE-2.0 -->
 
 ---
-title: Adapters (Gmail / PonyMail / Jira / GitHub / mail-source)
+title: Adapters (Gmail / PonyMail / Jira / GitHub / mail-source / SourceHut / maildir / VCS / change-request)
 status: experimental
 kind: feature
 mode: infra
@@ -10,7 +10,11 @@ source: >
   MISSION.md § Rationale ("ASF integrations live behind clean
   configuration boundaries; non-ASF adopters swap them") and § Technical
   scope (extensible adapter layer). Implemented in tools/gmail/,
-  tools/ponymail/, tools/jira/, tools/github/, tools/mail-source/.
+  tools/ponymail/, tools/jira/, tools/github/, tools/mail-source/,
+  tools/sourcehut/, tools/maildir/, tools/vcs/, tools/change-request/,
+  tools/asf-svn/, tools/mail-archive/, tools/mail-patch/,
+  tools/jira-patch/, tools/forwarder-relay/, tools/github-body-field/,
+  tools/github-rollup/.
 acceptance:
   - Project-specific integrations live behind adapter modules, not
     hardcoded into skills.
@@ -20,7 +24,7 @@ acceptance:
     redactor before any LLM read.
 ---
 
-# Adapters (Gmail / PonyMail / Jira / GitHub)
+# Adapters (Gmail / PonyMail / Jira / GitHub / SourceHut / maildir / VCS / change-request)
 
 ## What it does
 
@@ -33,9 +37,37 @@ by swapping the adapter, not the skill.
 
 - `tools/gmail/` — private-mail read/draft (drafts to the outbox; never
   sends).
+- `tools/maildir/` — private-mail drafting to a local Maildir spool; an
+  offline alternative to Gmail when no cloud mail backend is available.
 - `tools/ponymail/` — public mailing-list archive search.
+- `tools/mail-archive/` — static mailing-list archive reader for
+  projects whose list history is in a local mbox/Maildir export.
 - `tools/jira/` — issue-tracker adapter for projects on Jira.
 - `tools/github/` — issues/PRs/labels read + write-back helpers.
+  Sub-adapters: `tools/github-body-field/` (reads GitHub issue/PR body
+  structured field sets) and `tools/github-rollup/` (aggregates
+  multi-repo PR state into a single view).
+- `tools/sourcehut/` — SourceHut (sr.ht) forge bridge: ticket tracking
+  (`todo.sr.ht`), mailing-list patchset review (`lists.sr.ht`), CI build
+  status (`builds.sr.ht`), and repository reads (`git.sr.ht`/`hg.sr.ht`)
+  via GraphQL. Capability: `contract:tracker + contract:source-control +
+  contract:mail-archive`.
+- `tools/asf-svn/` — ASF Subversion distribution backend: staging area
+  reads, `svn` command-sequence generation for releases and KEYS updates.
+  Never runs `svn commit`; emits paste-ready commands for the Release
+  Manager.
+- `tools/vcs/` (`magpie-vcs`) — unified CLI over the abstract
+  source-control capability (`contract:source-control`). Dispatches
+  branch, stage, commit, diff, log, fetch, and push operations to the
+  active VCS backend (Git today), so skills call the abstract operation
+  and the backend is detected from the working copy or forced with
+  `--backend`/`$MAGPIE_VCS`.
+- `tools/change-request/` — Markdown contract spec for the
+  `contract:change-request` capability (PR / MR abstraction). Declares
+  the interface: `list_open`, `get`, `get_discussion`, `post_review`,
+  `land`, `reject`, `status`. Consumed by PR-management skills; the
+  active implementation is the adapter named by `change_request.backend`
+  in `project.md` (ASF default: `tools/github/`).
 - `tools/mail-source/` — abstract mail backend contract (operations,
   capability matrix, adopter-declaration syntax) with concrete IMAP and
   mbox implementations. Skills (`security-issue-import`,
@@ -43,6 +75,14 @@ by swapping the adapter, not the skill.
   source through this contract rather than calling Gmail or PonyMail
   directly; the adopter's `<project-config>/project.md → Mail sources`
   section declares which backends are active and what role each plays.
+- `tools/forwarder-relay/` — relay adapter for security reports forwarded
+  by an upstream broker (e.g. the ASF security team); the counterpart to
+  direct-intake adapters for the `security-issue-import-via-forwarder`
+  sub-skill.
+- `tools/mail-patch/` and `tools/jira-patch/` — patch-over-mail /
+  patch-over-Jira adapters; implement `contract:change-request` for
+  projects that land patches via mailing-list review or Jira rather than
+  GitHub PRs.
 
 ## Behaviour & contract
 
@@ -86,15 +126,19 @@ by swapping the adapter, not the skill.
 ## Validation
 
 ```bash
-for t in gmail ponymail jira github; do
+for t in gmail maildir ponymail jira github; do
   uv run --project tools/$t --group dev pytest || echo "check tools/$t test setup"
 done
+uv run --project tools/vcs --group dev pytest || echo "check tools/vcs test setup"
 ```
 
 ## Known gaps
 
 - `experimental` overall — adapter coverage varies; a new adopter system
   (e.g. GitLab, a different mail backend) is a gap the plan pass records.
+- **SourceHut adapter is new and untested end-to-end.** `tools/sourcehut/`
+  ships the GraphQL-based bridge (ticket, patchset, CI, repo), but no
+  adopter pilot has exercised it; signal/roster heuristics may change.
 - Adapters cover the *system-swap* case; the broader audit of residual
   ASF coupling across the catalogue, and the capability-flag mechanism for
   workflow branches that no adapter resolves, live in

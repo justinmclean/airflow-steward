@@ -9,8 +9,9 @@ mode: infra
 source: >
   MISSION.md § Privacy, security and supply-chain integrity ("Clean-
   environment wrapper", "Layered sandbox by default", "Pinned, reviewed,
-  signed dependencies"). Implemented in tools/agent-isolation/, the
-  setup-isolated-setup-* skills, and .claude/settings.json.
+  signed dependencies"). Implemented in tools/agent-isolation/,
+  tools/agent-guard/, tools/permission-audit/, tools/egress-gateway/,
+  the setup-isolated-setup-* skills, and .claude/settings.json.
 acceptance:
   - Every agent subprocess runs inside an OS-level sandbox with default-
     deny filesystem reads and network egress.
@@ -33,6 +34,24 @@ saying "no".
 
 - `tools/agent-isolation/` — the harness (clean-env wrapper +
   sandbox profiles).
+- `tools/agent-guard/` — deterministic pre-execution guard dispatcher
+  (`stdlib`-only). Wired as a `PreToolUse` hook (Claude Code) or a
+  `tool.execute.before` plugin (OpenCode); inspects every shell command
+  before it runs and denies the ones that break a hard framework rule,
+  independent of model memory. The guard decisions live in a single
+  harness-agnostic `dispatch()` core so every wired harness enforces
+  an identical rule set. Capability: `substrate:action-guard`.
+- `tools/permission-audit/` — audits and atomically edits Claude Code's
+  `permissions.allow[]` entries in `.claude/settings.json` and
+  `.claude/settings.local.json`. Backs the `--apply-permission-audit`
+  flag of `/magpie-setup verify` (check 8d). Also handles OpenCode
+  `permission` config via `audit-opencode`. Capability: `substrate:sandbox`.
+- `tools/egress-gateway/` — local HTTP(S) forward proxy for egress
+  control. Framework tools point `HTTPS_PROXY`/`HTTP_PROXY` at it; the
+  gateway rejects any connection to a host not on its allowlist before a
+  socket is opened. Defence-in-depth per RFC-AI-0003: even a
+  prompt-injection reaching for an arbitrary endpoint is blocked at the
+  network layer. Capability: `substrate:sandbox`.
 - `.claude/settings.json` — the `sandbox` block (filesystem
   allow/deny, network `allowedDomains`, `excludedCommands`) and
   `permissions` (`deny` / `ask`).
@@ -82,6 +101,9 @@ cooldown window; bumps are PRs, not silent updates.
 
 ```bash
 uv run --project tools/agent-isolation --group dev pytest
+uv run --project tools/agent-guard --group dev pytest
+uv run --project tools/permission-audit --group dev pytest
+uv run --project tools/egress-gateway --group dev pytest
 python3 -c "import json,sys; s=json.load(open('.claude/settings.json')); \
   asks=' '.join(s['permissions']['ask']); \
   sys.exit(0 if 'git push' in asks and 'gh *' in asks else 1)"
@@ -91,3 +113,6 @@ python3 -c "import json,sys; s=json.load(open('.claude/settings.json')); \
 
 - `stable`; drift shows up when a new state-mutating command is added to a
   skill without a matching `ask` rule — the plan pass flags it.
+- **`tools/agent-guard/` and `tools/egress-gateway/` are new additions**
+  since the last pilot cycle; end-to-end integration with a real adopter
+  session has not yet been exercised.

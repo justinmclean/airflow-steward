@@ -421,9 +421,10 @@ the same way it applies to a single reporter's content>
 The **Second independent report** block is the load-bearing part of
 the merge. It lets every future triager read both reports in one
 place without having to chase the closed duplicate's content.
-Append the drop side's body **verbatim** inside the `<details>`
-disclosure — preserve the reporter's wording, code blocks, and PoC
-text. Do not paraphrase; paraphrasing a security report is how
+Append the drop side's body **verbatim except for reporter-supplied
+CVSS scores, CVSS vectors, and qualitative severity labels** inside
+the `<details>` disclosure — preserve the reporter's wording, code
+blocks, and PoC text. Do not paraphrase; paraphrasing a security report is how
 credits get subtly wrong before publication. The short headline that
 stays visible at the top of the `<details>` block is a one-sentence
 summary for scroll-readers; clicking expands to the full verbatim
@@ -620,7 +621,8 @@ recap before presenting.
 - **Never re-synthesize credits.** Copy each reporter's credit line
   verbatim from their tracker.
 - **Never propagate a reporter-supplied CVSS** from the dropped
-  tracker into the kept tracker's `Severity` field. The
+  tracker into the kept tracker's `Severity` field or the appended
+  *Second independent report* content. The
   independent-scoring rule in [`AGENTS.md`](../../AGENTS.md)
   applies to merged content.
 - **Never paraphrase a reporter's body.** Paraphrasing is how

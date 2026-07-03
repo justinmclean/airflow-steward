@@ -38,6 +38,12 @@ reporter_thread_activity
     "third_party"  — external party (e.g. ASF Security) commented
     "none"         — no new thread activity since last team message
     null           — no Gmail thread (markdown-imported tracker)
+  Precedence: if the reporter is disputing or challenging a prior team
+  assessment anywhere in the thread (e.g. "I disagree with the ...
+  assessment"), classify as "pushback" even when the same thread also
+  introduces new technical detail — the challenge to the team's decision
+  is the salient triage signal. Use "new_detail" only when the reporter
+  adds new technical information without contesting a prior team call.
 
 canned_response_match
   Based on the mock canned-response scan output. One of:

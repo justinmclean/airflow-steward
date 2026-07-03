@@ -113,7 +113,7 @@ def build_corpus_text(corpus: list[dict]) -> str:
     lines = []
     for item in corpus:
         lines.append(f"#{item['number']} | {item['title']!r}")
-        lines.append(f"Body (first 300 chars): {item['body']}")
+        lines.append(f"Body: {item['body']}")
         lines.append("")
     return "\n".join(lines)
 

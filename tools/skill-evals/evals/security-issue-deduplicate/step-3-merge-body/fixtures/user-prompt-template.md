@@ -1,9 +1,5 @@
-## Kept tracker fields
-
-{corpus}
-
-## Drop tracker fields
+The two trackers to merge:
 
 {report}
 
-Build the merged body proposal and return JSON only.
+Build the merged issue body now.

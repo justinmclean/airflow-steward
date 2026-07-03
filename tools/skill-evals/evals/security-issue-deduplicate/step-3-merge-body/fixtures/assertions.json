@@ -1,14 +1,34 @@
 {
-  "has_details_disclosure": {
-    "field": "has_details_disclosure",
-    "type": "field_true"
-  },
   "has_second_independent_report": {
-    "field": "has_second_independent_report",
-    "type": "field_true"
+    "field": "raw_output",
+    "type": "regex",
+    "pattern": "Second independent report",
+    "flags": "i"
   },
-  "has_unfilled_placeholders": {
-    "field": "has_unfilled_placeholders",
-    "type": "field_true"
+  "has_details_disclosure": {
+    "field": "raw_output",
+    "type": "regex",
+    "pattern": "<details>",
+    "flags": ""
+  },
+  "has_both_credits": {
+    "field": "raw_output",
+    "type": "judge",
+    "rubric": "the body's 'Reporter credited as' section credits two distinct reporters, one per original tracker, on separate lines — not collapsed into a single credit and not dropping either reporter"
+  },
+  "mention_both_threads": {
+    "field": "raw_output",
+    "type": "judge",
+    "rubric": "the body references two distinct security mailing-list threads, one per original tracker, in its mailing-list-thread section"
+  },
+  "has_unknown_severity": {
+    "field": "raw_output",
+    "type": "judge",
+    "rubric": "the merged body states severity as Unknown and does NOT propagate any reporter-supplied CVSS score or HIGH/MEDIUM/LOW severity rating from the dropped tracker"
+  },
+  "has_cwe_blocker": {
+    "field": "raw_output",
+    "type": "judge",
+    "rubric": "the body explicitly flags that the two trackers name DIFFERENT primary CWE identifiers and surfaces this disagreement as a blocker for the triager, rather than silently choosing one CWE. Holds false when both trackers share the same CWE and no conflict is raised."
   }
 }

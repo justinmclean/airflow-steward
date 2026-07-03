@@ -159,6 +159,16 @@ def test_build_corpus_text_repr_escapes_quotes():
     assert "'She said" in result or '"She said' in result
 
 
+def test_build_corpus_text_passes_full_body_without_truncation_claim():
+    # Regression: the label used to say "first 300 chars" while passing the
+    # full body — misleading the model into under-reading long trackers and
+    # dropping credit/thread lines that fall past char 300.
+    long_body = "start " + ("x" * 600) + " REPORTER_CREDIT_AT_END"
+    result = build_corpus_text([{"number": 7, "title": "T", "body": long_body}])
+    assert "REPORTER_CREDIT_AT_END" in result  # full body present
+    assert "300 chars" not in result  # no false truncation claim
+
+
 # ---------------------------------------------------------------------------
 # build_roster_text
 # ---------------------------------------------------------------------------

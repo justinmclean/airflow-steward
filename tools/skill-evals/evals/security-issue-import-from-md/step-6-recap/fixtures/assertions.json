@@ -1,0 +1,26 @@
+{
+  "has_bare_issue_numbers": {
+    "field": "has_bare_issue_numbers",
+    "type": "field_true"
+  },
+  "has_file_basename": {
+    "field": "has_file_basename",
+    "type": "field_true"
+  },
+  "has_findings_count": {
+    "field": "has_findings_count",
+    "type": "field_true"
+  },
+  "has_handoff_line": {
+    "field": "has_handoff_line",
+    "type": "field_true"
+  },
+  "has_skipped_findings": {
+    "field": "has_skipped_findings",
+    "type": "field_true"
+  },
+  "has_tracker_links": {
+    "field": "has_tracker_links",
+    "type": "field_true"
+  }
+}

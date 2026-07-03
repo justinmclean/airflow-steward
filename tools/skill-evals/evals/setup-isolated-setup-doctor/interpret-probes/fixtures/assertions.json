@@ -1,0 +1,6 @@
+{
+  "has_failures": {
+    "field": "has_failures",
+    "type": "field_true"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "has_assignee": {
+    "field": "has_assignee",
+    "type": "field_true"
+  },
+  "has_bare_issue_numbers": {
+    "field": "has_bare_issue_numbers",
+    "type": "field_true"
+  }
+}

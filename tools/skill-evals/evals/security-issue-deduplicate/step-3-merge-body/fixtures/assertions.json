@@ -1,0 +1,14 @@
+{
+  "has_details_disclosure": {
+    "field": "has_details_disclosure",
+    "type": "field_true"
+  },
+  "has_second_independent_report": {
+    "field": "has_second_independent_report",
+    "type": "field_true"
+  },
+  "has_unfilled_placeholders": {
+    "field": "has_unfilled_placeholders",
+    "type": "field_true"
+  }
+}

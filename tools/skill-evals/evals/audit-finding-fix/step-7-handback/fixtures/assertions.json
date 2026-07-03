@@ -1,0 +1,26 @@
+{
+  "has_branch_name": {
+    "field": "has_branch_name",
+    "type": "field_true"
+  },
+  "has_diff_scope_summary": {
+    "field": "has_diff_scope_summary",
+    "type": "field_true"
+  },
+  "has_open_questions": {
+    "field": "has_open_questions",
+    "type": "field_true"
+  },
+  "has_suppressed_findings": {
+    "field": "has_suppressed_findings",
+    "type": "field_true"
+  },
+  "has_tool_and_count": {
+    "field": "has_tool_and_count",
+    "type": "field_true"
+  },
+  "has_verify_result": {
+    "field": "has_verify_result",
+    "type": "field_true"
+  }
+}

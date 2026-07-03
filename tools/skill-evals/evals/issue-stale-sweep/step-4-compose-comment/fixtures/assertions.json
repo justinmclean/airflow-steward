@@ -1,0 +1,10 @@
+{
+  "has_bare_issue_ref": {
+    "field": "has_bare_issue_ref",
+    "type": "field_true"
+  },
+  "has_nudge_marker": {
+    "field": "has_nudge_marker",
+    "type": "field_true"
+  }
+}

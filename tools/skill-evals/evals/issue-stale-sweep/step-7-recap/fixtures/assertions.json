@@ -1,0 +1,10 @@
+{
+  "has_bare_issue_ref": {
+    "field": "has_bare_issue_ref",
+    "type": "field_true"
+  },
+  "has_security_routing_note": {
+    "field": "has_security_routing_note",
+    "type": "field_true"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "has_generated_by_trailer": {
+    "field": "has_generated_by_trailer",
+    "type": "field_true"
+  },
+  "has_imperative_subject": {
+    "field": "has_imperative_subject",
+    "type": "field_true"
+  }
+}

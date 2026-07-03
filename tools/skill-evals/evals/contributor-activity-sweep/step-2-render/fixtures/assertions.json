@@ -1,0 +1,10 @@
+{
+  "has_footer": {
+    "field": "has_footer",
+    "type": "field_true"
+  },
+  "has_github_only_warning": {
+    "field": "has_github_only_warning",
+    "type": "field_true"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "has_existing_tests": {
+    "field": "has_existing_tests",
+    "type": "field_true"
+  },
+  "has_new_tests": {
+    "field": "has_new_tests",
+    "type": "field_true"
+  },
+  "has_precommit_command": {
+    "field": "has_precommit_command",
+    "type": "field_true"
+  },
+  "has_typecheck_command": {
+    "field": "has_typecheck_command",
+    "type": "field_true"
+  },
+  "has_unit_test_command": {
+    "field": "has_unit_test_command",
+    "type": "field_true"
+  }
+}

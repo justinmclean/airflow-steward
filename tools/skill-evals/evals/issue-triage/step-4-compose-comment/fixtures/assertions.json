@@ -1,0 +1,14 @@
+{
+  "has_proposed_disposition": {
+    "field": "has_proposed_disposition",
+    "type": "field_true"
+  },
+  "has_clickable_issue_links": {
+    "field": "has_clickable_issue_links",
+    "type": "field_true"
+  },
+  "has_technical_summary": {
+    "field": "has_technical_summary",
+    "type": "field_true"
+  }
+}

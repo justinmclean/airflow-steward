@@ -1,0 +1,34 @@
+{
+  "has_bare_issue_numbers": {
+    "field": "has_bare_issue_numbers",
+    "type": "field_true"
+  },
+  "has_board_column": {
+    "field": "has_board_column",
+    "type": "field_true"
+  },
+  "has_handoff_line": {
+    "field": "has_handoff_line",
+    "type": "field_true"
+  },
+  "has_labels": {
+    "field": "has_labels",
+    "type": "field_true"
+  },
+  "has_milestone": {
+    "field": "has_milestone",
+    "type": "field_true"
+  },
+  "has_pr_url": {
+    "field": "has_pr_url",
+    "type": "field_true"
+  },
+  "has_rollup_permalink": {
+    "field": "has_rollup_permalink",
+    "type": "field_true"
+  },
+  "has_tracker_link": {
+    "field": "has_tracker_link",
+    "type": "field_true"
+  }
+}

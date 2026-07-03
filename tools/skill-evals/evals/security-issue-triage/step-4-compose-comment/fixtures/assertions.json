@@ -1,0 +1,15 @@
+{
+  "has_bare_issue_numbers": {
+    "field": "has_bare_issue_numbers",
+    "type": "field_true"
+  },
+  "has_security_model_quote": {
+    "field": "has_security_model_quote",
+    "type": "field_true"
+  },
+  "mention_handles": {
+    "field": "mention_handles",
+    "type": "regex",
+    "pattern": "^\\[\"@[^\"]+\"(, \"@[^\"]+\"){0,2}\\]$"
+  }
+}

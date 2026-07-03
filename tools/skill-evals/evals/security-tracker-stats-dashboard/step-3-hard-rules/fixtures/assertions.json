@@ -1,0 +1,6 @@
+{
+  "has_config_path_in_output": {
+    "field": "has_config_path_in_output",
+    "type": "field_true"
+  }
+}

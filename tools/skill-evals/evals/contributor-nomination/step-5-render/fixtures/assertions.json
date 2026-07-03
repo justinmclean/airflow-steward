@@ -1,0 +1,14 @@
+{
+  "has_merit_note": {
+    "field": "has_merit_note",
+    "type": "field_true"
+  },
+  "has_off_github_warning": {
+    "field": "has_off_github_warning",
+    "type": "field_true"
+  },
+  "has_process_note": {
+    "field": "has_process_note",
+    "type": "field_true"
+  }
+}

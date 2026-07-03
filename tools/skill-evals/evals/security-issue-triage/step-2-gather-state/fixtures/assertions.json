@@ -1,0 +1,6 @@
+{
+  "has_linked_pr": {
+    "field": "has_linked_pr",
+    "type": "field_true"
+  }
+}

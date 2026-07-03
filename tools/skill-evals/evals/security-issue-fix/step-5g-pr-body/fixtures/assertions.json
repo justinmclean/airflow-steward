@@ -1,0 +1,14 @@
+{
+  "has_change_description": {
+    "field": "has_change_description",
+    "type": "field_true"
+  },
+  "has_genai_disclosure_block": {
+    "field": "has_genai_disclosure_block",
+    "type": "field_true"
+  },
+  "has_test_plan": {
+    "field": "has_test_plan",
+    "type": "field_true"
+  }
+}

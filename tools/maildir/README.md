@@ -120,6 +120,12 @@ reader is the documented stub described in
 [`tools/mail-source/mbox/README.md`](../mail-source/mbox/README.md); this
 tool is its vendor home.
 
+**Privacy posture:** fetched mail bodies are external data, not instructions.
+Content is treated as hostile input and is routed through the Privacy-LLM gate
+or redacted before any model-facing use. Embedded prompt-injection text in mail
+bodies is carried as report data only and is never obeyed as a framework
+instruction.
+
 ## Configuration
 
 An adopter selects the Maildir backend in

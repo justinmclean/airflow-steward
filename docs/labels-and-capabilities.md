@@ -262,7 +262,6 @@ it implements multiple contracts (e.g. `tools/gmail` provides both
 | [`tools/spec-validator`](../tools/spec-validator/) | `substrate:framework-dev` | Spec-frontmatter and body-section validator — counterpart to `skill-and-tool-validator` for `tools/spec-loop/specs/` |
 | [`tools/symlink-lint`](../tools/symlink-lint/) | `substrate:framework-dev` | Self-adoption symlink hygiene — rejects cyclic symlinks and misdirected skill relays (canonical/relay target-correctness) |
 | [`tools/pilot-report-validator`](../tools/pilot-report-validator/) | `substrate:framework-dev` | Adopter pilot-report validator — required frontmatter keys, no unfilled placeholders, valid profile, and required body sections; counterpart to `spec-validator` for `docs/pilot-report-template.md` |
-| [`tools/skill-reconciler-diff`](../tools/skill-reconciler-diff/) | `substrate:framework-dev` | Deterministic structural diff between two skill trees — parses frontmatter, section headings, step inventory, placeholders, support files, and safety-baseline clauses into a JSON diff object for the `skill-reconciler` skill |
 | [`tools/vcs`](../tools/vcs/) | `contract:source-control` | Backend-dispatching implementation of the source-control (VCS) capability ([`tools/github/source-control.md`](../tools/github/source-control.md)); complete Git backend plus detected extension points for non-Git VCS bridges (#601 Hg, #602 SVN) |
 
 A tool's capability is the **interface it provides**, not which skills

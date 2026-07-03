@@ -159,7 +159,13 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
   catalogue produces **0 asf-coupling warnings**; remaining bare `PMC` /
   `ICLA` / `announce@apache.org` references are inside org-scoped skills
   where ASF-specific text is appropriate.  No remaining tooling gap — the
-  lint exists and a human judges any new hits.
+  lint exists and a human judges any new hits.  In the same pass:
+  `skills/pr-management-triage/comment-templates.md` was generalised —
+  `security@apache.org` replaced with the `<security-list>` placeholder and
+  the "ASF vulnerability-handling process" wording replaced with a
+  project-agnostic phrase; the design rationale in
+  `skills/pr-management-triage/rationale.md` was anonymised to remove the
+  project-specific mailing list reference that appeared in a historical note.
 - **Non-ASF adopter profile fixture shipped** — `projects/non-asf-example/`
   contains a worked non-ASF profile (Velox Stream: GitHub-hosted, DCO,
   GHSA intake, MITRE CNA, GitHub Releases). The

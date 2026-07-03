@@ -407,8 +407,7 @@ deterministic quality-violation feedback for `draft`, `comment`
 which defaults to **`pr-body`**: the feedback is *folded into the
 PR description* as a managed marker block instead of posted as a
 comment. Editing a PR body does not notify subscribers, so the
-default keeps maintainer mailboxes quiet — the denoise change from
-the dev@ thread with Elad (see
+default keeps maintainer mailboxes quiet (see
 [`rationale.md#why-fold-feedback-into-the-pr-body-denoise`](rationale.md#why-fold-feedback-into-the-pr-body-denoise)).
 Under the default `pr-body` channel **every** contributor-facing
 action — not just the three violation actions, but `ping`,

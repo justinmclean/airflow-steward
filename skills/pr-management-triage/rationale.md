@@ -622,22 +622,14 @@ than posted as a PR comment. See
 [`comment-templates.md#body-fold-rendering`](comment-templates.md#body-fold-rendering)
 for the mechanism and [`actions.md`](actions.md) for the recipe.
 
-**The motivating problem.** On the dev@airflow.apache.org thread
-*"[DISCUSS] What do we do with unreviewed PRs"* (2026-06-10), Elad
-Kalif raised that the triage process posts so many comments that
-it floods maintainer mailboxes — and that the resulting noise
-causes maintainers to **miss the real human comments** on the PRs
-they actively track. A comment on a PR notifies every subscriber;
-across a queue of hundreds of PRs, the routine "here are your
-violations" comments drown out the conversations that need a human.
+**The motivating problem.** During a design discussion (2026-06-10), maintainers raised that the triage process posts so many comments that it floods maintainer mailboxes — and that the resulting noise causes maintainers to **miss the real human comments** on the PRs they actively track. A comment on a PR notifies every subscriber; across a queue of hundreds of PRs, the routine "here are your violations" comments drown out the conversations that need a human.
 
 **The fix.** A new PR *comment* notifies; editing the PR
 *description* does **not**. Folding the same violation text into
 the body delivers identical information to the contributor (who
 sees it on their PR) and remains fully deterministic, while
-producing zero notifications. Jarek proposed exactly this on the
-thread, noting it is the technique already used for security
-issues. The change keeps the whole triage process intact — PRs
+producing zero notifications. A maintainer proposed exactly this,
+noting it is the technique already used for security issues. The change keeps the whole triage process intact — PRs
 that need fixing are still drafted, the criteria are still
 surfaced — it only moves the delivery from a notifying channel to
 a silent one.

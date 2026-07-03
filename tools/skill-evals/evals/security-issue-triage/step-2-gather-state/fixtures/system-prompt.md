@@ -23,7 +23,9 @@ has_linked_pr
   true if any of: (a) the closedByPullRequestsReferences field is
   non-empty, (b) a cross-repo `gh search prs` hit was provided, or
   (c) the issue body's "PR with the fix" field contains a URL.
-  false otherwise.
+  false otherwise. Note: (b) and (c) each make this true on their own —
+  an empty closedByPullRequestsReferences array does NOT make it false
+  when a cross-repo PR hit or a body "PR with the fix" URL is present.
 
 pr_merged
   true if the linked PR's state is MERGED. false if OPEN or CLOSED

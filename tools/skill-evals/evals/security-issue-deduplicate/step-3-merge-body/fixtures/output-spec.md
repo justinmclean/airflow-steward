@@ -2,7 +2,17 @@
 
 You are executing Step 3 (build merged body proposal) in isolation. The
 extracted fields from both trackers are provided in the user turn as mock
-data. Build the merged body and return ONLY valid JSON with these fields:
+data. Build the merged body and return ONLY valid JSON with these fields.
+
+The merged body combines BOTH trackers, never only the kept side:
+- **Reporter credited as** lists one credit line per tracker — the kept
+  reporter's credit AND the drop reporter's credit — both verbatim. Never
+  collapse them into a single line or omit either side.
+- **Security mailing list thread** lists one thread line per tracker;
+  `mailing_threads_count` equals the number of trackers that supplied a
+  thread (both, when each tracker has one).
+- If the two trackers name different primary CWEs, surface the disagreement
+  as a blocker (`cwe_blocker` true) rather than silently choosing one.
 
 ```json
 {

@@ -5,6 +5,7 @@
 - [`tools/ponymail/`](#toolsponymail)
   - [Prerequisites](#prerequisites)
   - [Security and privacy](#security-and-privacy)
+  - [Configuration](#configuration)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -38,3 +39,12 @@ by an untrusted sender.  Skills route PonyMail content through structured
 report fields; raw bodies are never passed to the model as framework
 directives.  Embedded prompt-injection attempts in archived threads are
 surfaced to the maintainer for human review, not obeyed.
+
+## Configuration
+
+Adopters select PonyMail through `<project-config>/project.md` mail-source
+rows and the `archive_system` block, or inherit it from
+`organizations/ASF/organization.md`. The template documents PonyMail
+URL keys such as `ponymail_private_search_url_template`,
+`ponymail_public_search_url_template`, and `ponymail_thread_url_template`
+in the `project.md` *Mail sources* section.

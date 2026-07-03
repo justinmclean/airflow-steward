@@ -4,6 +4,7 @@
 
 - [`tools/apache-projects/`](#toolsapache-projects)
   - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -37,3 +38,11 @@ operation catalogue, setup, and the track-`main` install contract.
 - **CLIs:** `git` (clone the `apache/comdev` checkout), `npm` (install the server's deps), `node` (run it).
 - **Credentials / auth:** None — the server is read-only and unauthenticated; every field it returns is already public.
 - **Network:** `projects.apache.org` (the public JSON feeds the server fetches at run time); `github.com` to clone and track `apache/comdev` at `main`.
+
+## Configuration
+
+Adopters select this backend through `<project-config>/project.md` or
+their organization defaults under the `project_metadata` block. ASF
+projects inherit `project_metadata.kind: apache-projects-mcp` from
+`organizations/ASF/organization.md`; non-ASF projects normally set
+`project_metadata.kind: none` and supply roster evidence directly.

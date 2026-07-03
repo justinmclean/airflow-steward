@@ -3,6 +3,7 @@
 
 - [`magpie-vcs`](#magpie-vcs)
   - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
   - [Why](#why)
   - [The abstraction](#the-abstraction)
   - [Backends](#backends)
@@ -51,6 +52,15 @@ VCS the project enables under *Tools enabled → Source control*.
   `push`) inherit whatever auth the underlying VCS/remote needs.
 - **Network:** Local for read and local-write operations; `fetch` / `push`
   reach the project's remote (e.g. GitHub) over the network.
+
+## Configuration
+
+The active backend is detected from the working copy or forced with
+`--backend` / `$MAGPIE_VCS`. Skills get the checkout path from
+`<project-config>/user.md` (or the resolved user config) and the expected
+source-control backend from `<project-config>/project.md` *Tools enabled*
+entries. Backend-specific adopter knobs belong in the relevant
+`*-config.md` file rather than in this tool.
 
 ## Why
 

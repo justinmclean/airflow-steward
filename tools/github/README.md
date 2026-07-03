@@ -4,6 +4,7 @@
 
 - [`tools/github/`](#toolsgithub)
   - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -28,3 +29,13 @@ This tool implements three capability contracts: `contract:tracker` (issues / bo
 - **CLIs:** `gh` (authenticated), `git` (source-control capability), `jq` (used via `gh api --jq`).
 - **Credentials / auth:** `gh auth status` must show a logged-in user with the needed scopes — every skill's Step 0 runs it.
 - **Network:** `api.github.com` (REST + GraphQL) and `github.com` (the `git` remote); source-control recipes are offline except explicit `fetch` / `push`.
+
+## Configuration
+
+Adopters select GitHub-backed tracker, source-control, and
+change-request behavior through `<project-config>/project.md` repository
+keys such as `tracker_repo`, `upstream_repo`, and the source-control /
+change-request entries in the *Tools enabled* table. GitHub issue body
+fields, labels, project-board IDs, and PR-management knobs live in the
+matching `<project-config>/*-config.md` files documented from
+`projects/_template/README.md`.

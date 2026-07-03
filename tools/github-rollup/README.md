@@ -4,6 +4,7 @@
 
 - [github-rollup](#github-rollup)
   - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
   - [Why](#why)
   - [Invocation](#invocation)
     - [`append <issue> --action "<label>" ...`](#append-issue---action-label-)
@@ -33,6 +34,14 @@ issue **without bringing the rollup body into agent context**.
 - **CLIs:** `uv`; `gh` — the script shells out to it for all GitHub access (the default `@user` comes from `gh api user`).
 - **Credentials / auth:** an authenticated `gh` session (`gh auth status` must pass) — the comment read / append / PATCH all go through `gh`.
 - **Network:** `api.github.com` via `gh`.
+
+## Configuration
+
+This helper has no persistent config file of its own. Callers pass the
+target issue from `<project-config>/project.md` → `tracker_repo`; the
+status-rollup comment format is the GitHub tracker convention documented
+in `tools/github/status-rollup.md` and reused by security lifecycle
+skills.
 
 ## Why
 

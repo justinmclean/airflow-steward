@@ -4,6 +4,7 @@
 
 - [github-body-field](#github-body-field)
   - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
   - [Why](#why)
   - [Invocation](#invocation)
     - [`get <issue> --field "<name>"`](#get-issue---field-name)
@@ -34,6 +35,14 @@ body **without bringing the body into agent context**.
 - **CLIs:** `uv`; `gh` — the script shells out to it for all GitHub access (the `--repo` argument is forwarded verbatim).
 - **Credentials / auth:** an authenticated `gh` session (`gh auth status` must pass) — the body read / parse / replace / push all go through `gh`.
 - **Network:** `api.github.com` via `gh`.
+
+## Configuration
+
+This helper has no persistent config file of its own. Callers pass
+`--repo <tracker>` from `<project-config>/project.md` and the field names
+declared by the adopter's tracker configuration, such as
+`<project-config>/issue-tracker-config.md` or sibling
+`*-config.md` files that define tracker body fields.
 
 ## Why
 

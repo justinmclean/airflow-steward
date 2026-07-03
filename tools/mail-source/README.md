@@ -5,6 +5,7 @@
 - [`tools/mail-source/`](#toolsmail-source)
   - [Prerequisites](#prerequisites)
   - [Security and privacy](#security-and-privacy)
+  - [Operations](#operations)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -39,3 +40,10 @@ prompt-injection attempts in inbound mail are surfaced to the maintainer for
 human review, not obeyed.  Concrete backends must each apply the same
 posture (see [`tools/gmail/`](../gmail/), [`tools/mail-source/imap/`](imap/),
 [`tools/mail-source/mbox/`](mbox/)).
+
+## Operations
+
+The backend-neutral interface is documented in [`contract.md`](contract.md).
+Concrete backend operations live in the selected adapter directory, such as
+[`../gmail/`](../gmail/), [`../ponymail/`](../ponymail/),
+[`imap/`](imap/), or [`mbox/`](mbox/).

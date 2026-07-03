@@ -101,6 +101,7 @@ from skill_and_tool_validator import (
     validate_mail_privacy_boundary,
     validate_modes_doc_consistency,
     validate_name_convention,
+    validate_organization_structure,
     validate_override_contract,
     validate_override_file,
     validate_placeholders,
@@ -3065,6 +3066,64 @@ class TestOrganizationMembership:
             if v.category == "organization"
         ]
         assert len(violations) == 1
+
+
+class TestOrganizationStructure:
+    """Tests for validate_organization_structure — required files inside organizations/<org>/."""
+
+    def _make_org(self, tmp_path: Path, org: str, files: list[str]) -> None:
+        org_dir = tmp_path / "organizations" / org
+        org_dir.mkdir(parents=True)
+        for fname in files:
+            (org_dir / fname).write_text("# placeholder\n")
+
+    def test_well_formed_org_no_violations(self, tmp_path: Path) -> None:
+        self._make_org(tmp_path, "ASF", ["README.md", "organization.md"])
+        vs = list(validate_organization_structure(tmp_path))
+        assert vs == []
+
+    def test_missing_readme_yields_violation(self, tmp_path: Path) -> None:
+        self._make_org(tmp_path, "MyOrg", ["organization.md"])
+        vs = list(validate_organization_structure(tmp_path))
+        assert len(vs) == 1
+        assert "README.md" in vs[0].message
+        assert vs[0].category == ORGANIZATION_CATEGORY
+
+    def test_missing_organization_md_yields_violation(self, tmp_path: Path) -> None:
+        self._make_org(tmp_path, "MyOrg", ["README.md"])
+        vs = list(validate_organization_structure(tmp_path))
+        assert len(vs) == 1
+        assert "organization.md" in vs[0].message
+        assert vs[0].category == ORGANIZATION_CATEGORY
+
+    def test_both_files_missing_yields_two_violations(self, tmp_path: Path) -> None:
+        self._make_org(tmp_path, "MyOrg", [])
+        vs = list(validate_organization_structure(tmp_path))
+        assert len(vs) == 2
+        missing = {v.path.name for v in vs}
+        assert missing == {"README.md", "organization.md"}
+
+    def test_template_dir_is_excluded(self, tmp_path: Path) -> None:
+        # _template without required files must not trigger violations.
+        (tmp_path / "organizations" / "_template").mkdir(parents=True)
+        vs = list(validate_organization_structure(tmp_path))
+        assert vs == []
+
+    def test_multiple_orgs_each_checked(self, tmp_path: Path) -> None:
+        self._make_org(tmp_path, "ASF", ["README.md", "organization.md"])
+        self._make_org(tmp_path, "independent", ["README.md"])  # missing organization.md
+        vs = list(validate_organization_structure(tmp_path))
+        assert len(vs) == 1
+        assert "independent" in str(vs[0].path)
+        assert "organization.md" in vs[0].message
+
+    def test_no_organizations_dir_is_silent(self, tmp_path: Path) -> None:
+        # Repos that have not yet created organizations/ do not error.
+        vs = list(validate_organization_structure(tmp_path))
+        assert vs == []
+
+    def test_organization_category_is_hard(self) -> None:
+        assert ORGANIZATION_CATEGORY in HARD_CATEGORIES
 
 
 # ---------------------------------------------------------------------------

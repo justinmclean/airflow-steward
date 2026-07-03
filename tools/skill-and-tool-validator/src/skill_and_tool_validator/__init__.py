@@ -794,6 +794,46 @@ def known_organizations(root: Path | None = None) -> set[str]:
     return {d.name for d in base.iterdir() if d.is_dir() and d.name != "_template"}
 
 
+# Required files that every organizations/<org>/ adapter directory must contain.
+# Authoring convention (README + organization.md) elevated to a HARD check so
+# a malformed adapter is caught before any skill references it.
+_ORG_REQUIRED_FILES: tuple[str, ...] = ("README.md", "organization.md")
+
+
+def validate_organization_structure(root: Path | None = None) -> Iterable[Violation]:
+    """Enforce required files inside each ``organizations/<org>/`` adapter directory.
+
+    Every adapter directory (excluding ``_template``) must contain:
+
+    - ``README.md`` — human-readable description of the organization adapter.
+    - ``organization.md`` — the machine-readable shared defaults that skills
+      inherit when ``organization: <org>`` is declared in a project config.
+
+    Both are HARD violations: a directory that exists but lacks either file is
+    an incomplete adapter and cannot be reliably resolved by skills at runtime.
+    """
+    repo_root = root or find_repo_root()
+    base = repo_root / ORGANIZATIONS_DIR
+    if not base.exists():
+        return
+
+    for org_dir in sorted(base.iterdir()):
+        if not org_dir.is_dir():
+            continue
+        if org_dir.name == "_template":
+            continue
+        for required_file in _ORG_REQUIRED_FILES:
+            if not (org_dir / required_file).exists():
+                yield Violation(
+                    org_dir / required_file,
+                    None,
+                    f"organizations/{org_dir.name}/ is missing required file '{required_file}' "
+                    f"— every organization adapter must declare its identity (README.md) "
+                    f"and its shared defaults (organization.md)",
+                    category=ORGANIZATION_CATEGORY,
+                )
+
+
 def validate_frontmatter(path: Path, text: str, root: Path | None = None) -> Iterable[Violation]:
     """Validate the YAML frontmatter of a SKILL.md file."""
     fm = parse_frontmatter(text)
@@ -3521,6 +3561,10 @@ def run_validation(root: Path | None = None) -> list[Violation]:
 
     # Tool-level checks: every tools/<name>/ has a README that declares its capability.
     violations.extend(validate_tools(repo_root))
+
+    # Organization-adapter structure: each organizations/<org>/ must have README.md
+    # and organization.md (HARD — an incomplete adapter cannot be reliably resolved).
+    violations.extend(validate_organization_structure(repo_root))
 
     # Adapter authoring smoke: contract:* tool READMEs declare credentials,
     # operations, and config keys (SOFT advisory).

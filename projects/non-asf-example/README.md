@@ -53,13 +53,24 @@ carry the differences below — the *skills* are identical:
 - [`issue-tracker-config.md`](issue-tracker-config.md) — GitHub Issues on the
   upstream repo
 - [`stale-sweep-config.md`](stale-sweep-config.md) — stale-sweep thresholds
+- [`reviewer-roster.md`](reviewer-roster.md) — reviewer roster for `reviewer-routing`
+  (GitHub handles, declared areas, load caps; no ASF-specific fields)
 
 ## Smoke eval
 
-`tools/skill-evals/evals/non-asf-profile-smoke/` drives the
-`issue-stale-sweep` skill through this profile and asserts that:
+`tools/skill-evals/evals/non-asf-profile-smoke/` drives multiple skills
+through this profile and asserts that a non-ASF project can run the full
+framework without editing any skill body. Surfaces covered:
 
-1. Pre-flight (step 1) passes with no Apache-specific fields present.
-2. Issue classification (step 3) produces correct output for a non-ASF
-   project without requiring any Apache labels or governance signals.
-3. The skill body was not edited — only the config files differ.
+1. **Security intake** (`security-issue-import` Step 3) — GHSA advisory,
+   direct email, and automated-scanner inputs are classified without any
+   ASF forwarder or mailing-list infrastructure.
+2. **Release backend** (`release-prepare` Step 0) — `github-releases` +
+   `pr-approval` mechanism passes pre-flight; missing release-train blocks.
+3. **Contributor governance** (`committer-onboarding` Step 1) — DCO and
+   no-CLA intake models skip ICLA/secretary-request steps.
+4. **Reviewer routing** (`reviewer-routing` Step 3) — `reviewer-roster.md`
+   drives routing with no ASF PMC or Apache ID; area-match and load-aware
+   fallback both work against the `independent` organization profile.
+5. **Issue management** (`issue-stale-sweep` Steps 1 and 3) — GitHub
+   Issues and non-ASF label names work without PMC roster or PonyMail.

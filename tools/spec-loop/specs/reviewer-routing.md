@@ -117,10 +117,11 @@ uv run --project tools/skill-evals skill-eval tools/skill-evals/evals/reviewer-r
   counted as open review requests, assigned-and-unreviewed PRs, or a
   decay-weighted recent count is left to the implementation; the contract
   only requires that some load signal is present and shown.
-- **Non-ASF roster shape is unproven.** The roster-bounded contract
-  assumes an adopter declares a maintainer list; no non-ASF profile
-  fixture exercises routing yet (overlaps the non-ASF adopter profile
-  work item in IMPLEMENTATION_PLAN).
+- **Non-ASF roster shape is now exercised.** `projects/non-asf-example/reviewer-roster.md`
+  provides a Velox Stream roster with no ASF-specific fields; the
+  `non-asf-profile-smoke/step-reviewer-routing/` eval suite asserts that
+  area-match routing and load-aware fallback both work under the
+  `organization: independent` profile. Gap cleared.
 - **`experimental` — no adopter pilot has run.** The skill ships but no
   end-to-end routing workflow has been exercised in a live maintainer
   session; signal weights and roster-match heuristics may change.

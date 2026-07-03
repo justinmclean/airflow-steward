@@ -16,13 +16,14 @@ Every case in this suite uses the same unmodified skill SKILL.md. The
 asserts that the skill still produces correct output — demonstrating that
 config substitution alone is sufficient across all tested surfaces.
 
-## Suites (13 cases total)
+## Suites (15 cases total)
 
 | Suite | Skill tested | Step | Cases | What it covers |
 |---|---|---|---|---|
 | step-security-intake-classify | `security-issue-import` | Step 3 (classify) | 3 | non-ASF GHSA intake: direct advisory, direct email (no forwarder), automated-scanner noise — no ASF forwarder relay or mailing-list infrastructure required |
 | step-release-backend-preflight | `release-prepare` | Step 0 (pre-flight) | 2 | non-ASF `github-releases` backend + `pr-approval` mechanism: clean pass and missing-train blocked |
 | step-contributor-governance-intake | `committer-onboarding` | Step 1 (IP-compliance + comms) | 2 | non-ASF DCO model (`github-codeowners` governance) and no-CLA model (`maintainer-roster` governance): ICLA check skipped in both paths |
+| step-reviewer-routing | `reviewer-routing` | Step 3 (score and rank) | 2 | non-ASF `reviewer-roster.md` (no ASF PMC/Apache-ID): area-match → primary reviewer selected; no-area-match → NO ELIGIBLE REVIEWER (empty eligible set) |
 | step-1-fetch-pool | `issue-stale-sweep` | Step 1 (fetch candidate pool) | 3 | non-ASF GitHub Issues clean pass; framework-default fallback; component-filter selector |
 | step-3-classify | `issue-stale-sweep` | Step 3 (classify each issue) | 3 | stale request-update; active skip; security-label skip (no ASF label names required) |
 
@@ -56,6 +57,22 @@ config substitution alone is sufficient across all tested surfaces.
   congratulations email that includes the project's no-CLA explanation —
   no ASF secretary account-request drafted.
 
+### Reviewer routing (step-reviewer-routing)
+
+- The `reviewer-routing` skill proposes a primary reviewer from a plain
+  `reviewer-roster.md` without any ASF-specific fields (no `apache_id`,
+  no committee membership, no Whimsy lookup required).
+- When a PR's changed paths match a roster member's declared areas, that
+  member is preferred over others regardless of the organization layer.
+  The area-match case asserts the primary reviewer only; the optional
+  `backup_reviewer` slot (Step 4) is intentionally left ungraded because a
+  smoke suite should not pin an optional field, and `roster_bounded` still
+  guards against any out-of-roster handle.
+- When no roster area matches the changed paths, the eligible set is
+  empty after area filtering, so Step 3's empty-result rule emits
+  NO ELIGIBLE REVIEWER (no area match) rather than proposing a fallback —
+  and this holds identically across organization profiles.
+
 ### Issue management (step-1-fetch-pool, step-3-classify)
 
 - `step-1-fetch-pool` cases pass with `tracker_type: github-issues` and
@@ -83,4 +100,8 @@ uv run --project tools/skill-evals skill-eval \
 # Single case
 uv run --project tools/skill-evals skill-eval \
     tools/skill-evals/evals/non-asf-profile-smoke/step-contributor-governance-intake/fixtures/case-1-dco-model-github-codeowners
+
+# Reviewer-routing non-ASF suite
+uv run --project tools/skill-evals skill-eval \
+    tools/skill-evals/evals/non-asf-profile-smoke/step-reviewer-routing/fixtures/
 ```

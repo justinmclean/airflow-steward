@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -61,6 +62,7 @@ from skill_and_tool_validator import (
     collect_doc_files,
     collect_files_to_check,
     collect_skill_dirs,
+    collect_tool_dirs,
     collect_tool_python_files,
     extract_headings,
     find_repo_root,
@@ -2577,6 +2579,35 @@ class TestValidateTools:
         (tool / "README.md").write_text(
             "# tools/foo\n\n**Capability:** substrate:framework-dev\n\nFoo tool.\n\n" + _VALID_PREREQS
         )
+        violations = list(validate_tools(root))
+        assert violations == []
+
+    def test_ignored_tool_artifact_directory_skipped(self, tmp_path: Path) -> None:
+        root = _make_tools_root(tmp_path)
+        subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True)
+        (root / ".gitignore").write_text("tools/ignored-artifact/\n", encoding="utf-8")
+
+        tracked_tool = root / "tools" / "tracked"
+        tracked_tool.mkdir()
+        (tracked_tool / "README.md").write_text(
+            "# tools/tracked\n\n**Capability:** substrate:framework-dev\n\nTracked tool.\n\n"
+            + _VALID_PREREQS,
+            encoding="utf-8",
+        )
+
+        ignored_tool = root / "tools" / "ignored-artifact"
+        ignored_tool.mkdir()
+        (ignored_tool / ".pytest_cache").mkdir()
+        (ignored_tool / ".pytest_cache" / "CACHEDIR.TAG").write_text("", encoding="utf-8")
+
+        subprocess.run(
+            ["git", "add", ".gitignore", "tools/tracked/README.md"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        )
+
+        assert [d.name for d in collect_tool_dirs(root)] == ["tracked"]
         violations = list(validate_tools(root))
         assert violations == []
 

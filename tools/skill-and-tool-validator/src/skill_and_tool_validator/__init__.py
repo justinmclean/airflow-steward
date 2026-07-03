@@ -126,6 +126,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import re
+import subprocess
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -1542,10 +1543,46 @@ def collect_files_to_check(root: Path | None = None) -> list[Path]:
 
 def collect_tool_dirs(root: Path | None = None) -> list[Path]:
     """Return every immediate sub-directory under tools/ that should be checked."""
-    base = (root or find_repo_root()) / TOOLS_DIR
+    repo_root = root or find_repo_root()
+    base = repo_root / TOOLS_DIR
     if not base.exists():
         return []
-    return sorted(d for d in base.iterdir() if d.is_dir() and not d.name.startswith("."))
+
+    dirs = sorted(d for d in base.iterdir() if d.is_dir() and not d.name.startswith("."))
+    tracked_names = _git_tracked_tool_names(repo_root)
+    if tracked_names is None:
+        return dirs
+    return [d for d in dirs if d.name in tracked_names]
+
+
+def _git_tracked_tool_names(root: Path) -> set[str] | None:
+    """Return top-level ``tools/<name>`` entries tracked by git, if available."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z", "--", str(TOOLS_DIR)],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=False,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+
+    names: set[str] = set()
+    prefix = f"{TOOLS_DIR.as_posix()}/"
+    for raw_path in result.stdout.split(b"\0"):
+        if not raw_path:
+            continue
+        path = raw_path.decode("utf-8", errors="surrogateescape")
+        if not path.startswith(prefix):
+            continue
+        remainder = path[len(prefix) :]
+        name = remainder.split("/", 1)[0]
+        if name and not name.startswith("."):
+            names.add(name)
+    return names
 
 
 def validate_tools(root: Path | None = None) -> Iterable[Violation]:

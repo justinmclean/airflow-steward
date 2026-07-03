@@ -5,7 +5,7 @@
 
 **Capability:** substrate:framework-dev
 
-**Harness:** Claude Code, OpenCode
+**Harness:** Claude Code, Codex, Cursor, Gemini CLI, OpenCode
 
 A spec-driven build loop for this framework, in the general
 [Ralph](https://ghuntley.com/ralph/) style (run a fresh agent context
@@ -16,29 +16,55 @@ this is the operator quickstart.
 
 The loop drives a **headless agent CLI** and is not tied to one harness.
 `SPEC_LOOP_AGENT` picks the CLI (default `claude`) and `SPEC_LOOP_HARNESS`
-picks its run convention — `claude` (`claude -p --dangerously-skip-permissions
---output-format …`, prompt on stdin) or `opencode` (`opencode run --auto
---model … "<prompt>"`, prompt as a positional argument). `SPEC_LOOP_HARNESS`
-defaults from the agent basename, so `SPEC_LOOP_AGENT=opencode` is usually all
-that is needed:
+picks its run convention:
+
+- `claude` — `claude -p --dangerously-skip-permissions --output-format …`,
+  prompt on stdin.
+- `codex` — `codex exec --dangerously-bypass-approvals-and-sandbox -`,
+  prompt on stdin.
+- `cursor` — `cursor agent --print --force --trust --workspace … "<prompt>"`
+  or `cursor-agent --print --force --trust --workspace … "<prompt>"`.
+- `gemini` — `gemini --yolo --prompt "<prompt>"`.
+- `opencode` — `opencode run --auto --model … "<prompt>"`, prompt as a
+  positional argument.
+
+`SPEC_LOOP_HARNESS` defaults from the agent basename, so
+`SPEC_LOOP_AGENT=codex`, `SPEC_LOOP_AGENT=cursor-agent`,
+`SPEC_LOOP_AGENT=gemini`, or `SPEC_LOOP_AGENT=opencode` is usually all that
+is needed:
+
+```bash
+SPEC_LOOP_AGENT=codex tools/spec-loop/loop.sh build 5
+```
+
+```bash
+SPEC_LOOP_AGENT=cursor-agent tools/spec-loop/loop.sh build 5
+```
+
+```bash
+SPEC_LOOP_AGENT=gemini tools/spec-loop/loop.sh build 5
+```
 
 ```bash
 SPEC_LOOP_AGENT=opencode SPEC_LOOP_MODEL=anthropic/claude-sonnet-4-5 \
   tools/spec-loop/loop.sh build 5
 ```
 
-Both conventions run the agent non-interactively with permissions
+All conventions run the agent non-interactively with permissions
 auto-approved; the loop's safety rails (never push, never open a PR) come from
-the OS sandbox and the loop's own guards, not from the harness — see the
-SECURITY notes in [`loop.sh`](loop.sh).
+the OS sandbox, missing push/write credentials, repo hooks, and the loop's own
+guards. Claude also gets per-invocation `--disallowedTools` hard-deny flags;
+the other harnesses rely on their own policy/config plus the external sandbox.
+See the SECURITY notes in [`loop.sh`](loop.sh).
 
 ## Prerequisites
 
 - **Runtime:** Bash + coreutils (`loop.sh` is the runner); the
   spec-side helper tools it drives are Python 3.11+ run via `uv`.
 - **CLIs:** `git` (required — must run inside a git checkout), `gh`
-  (for open-PR duplicate-work checks), and a Claude-compatible agent
-  CLI (`SPEC_LOOP_AGENT`, default `claude`).
+  (for open-PR duplicate-work checks), and one supported headless agent
+  CLI (`SPEC_LOOP_AGENT`, default `claude`; also supports `codex`,
+  `cursor` / `cursor-agent`, `gemini`, and `opencode`).
 - **Credentials / auth:** `gh` must be authenticated for the PR checks;
   the loop is designed to run with **no** push/write credentials in the
   environment (it hard-denies `git push` and `gh` writes).
@@ -94,18 +120,24 @@ The loop runs the agent with `--dangerously-skip-permissions`, so it
 push/write credentials in the environment. The flag bypasses the agent
 permission layer (`.claude/settings.json` deny/ask) but **not** the OS
 sandbox (clean-env + filesystem/network), which stays the real boundary;
-as defence in depth the loop also hard-denies `git push` and `gh` via
-`--disallowedTools`. Full rationale:
-[`docs/spec-driven-development.md` § Security and the dangerously-skip-permissions flag](../../docs/spec-driven-development.md#security-and-the-dangerously-skip-permissions-flag).
+for Claude, as defence in depth, the loop also hard-denies `git push` and
+`gh` via `--disallowedTools`. Full rationale:
+[`docs/spec-driven-development.md` § Security and unattended agent loops](../../docs/spec-driven-development.md#security-and-unattended-agent-loops).
 
 ## Stop / configure
 
 - Stop: `Ctrl+C`, or `touch STOP` (exits after the current iteration).
 - `SPEC_LOOP_BASE` — branch to fork work items from. Defaults to `main`;
   set it explicitly to build on top of a different branch.
-- `SPEC_LOOP_AGENT` — Claude-compatible agent CLI or wrapper to run
-  (default `claude`).
-- `SPEC_LOOP_MODEL` — model passed to the agent CLI (default `sonnet`).
+- `SPEC_LOOP_AGENT` — supported headless agent CLI or wrapper to run
+  (default `claude`; `codex`, `cursor`, `gemini`, and `opencode` are
+  first-class harnesses).
+- `SPEC_LOOP_HARNESS` — override the invocation convention when the CLI
+  name does not imply it (`claude`, `codex`, `cursor`, `gemini`, or
+  `opencode`).
+- `SPEC_LOOP_MODEL` — model passed to the agent CLI. Defaults to `sonnet`
+  for Claude; Codex/Cursor/Gemini/OpenCode use their configured default
+  unless this is set.
 - `SPEC_LOOP_PR_LIMIT` — number of open PRs to include in duplicate-work
   checks (default `100`).
 - `SPEC_LOOP_PLAN_MAX` — plan line count that triggers one consolidation

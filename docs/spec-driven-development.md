@@ -8,7 +8,7 @@
   - [Specs are not RFCs](#specs-are-not-rfcs)
   - [A branch per fix or feature](#a-branch-per-fix-or-feature)
   - [Why it never pushes](#why-it-never-pushes)
-  - [Security and the dangerously-skip-permissions flag](#security-and-the-dangerously-skip-permissions-flag)
+  - [Security and unattended agent loops](#security-and-unattended-agent-loops)
   - [Keeping specs honest: the update beat](#keeping-specs-honest-the-update-beat)
   - [Layout](#layout)
   - [Quick start](#quick-start)
@@ -118,7 +118,7 @@ Opening the PR with `--web` is the framework's convention so the reviewer
 sees the title, body, and generative-AI disclosure in the browser before
 submitting. The agent drafts; the human presses the button.
 
-## Security and the dangerously-skip-permissions flag
+## Security and unattended agent loops
 
 The loop runs the agent headless with `--dangerously-skip-permissions`.
 That deserves a direct explanation, because it looks, at a glance, like
@@ -133,7 +133,9 @@ commit — unattended.
 **What it bypasses, and what it does not.** The framework's sandbox is
 layered (see [`docs/rfcs/RFC-AI-0004.md`](rfcs/RFC-AI-0004.md) for the
 normative statement and `docs/setup/secure-agent-internals.md` for the
-mechanism). `--dangerously-skip-permissions` only reaches the top two:
+mechanism). The harness-specific unattended flag
+(`--dangerously-skip-permissions`, `--dangerously-bypass-approvals-and-sandbox`,
+`--force`, `--yolo`, etc.) only reaches the top two:
 
 | Layer | Mechanism | Bypassed by the flag? |
 |---|---|---|
@@ -142,11 +144,11 @@ mechanism). `--dangerously-skip-permissions` only reaches the top two:
 | 2. Tool permissions | `.claude/settings.json` `permissions.deny` | **Yes** |
 | 3. Forced confirmation | `.claude/settings.json` `permissions.ask` on `git push`, `gh …` | **Yes** |
 
-So the flag removes the *agent-level* gate (Layers 2–3), but the
+So the unattended mode removes the *agent-level* gate (Layers 2–3), but the
 *OS-level* boundary (Layers 0–1) is untouched — it is enforced beneath
 the agent and cannot be turned off from inside it. This is exactly the
-posture the flag's own guidance assumes: it is *"recommended only for
-sandboxes with no internet access."*
+posture these flags' own guidance assumes: use them only inside an
+external sandbox.
 
 **How the loop stays safe anyway.** Three things, in order of
 importance:
@@ -158,9 +160,10 @@ importance:
 2. **Run it with no push/write credentials in the environment.** The
    clean-env wrapper already strips them; keep it that way. `github.com`
    is on the network allow-list, but a `git push` or `gh pr create` with
-   no token cannot authenticate, so it fails closed. As defence in depth
-   the loop also passes
-   `--disallowedTools "Bash(git push *)" "Bash(gh *)"`.
+   no token cannot authenticate, so it fails closed. As Claude-specific
+   defence in depth, the loop also passes
+   `--disallowedTools "Bash(git push *)" "Bash(gh *)"` when using the
+   Claude harness.
 3. **Structural containment.** Every iteration works on its own
    `spec/<slug>` branch, the loop guards against commits landing on the
    base branch, and the prompts forbid push/PR. The human-in-the-loop
@@ -233,9 +236,11 @@ gh pr create --web --base main --head spec/<slug> --title "…" --body-file …
 Stop any run with `Ctrl+C` or `touch STOP`. By default the loop forks
 work items from the branch you start it on (typically `main`); set
 `SPEC_LOOP_BASE` to build on top of a different branch. Set
-`SPEC_LOOP_AGENT` when the Claude-compatible agent CLI is installed
-under a command name other than `claude`. Set `SPEC_LOOP_PR_LIMIT` to
-change how many open PRs are included in the duplicate-work check.
+`SPEC_LOOP_AGENT` to choose a supported headless agent CLI (`claude`,
+`codex`, `cursor`, `gemini`, or `opencode`), and set
+`SPEC_LOOP_HARNESS` when a wrapper's name does not imply its run
+convention. Set `SPEC_LOOP_PR_LIMIT` to change how many open PRs are
+included in the duplicate-work check.
 
 ## How this composes with the framework's principles
 

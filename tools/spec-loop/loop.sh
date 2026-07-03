@@ -31,28 +31,32 @@
 #     iteration and rebuild it forever (an endless loop).
 #
 # SECURITY — read before running:
-#   This loop runs the agent with `--dangerously-skip-permissions`, which
-#   bypasses the AGENT permission layer (.claude/settings.json deny/ask)
-#   but NOT the OS sandbox (clean-env + filesystem/network). Per the
-#   project's security model it MUST be launched inside the sandbox
-#   harness, with no push/write credentials in the environment. Full
-#   rationale: docs/spec-driven-development.md § Security and the
-#   dangerously-skip-permissions flag.
+#   This loop runs the agent in each harness's unattended / auto-approval mode
+#   (for example Claude's `--dangerously-skip-permissions`, Codex's
+#   `--dangerously-bypass-approvals-and-sandbox`, Cursor's `--force`, or
+#   Gemini's `--yolo`). That bypasses the agent permission layer but NOT the
+#   external OS sandbox (clean-env + filesystem/network). Per the project's
+#   security model it MUST be launched inside the sandbox harness, with no
+#   push/write credentials in the environment. Full rationale:
+#   docs/spec-driven-development.md § Security and unattended agent loops.
 #
 # Stop gracefully: press Ctrl+C, or `touch STOP` (exits after the current
 # iteration finishes).
 #
 # Env overrides:
 #   SPEC_LOOP_BASE   branch to fork work items from (default: main)
-#   SPEC_LOOP_AGENT  agent CLI to run (default: claude). Any headless agent
-#                    CLI works; the invocation convention is chosen by
-#                    SPEC_LOOP_HARNESS below.
+#   SPEC_LOOP_AGENT  agent CLI to run (default: claude). Any supported
+#                    headless agent CLI works; the invocation convention is
+#                    chosen by SPEC_LOOP_HARNESS below.
 #   SPEC_LOOP_HARNESS  which harness's headless-run convention to use when
-#                    invoking SPEC_LOOP_AGENT: `claude` (default) or
-#                    `opencode`. Defaults from the agent basename (a CLI named
-#                    `opencode` selects the opencode convention), so setting
+#                    invoking SPEC_LOOP_AGENT: `claude` (default), `codex`,
+#                    `cursor`, `gemini`, or `opencode`. Defaults from the
+#                    agent basename, so setting SPEC_LOOP_AGENT=codex,
+#                    SPEC_LOOP_AGENT=cursor-agent, SPEC_LOOP_AGENT=gemini, or
 #                    SPEC_LOOP_AGENT=opencode is usually enough.
-#   SPEC_LOOP_MODEL  model passed to the agent CLI (default: sonnet)
+#   SPEC_LOOP_MODEL  model passed to the agent CLI. Defaults to `sonnet` for
+#                    Claude; all other harnesses use their configured default
+#                    unless this is set.
 #   SPEC_LOOP_PR_LIMIT  open PRs to list for duplicate-work checks (default: 100)
 #   SPEC_LOOP_PLAN_MAX  plan line count that triggers ONE consolidation
 #                    round before building (default: 500)
@@ -96,10 +100,19 @@ AGENT="${SPEC_LOOP_AGENT:-claude}"
 # agent basename so `SPEC_LOOP_AGENT=opencode` is enough; override explicitly
 # with SPEC_LOOP_HARNESS when the CLI name doesn't match the convention.
 case "${SPEC_LOOP_HARNESS:-$(basename "$AGENT")}" in
+    *codex*)    HARNESS=codex ;;
+    *cursor*)   HARNESS=cursor ;;
+    *gemini*)   HARNESS=gemini ;;
     *opencode*) HARNESS=opencode ;;
     *)          HARNESS=claude ;;
 esac
-MODEL="${SPEC_LOOP_MODEL:-sonnet}"
+if [ -n "${SPEC_LOOP_MODEL:-}" ]; then
+    MODEL="$SPEC_LOOP_MODEL"
+elif [ "$HARNESS" = "claude" ]; then
+    MODEL="sonnet"
+else
+    MODEL=""
+fi
 PR_LIMIT="${SPEC_LOOP_PR_LIMIT:-100}"
 # Agent output format. Default `text` is what the spinner expects; switch to
 # `stream-json` (SPEC_LOOP_OUTPUT_FORMAT=stream-json) to see live tool-call
@@ -163,7 +176,7 @@ fi
 
 if ! command -v "$AGENT" >/dev/null 2>&1; then
     echo "Error: agent CLI '$AGENT' not found on PATH." >&2
-    echo "Set SPEC_LOOP_AGENT to a headless agent CLI (claude / opencode / a wrapper)" >&2
+    echo "Set SPEC_LOOP_AGENT to a headless agent CLI (claude / codex / cursor / gemini / opencode / a wrapper)" >&2
     echo "and SPEC_LOOP_HARNESS to its run convention if the name doesn't imply it." >&2
     exit 1
 fi
@@ -173,7 +186,7 @@ echo "Mode:   $MODE"
 echo "Prompt: $PROMPT_FILE"
 echo "Base:   $BASE  (work items fork from here)"
 echo "Agent:  $AGENT"
-echo "Model:  $MODEL"
+if [ -n "$MODEL" ]; then echo "Model:  $MODEL"; else echo "Model:  (agent default)"; fi
 if [ "$MAX_ITERATIONS" -gt 0 ]; then echo "Max:    $MAX_ITERATIONS iterations"; else echo "Max:    unlimited"; fi
 echo "Stop:   Ctrl+C  or  touch STOP"
 echo "Note:   this loop never pushes and never opens a PR."
@@ -445,6 +458,8 @@ while true; do
     #                                   remote even with permissions skipped.
     # Claude CLI requires --verbose with -p when output-format is stream-json;
     # add it only in that case to keep the default `text` run quiet.
+    MODEL_ARGS=()
+    [ -n "$MODEL" ] && MODEL_ARGS=(--model "$MODEL")
     if [ "$HARNESS" = "opencode" ]; then
         # OpenCode headless: `opencode run <message>` takes the prompt as a
         # positional argument (no stdin), `--model provider/model`, `--auto`
@@ -460,9 +475,48 @@ while true; do
         [ "$OUTPUT_FORMAT" = "stream-json" ] && OC_FORMAT_ARGS=(--format json)
         "$AGENT" run \
             --auto \
-            --model "$MODEL" \
+            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
             ${OC_FORMAT_ARGS[@]+"${OC_FORMAT_ARGS[@]}"} \
             "$(cat "$PROMPT_WITH_CONTEXT")" &
+    elif [ "$HARNESS" = "codex" ]; then
+        # Codex CLI headless: `codex exec -` reads the prompt from stdin.
+        # `--dangerously-bypass-approvals-and-sandbox` is Codex's unattended
+        # automation switch; as with the other harnesses, only use this loop
+        # inside the external OS sandbox described in the SECURITY header.
+        # Codex has no per-invocation --disallowedTools equivalent here; the
+        # hard boundary is the OS sandbox plus repo hooks / exec policy.
+        CODEX_FORMAT_ARGS=()
+        [ "$OUTPUT_FORMAT" = "stream-json" ] && CODEX_FORMAT_ARGS=(--json)
+        "$AGENT" exec \
+            --dangerously-bypass-approvals-and-sandbox \
+            --cd "$ROOT" \
+            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
+            ${CODEX_FORMAT_ARGS[@]+"${CODEX_FORMAT_ARGS[@]}"} \
+            - < "$PROMPT_WITH_CONTEXT" &
+    elif [ "$HARNESS" = "cursor" ]; then
+        # Cursor Agent headless: `cursor agent --print <prompt>` or the
+        # standalone `cursor-agent --print <prompt>`. `--force` is Cursor's
+        # unattended "allow commands unless explicitly denied" mode, and
+        # `--trust` avoids a workspace-trust prompt in headless runs.
+        CURSOR_FORMAT_ARGS=(--output-format "$OUTPUT_FORMAT")
+        CURSOR_SUBCOMMAND=()
+        [ "$(basename "$AGENT")" = "cursor" ] && CURSOR_SUBCOMMAND=(agent)
+        "$AGENT" \
+            ${CURSOR_SUBCOMMAND[@]+"${CURSOR_SUBCOMMAND[@]}"} \
+            --print \
+            --force \
+            --trust \
+            --workspace "$ROOT" \
+            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
+            ${CURSOR_FORMAT_ARGS[@]+"${CURSOR_FORMAT_ARGS[@]}"} \
+            "$(cat "$PROMPT_WITH_CONTEXT")" &
+    elif [ "$HARNESS" = "gemini" ]; then
+        # Gemini CLI headless: `gemini --prompt <prompt>` runs
+        # non-interactively; `--yolo` automatically approves tool calls.
+        "$AGENT" \
+            --yolo \
+            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
+            --prompt "$(cat "$PROMPT_WITH_CONTEXT")" &
     else
         # Claude Code headless (the default).
         VERBOSE_ARGS=()
@@ -472,7 +526,7 @@ while true; do
             --disallowedTools "Bash(git push:*)" "Bash(gh:*)" \
             --output-format="$OUTPUT_FORMAT" \
             ${VERBOSE_ARGS[@]+"${VERBOSE_ARGS[@]}"} \
-            --model "$MODEL" < "$PROMPT_WITH_CONTEXT" &
+            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} < "$PROMPT_WITH_CONTEXT" &
     fi
     AGENT_PID=$!
     spinner "$AGENT_PID" & SPINNER_PID=$!

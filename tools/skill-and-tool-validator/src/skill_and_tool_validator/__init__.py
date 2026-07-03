@@ -2876,9 +2876,7 @@ _BRANCH_SWITCH_RE = re.compile(r"git\s+switch\s+(?:--create|-c)\s+([^\s#\\]+)")
 #   - security, vulnerability (or vuln), advisory as a word component
 _EMBARGO_BRANCH_RE = re.compile(
     r"CVE-\d{4}-\d{4,}"
-    r"|(?:^|[-_/])security(?:[-_/]|$)"
-    r"|(?:^|[-_/])vuln(?:erability|erable)?(?:[-_/]|$)"
-    r"|(?:^|[-_/])advisory(?:[-_/]|$)",
+    r"|(?<![^-_/])(?:security|vuln(?:erability|erable)?|advisory)(?![^-_/])",
     re.IGNORECASE,
 )
 

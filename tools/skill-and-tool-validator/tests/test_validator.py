@@ -4026,6 +4026,18 @@ class TestValidateBranchNameConfidentiality:
         violations = list(validate_branch_name_confidentiality(path, text))
         assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
 
+    def test_security_path_component_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b fixes/security/218")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert any(v.category == BRANCH_CONFIDENTIALITY_CATEGORY for v in violations)
+
+    def test_security_substring_not_flagged(self, tmp_path: Path) -> None:
+        path = tmp_path / "SKILL.md"
+        text = self._md("git checkout -b fix-insecurity-message")
+        violations = list(validate_branch_name_confidentiality(path, text))
+        assert not violations
+
     # --- Placeholder names are skipped ---
 
     def test_placeholder_branch_not_flagged(self, tmp_path: Path) -> None:

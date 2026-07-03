@@ -3,14 +3,11 @@ name: magpie-good-first-issue-sweep
 mode: Mentoring
 description: |
   Sweep the open `<issue-tracker>` backlog for existing issues that
-  could be labelled as good first issues. Score each candidate against
-  the G1–G7 suitability rubric (scope, self-containment, code pointer,
-  small effort, no security sensitivity, no architectural decision, no
-  deprecation decision) and classify it as READY (propose the GFI
-  label), NEAR-MISS (surface specific edits to make it GFI-ready), or
-  SKIP (not suitable). Applies labels only after explicit maintainer
-  confirmation; never edits issue bodies without the maintainer's
-  direction.
+  could be labelled as good first issues. Classifies each candidate as
+  READY (propose the GFI label), NEAR-MISS (surface edits to make it
+  GFI-ready), or SKIP using the G1–G7 suitability rubric. Applies
+  labels only after explicit maintainer confirmation; never edits issue
+  bodies without the maintainer's direction.
 when_to_use: |
   Invoke when a maintainer says "find good first issues in the backlog",
   "which open issues could a newcomer pick up", "label existing issues

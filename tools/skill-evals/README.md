@@ -90,6 +90,13 @@ the runner exits non-zero on any `FAIL` or `ERROR`.
 PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --cli "claude -p" \
     tools/skill-evals/evals/issue-triage/
 
+# Run every case for a skill against OpenCode. The wrapper turns the
+# runner's stdin prompt into the positional message that `opencode run`
+# expects.
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner \
+    --cli "bash -c 'opencode run \"$(cat)\"'" \
+    tools/skill-evals/evals/issue-triage/
+
 # Any LLM CLI that reads a prompt on stdin and writes the response to
 # stdout works — `llm`, `gpt`, a thin curl wrapper, etc.
 PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner --cli "llm -m gpt-4o-mini" \
@@ -130,6 +137,55 @@ prose properties via boolean flags (`has_security_model_quote`,
 automatic JSON-equality comparison is meaningless. Those cases report
 `MANUAL` and the runner skips the CLI call; review them by re-running
 without `--cli` (or with `--verbose`).
+
+#### OpenCode
+
+OpenCode's non-interactive command is `opencode run [message..]`; it
+does not consume the eval prompt from stdin directly. Because
+`skill-eval --cli` always sends the assembled prompt on stdin, invoke
+OpenCode through a small shell wrapper that reads stdin and passes it as
+the message:
+
+```bash
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner \
+    --cli "bash -c 'opencode run \"$(cat)\"'" \
+    tools/skill-evals/evals/security-issue-triage/
+```
+
+Use OpenCode's normal flags inside the wrapper when you need a specific
+model, agent, or output mode:
+
+```bash
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner \
+    --cli "bash -c 'opencode run --model anthropic/claude-sonnet-4-5 \"$(cat)\"'" \
+    tools/skill-evals/evals/security-issue-triage/step-3-classify/fixtures/
+```
+
+For cross-model checks, point the field-aware grader at a different CLI
+or at the same OpenCode wrapper. Using the same model for `--cli` and
+`--grader-cli` is a smoke test, not independent evidence:
+
+```bash
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner \
+    --cli "bash -c 'opencode run \"$(cat)\"'" \
+    --grader-cli "claude -p --model haiku" \
+    tools/skill-evals/evals/security-issue-triage/
+```
+
+Add `--timeout <seconds>` for slower providers. Add OpenCode's global
+`--pure` flag (which must come *before* the `run` subcommand) inside the
+wrapper if you want to run without external OpenCode plugins:
+
+```bash
+PYTHONPATH=tools/skill-evals/src python3 -m skill_evals.runner \
+    --timeout 240 \
+    --cli "bash -c 'opencode --pure run \"$(cat)\"'" \
+    tools/skill-evals/evals/security-issue-triage/
+```
+
+Avoid `opencode run --auto` for evals. The fixtures mock external tool
+calls, so auto-approval is unnecessary and can hide permission-policy
+problems that the eval is meant to surface.
 
 ### Field-aware grading (default in `--cli` mode)
 

@@ -10,7 +10,9 @@ source: >
   README.md § Skill families (utilities) and AGENTS.md § Reusable skills.
   Implemented by tools/skill-and-tool-validator/, tools/skill-evals/,
   tools/sandbox-lint/, tools/dashboard-generator/, tools/probe-templates/,
-  and the write-skill / list-skills utility skills.
+  tools/pilot-report-validator/, tools/vendor-neutrality-score/,
+  tools/preflight-audit/, tools/spec-inventory/, and the write-skill /
+  list-skills utility skills.
 acceptance:
   - Skill definitions are validated (frontmatter keys name/description/
     license, internal link integrity, placeholder conventions).
@@ -49,6 +51,25 @@ trustworthy as it grows.
 - `tools/spec-inventory/` — deterministic `uv` tool that summarizes
   specs, skills, and tools into a compact routing inventory for spec-loop
   prompts.
+- `tools/pilot-report-validator/` — validates adopter pilot-report files
+  against the required schema defined in `docs/pilot-report-template.md`.
+  Checks required frontmatter keys (`skill`, `date`, `target_repo`,
+  plus family-specific required fields), blocked-preflight list
+  structure, and section presence. Pilot reports are the primary
+  evidence source for advancing a skill from `experimental` to `stable`.
+  Capability: `substrate:framework-dev`. Stdlib-only, offline.
+- `tools/vendor-neutrality-score/` — deterministic `uv` tool that scores
+  Magpie's vendor neutrality from repository metadata alone (no network,
+  no model calls). For each capability contract, answers: does Magpie
+  already work across more than one vendor, and is any skill locked to a
+  vendor with no alternative? Reads `tools/*/README.md` and
+  `skills/*/SKILL.md` locally. Capability: `substrate:framework-dev +
+  substrate:analytics`.
+- `tools/preflight-audit/` — dry-runs the bulk-mode pre-flight classifier
+  in live mode (via `gh api graphql`) or replay mode (offline, from a
+  cached snapshot) against a real tracker. Measures skip-rate before and
+  after any rule change, closing the tune-then-verify loop so rule edits
+  are backed by evidence. Capability: `substrate:analytics`.
 - `tools/spec-validator/` — validates spec-loop spec frontmatter
   (required keys, valid `status`/`kind`/`mode` values, body-section
   presence, `Known gaps` section required in functional specs,
@@ -133,6 +154,11 @@ uv run --project tools/spec-inventory --group dev pytest tools/spec-inventory/te
   drift from skill frontmatter.
 - **Tool README prerequisites vary.** A prerequisites consistency pass
   should normalize older tool READMEs before tightening the validator.
-- **Pilot evidence has no common shape.** Experimental-family specs all
-  need adopter evidence, but there is no standard pilot-report template
-  or helper yet.
+- **Pilot evidence shape is now defined and validated.** `docs/pilot-report-template.md`
+  defines the required frontmatter schema and body sections; `tools/pilot-report-validator/`
+  enforces the schema on every `.md` file with a YAML frontmatter block.
+  The "no common shape" gap is closed; the remaining gap is adoption —
+  no adopter pilot has yet submitted a validated report against the template.
+- **Vendor-neutrality measurement is available but unscheduled.** `tools/vendor-neutrality-score/`
+  ships and can be run ad hoc, but is not yet wired into CI or the
+  build loop. Score drift is not automatically surfaced.

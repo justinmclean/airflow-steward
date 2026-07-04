@@ -51,7 +51,7 @@ Each mode is an independently toggleable set of skills. Maturity mirrors
 | CVE tooling | [cve-tooling.md](cve-tooling.md) |
 | Security reporting & dashboards | [security-reporting.md](security-reporting.md) |
 | Adoption & setup | [adoption-and-setup.md](adoption-and-setup.md) |
-| Adapters (Gmail / PonyMail / Jira / GitHub / mail-source / forwarder-relay / mail-archive / github-body-field / github-rollup) | [adapters.md](adapters.md) |
+| Adapters (Gmail / maildir / PonyMail / Jira / GitHub / SourceHut / VCS / change-request / mail-source / asf-svn / forwarder-relay / mail-archive / mail-patch / jira-patch / github-body-field / github-rollup) | [adapters.md](adapters.md) |
 | Project-agnosticism (de-ASF coupling) | [project-agnosticism.md](project-agnosticism.md) |
 | Meta & quality tooling | [meta-and-quality-tooling.md](meta-and-quality-tooling.md) |
 | Spec-loop runner (plan/build/update/consolidate + headless harnesses) | [spec-loop-runner.md](spec-loop-runner.md) |

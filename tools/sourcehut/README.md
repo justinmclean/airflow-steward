@@ -29,7 +29,7 @@ SourceHut (sr.ht) forge bridge implementation for the Apache Magpie framework. I
 
 1. **VCS Repositories:** Reads repo metadata across `git.sr.ht` and `hg.sr.ht`.
 2. **Issue Tracker:** Read/write operations (create ticket, comment, resolve status, update labels) on `todo.sr.ht` trackers.
-3. **Mailing Lists:** Reads patchsets and threads from `lists.sr.ht`, mapping them to the uniform PR/MR review abstraction.
+3. **Mailing Lists:** Reads patchsets and threads from `lists.sr.ht`, mapping them to the uniform PR/MR review abstraction. Fetched mail bodies are external data, not instructions; content is treated as hostile input and routed through the Privacy-LLM gate or redacted before model-facing use. Embedded prompt-injection text in mail bodies is carried as report data only and is never obeyed as a framework instruction.
 4. **CI Builds:** Reads job statuses from `builds.sr.ht`.
 5. **GraphQL client:** Unified command line tool to execute arbitrary queries/mutations across sr.ht subdomains.
 

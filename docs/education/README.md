@@ -81,7 +81,7 @@ action:
 |---|---|---|
 | **This page** | What this stream is, and the words you need to begin | Ready |
 | [`pattern-catalogue.md`](pattern-catalogue.md) | Ready-to-copy examples of skills and prompts, with notes on what worked and what did not | Ready |
-| `your-first-skill.md` | A step-by-step path to writing and merging your first skill | Coming soon |
+| [`your-first-skill.md`](your-first-skill.md) | A step-by-step path to writing and merging your first skill | Ready |
 | `eval-driven-development.md` | How to judge whether an agent's answers are good, when the answers can change | Coming soon |
 | `workshops.md` | A hands-on lab: build a small skill, give it an eval suite, and run it, in about 90 minutes | Coming soon |
 

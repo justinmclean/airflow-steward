@@ -40,6 +40,7 @@ from spec_validator import (
     validate_body,
     validate_frontmatter,
     validate_spdx_header,
+    validate_spec_loop_runner_fixtures,
     validate_validation_paths,
     validation_has_code_block,
 )
@@ -465,6 +466,27 @@ class TestRunValidation:
         assert rc == 1
         captured = capsys.readouterr()
         assert "violation" in captured.out
+
+
+class TestSpecLoopRunnerFixtures:
+    def test_missing_fixture_is_skipped(self, tmp_path: Path) -> None:
+        (tmp_path / "tools").mkdir()
+        assert validate_spec_loop_runner_fixtures(tmp_path) == []
+
+    def test_passing_fixture_is_ok(self, tmp_path: Path) -> None:
+        fixture = tmp_path / "tools" / "spec-loop" / "tests" / "test_runner_fixtures.sh"
+        fixture.parent.mkdir(parents=True)
+        fixture.write_text("#!/usr/bin/env bash\nexit 0\n")
+        assert validate_spec_loop_runner_fixtures(tmp_path) == []
+
+    def test_failing_fixture_is_reported(self, tmp_path: Path) -> None:
+        fixture = tmp_path / "tools" / "spec-loop" / "tests" / "test_runner_fixtures.sh"
+        fixture.parent.mkdir(parents=True)
+        fixture.write_text("#!/usr/bin/env bash\necho broken >&2\nexit 7\n")
+        violations = validate_spec_loop_runner_fixtures(tmp_path)
+        assert len(violations) == 1
+        assert "exit code 7" in violations[0].message
+        assert "broken" in violations[0].message
 
 
 # ---------------------------------------------------------------------------

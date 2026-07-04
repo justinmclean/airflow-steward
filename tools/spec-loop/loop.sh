@@ -72,6 +72,8 @@ cd "$ROOT" || exit 1
 
 LOOP_DIR="tools/spec-loop"
 PLAN="$LOOP_DIR/IMPLEMENTATION_PLAN.md"
+# shellcheck source=tools/spec-loop/lib.sh
+. "$LOOP_DIR/lib.sh"
 
 current_branch() {
     local branch
@@ -400,19 +402,24 @@ while true; do
     # fall back to the control branch ($TOOLING_REF) if the tree is on a base
     # that lacks the tooling. Either way the read never breaks after checkout.
     PROMPT_WITH_CONTEXT="$(mktemp "${TMPDIR:-/tmp}/spec-loop-prompt.XXXXXX")" || exit 1
+    PROMPT_SOURCE="$(mktemp "${TMPDIR:-/tmp}/spec-loop-source.XXXXXX")" || exit 1
     if [ -f "$ACTIVE_PROMPT" ]; then
-        cat "$ACTIVE_PROMPT" > "$PROMPT_WITH_CONTEXT"
-    elif ! git show "$TOOLING_REF:$ACTIVE_PROMPT" > "$PROMPT_WITH_CONTEXT" 2>/dev/null; then
+        cat "$ACTIVE_PROMPT" > "$PROMPT_SOURCE"
+    elif ! git show "$TOOLING_REF:$ACTIVE_PROMPT" > "$PROMPT_SOURCE" 2>/dev/null; then
         echo "Error: could not read '$ACTIVE_PROMPT' from the working tree or control branch '$TOOLING_REF'." >&2
-        rm -f "$PROMPT_WITH_CONTEXT"; break
+        rm -f "$PROMPT_WITH_CONTEXT" "$PROMPT_SOURCE"; break
     fi
-    compact_inventory_context >> "$PROMPT_WITH_CONTEXT"
+    COMPACT_CONTEXT="$(mktemp "${TMPDIR:-/tmp}/spec-loop-compact.XXXXXX")" || exit 1
+    PR_CONTEXT="$(mktemp "${TMPDIR:-/tmp}/spec-loop-prs.XXXXXX")" || exit 1
+    BRANCH_CONTEXT="$(mktemp "${TMPDIR:-/tmp}/spec-loop-branches.XXXXXX")" || exit 1
+    UPDATE_SCOPE_CONTEXT="$(mktemp "${TMPDIR:-/tmp}/spec-loop-update-scope.XXXXXX")" || exit 1
+    compact_inventory_context > "$COMPACT_CONTEXT"
     # Update mode just diffs code against specs; it doesn't pick a work item, so
     # the open-PR list (a network round-trip via gh) buys nothing. Skip it there.
     if [ "$MODE" != "update" ]; then
-        open_pr_context >> "$PROMPT_WITH_CONTEXT"
+        open_pr_context > "$PR_CONTEXT"
     fi
-    local_branch_context >> "$PROMPT_WITH_CONTEXT"
+    local_branch_context > "$BRANCH_CONTEXT"
 
     if [ "$BUILD_ITERATION" = true ]; then
         # The work-item branch forks off BASE (e.g. main), which need not
@@ -454,7 +461,7 @@ while true; do
                 echo "Error: could not check out base '$BASE'. git reported:" >&2
                 printf '  %s\n' "$checkout_out" >&2
                 echo "Resolve the working tree (commit or stash changes), then re-run." >&2
-                rm -f "$PROMPT_WITH_CONTEXT"; break
+                rm -f "$PROMPT_WITH_CONTEXT" "$PROMPT_SOURCE" "$COMPACT_CONTEXT" "$PR_CONTEXT" "$BRANCH_CONTEXT" "$UPDATE_SCOPE_CONTEXT"; break
             fi
         fi
         BASE_HEAD="$(git rev-parse HEAD)"
@@ -463,9 +470,13 @@ while true; do
         # and BASE_HEAD is known. The agent will diff $prev..$BASE_HEAD on the
         # listed paths and skip anything not touched in that range.
         if [ "$MODE" = "update" ]; then
-            update_scope_context >> "$PROMPT_WITH_CONTEXT"
+            update_scope_context > "$UPDATE_SCOPE_CONTEXT"
         fi
     fi
+
+    spec_loop_assemble_prompt_file \
+        "$PROMPT_SOURCE" "$PROMPT_WITH_CONTEXT" "$MODE" "$BUILD_ITERATION" "$BASE" "$TOOLING_REF" \
+        "$COMPACT_CONTEXT" "$PR_CONTEXT" "$BRANCH_CONTEXT" "$UPDATE_SCOPE_CONTEXT"
 
     # Run one iteration with a fresh context.
     #   -p                              headless / non-interactive
@@ -478,81 +489,14 @@ while true; do
     #                                   remote even with permissions skipped.
     # Claude CLI requires --verbose with -p when output-format is stream-json;
     # add it only in that case to keep the default `text` run quiet.
-    MODEL_ARGS=()
-    [ -n "$MODEL" ] && MODEL_ARGS=(--model "$MODEL")
-    if [ "$HARNESS" = "opencode" ]; then
-        # OpenCode headless: `opencode run <message>` takes the prompt as a
-        # positional argument (no stdin), `--model provider/model`, `--auto`
-        # auto-approves permissions not explicitly denied (the OpenCode
-        # equivalent of Claude's --dangerously-skip-permissions), and
-        # `--format json` matches the stream-json request. OpenCode has no
-        # per-invocation --disallowedTools; the push/gh denial that flag
-        # provides as defense-in-depth is instead enforced by the OS sandbox
-        # (the real guard — see the SECURITY header) plus, when wired, the
-        # agent-guard OpenCode plugin and the project's opencode.json
-        # `permission` config.
-        OC_FORMAT_ARGS=()
-        [ "$OUTPUT_FORMAT" = "stream-json" ] && OC_FORMAT_ARGS=(--format json)
-        "$AGENT" run \
-            --auto \
-            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
-            ${OC_FORMAT_ARGS[@]+"${OC_FORMAT_ARGS[@]}"} \
-            "$(cat "$PROMPT_WITH_CONTEXT")" &
-    elif [ "$HARNESS" = "codex" ]; then
-        # Codex CLI headless: `codex exec -` reads the prompt from stdin.
-        # `--dangerously-bypass-approvals-and-sandbox` is Codex's unattended
-        # automation switch; as with the other harnesses, only use this loop
-        # inside the external OS sandbox described in the SECURITY header.
-        # Codex has no per-invocation --disallowedTools equivalent here; the
-        # hard boundary is the OS sandbox plus repo hooks / exec policy.
-        CODEX_FORMAT_ARGS=()
-        [ "$OUTPUT_FORMAT" = "stream-json" ] && CODEX_FORMAT_ARGS=(--json)
-        "$AGENT" exec \
-            --dangerously-bypass-approvals-and-sandbox \
-            --cd "$ROOT" \
-            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
-            ${CODEX_FORMAT_ARGS[@]+"${CODEX_FORMAT_ARGS[@]}"} \
-            - < "$PROMPT_WITH_CONTEXT" &
-    elif [ "$HARNESS" = "cursor" ]; then
-        # Cursor Agent headless: `cursor agent --print <prompt>` or the
-        # standalone `cursor-agent --print <prompt>`. `--force` is Cursor's
-        # unattended "allow commands unless explicitly denied" mode, and
-        # `--trust` avoids a workspace-trust prompt in headless runs.
-        CURSOR_FORMAT_ARGS=(--output-format "$OUTPUT_FORMAT")
-        CURSOR_SUBCOMMAND=()
-        [ "$(basename "$AGENT")" = "cursor" ] && CURSOR_SUBCOMMAND=(agent)
-        "$AGENT" \
-            ${CURSOR_SUBCOMMAND[@]+"${CURSOR_SUBCOMMAND[@]}"} \
-            --print \
-            --force \
-            --trust \
-            --workspace "$ROOT" \
-            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
-            ${CURSOR_FORMAT_ARGS[@]+"${CURSOR_FORMAT_ARGS[@]}"} \
-            "$(cat "$PROMPT_WITH_CONTEXT")" &
-    elif [ "$HARNESS" = "gemini" ]; then
-        # Gemini CLI headless: `gemini --prompt <prompt>` runs
-        # non-interactively; `--yolo` automatically approves tool calls.
-        "$AGENT" \
-            --yolo \
-            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} \
-            --prompt "$(cat "$PROMPT_WITH_CONTEXT")" &
-    else
-        # Claude Code headless (the default).
-        VERBOSE_ARGS=()
-        [ "$OUTPUT_FORMAT" = "stream-json" ] && VERBOSE_ARGS=(--verbose)
-        "$AGENT" -p \
-            --dangerously-skip-permissions \
-            --disallowedTools "Bash(git push:*)" "Bash(gh:*)" \
-            --output-format="$OUTPUT_FORMAT" \
-            ${VERBOSE_ARGS[@]+"${VERBOSE_ARGS[@]}"} \
-            ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} < "$PROMPT_WITH_CONTEXT" &
-    fi
-    AGENT_PID=$!
+    # Harness-specific launch details live in lib.sh so fixture tests can
+    # validate argv construction without starting an agent.
+    spec_loop_launch_agent "$HARNESS" "$AGENT" "$ROOT" "$PROMPT_WITH_CONTEXT" "$MODEL" "$OUTPUT_FORMAT"
+    AGENT_PID=$SPEC_LOOP_AGENT_PID
     spinner "$AGENT_PID" & SPINNER_PID=$!
     wait "$AGENT_PID"
     wait "$SPINNER_PID" 2>/dev/null
-    rm -f "$PROMPT_WITH_CONTEXT"
+    rm -f "$PROMPT_WITH_CONTEXT" "$PROMPT_SOURCE" "$COMPACT_CONTEXT" "$PR_CONTEXT" "$BRANCH_CONTEXT" "$UPDATE_SCOPE_CONTEXT"
 
     CUR_BRANCH="$(current_branch)"
     LAST_COMMIT="$(git log --oneline -1 2>/dev/null)"
@@ -576,7 +520,7 @@ while true; do
         # on BASE — make a tiny marker-only branch off BASE.
         if [ "$MODE" = "update" ]; then
             if [ "$CUR_BRANCH" != "$BASE" ] && [ "$CUR_BRANCH" != "$TOOLING_REF" ]; then
-                printf '%s\n' "$BASE_HEAD" > tools/spec-loop/.last-sync
+                spec_loop_write_last_sync_marker tools/spec-loop/.last-sync "$BASE_HEAD"
                 if ! git diff --quiet -- tools/spec-loop/.last-sync 2>/dev/null; then
                     git add tools/spec-loop/.last-sync
                     if git commit --amend --no-edit >/dev/null 2>&1; then
@@ -589,9 +533,9 @@ while true; do
                 cur_marker=""
                 [ -f tools/spec-loop/.last-sync ] && cur_marker="$(tr -d '[:space:]' < tools/spec-loop/.last-sync)"
                 if [ "$cur_marker" != "$BASE_HEAD" ]; then
-                    marker_branch="advance-last-sync-${BASE_HEAD:0:7}"
+                    marker_branch="$(spec_loop_marker_branch_name "$BASE_HEAD")"
                     if git checkout -b "$marker_branch" >/dev/null 2>&1; then
-                        printf '%s\n' "$BASE_HEAD" > tools/spec-loop/.last-sync
+                        spec_loop_write_last_sync_marker tools/spec-loop/.last-sync "$BASE_HEAD"
                         git add tools/spec-loop/.last-sync
                         if git commit -m "chore(spec-loop): advance .last-sync to $BASE_HEAD" >/dev/null 2>&1; then
                             echo "[ marker ] advanced .last-sync on $marker_branch"

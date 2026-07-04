@@ -35,6 +35,9 @@ Checks every .md file that carries a YAML frontmatter block:
    shell pattern (``--project``, ``--directory``, ``bash -n``,
    ``shellcheck``, ``test -f``) in a Validation code block must exist
    under the repository root. Catches stale paths after renames.
+10. Spec-loop runner fixtures — when present, execute the deterministic
+    Bash fixture suite for prompt assembly, harness argv construction, and
+    ``.last-sync`` marker helpers.
 
 Files without frontmatter (README.md, overview.md) are skipped silently.
 
@@ -48,6 +51,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -447,7 +451,34 @@ def run_validation(target: Path, repo_root: Path | None = None) -> list[Violatio
     violations: list[Violation] = []
     for path in collect_spec_files(target):
         violations.extend(validate_file(path, repo_root=root))
+    violations.extend(validate_spec_loop_runner_fixtures(root))
     return violations
+
+
+def validate_spec_loop_runner_fixtures(repo_root: Path) -> list[Violation]:
+    """Run deterministic fixture tests for the spec-loop runner when present."""
+    fixture = repo_root / "tools" / "spec-loop" / "tests" / "test_runner_fixtures.sh"
+    if not fixture.exists():
+        return []
+
+    result = subprocess.run(
+        ["bash", str(fixture)],
+        cwd=repo_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode == 0:
+        return []
+
+    output = "\n".join(part for part in (result.stdout.strip(), result.stderr.strip()) if part)
+    return [
+        Violation(
+            fixture.relative_to(repo_root),
+            None,
+            f"spec-loop runner fixture tests failed with exit code {result.returncode}: {output}",
+        )
+    ]
 
 
 # ---------------------------------------------------------------------------

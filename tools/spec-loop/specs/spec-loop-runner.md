@@ -8,6 +8,7 @@ kind: feature
 mode: infra
 source: >
   tools/spec-loop/README.md, tools/spec-loop/loop.sh,
+  tools/spec-loop/lib.sh, tools/spec-loop/tests/test_runner_fixtures.sh,
   tools/spec-loop/PROMPT_plan.md, tools/spec-loop/PROMPT_build.md,
   tools/spec-loop/PROMPT_update.md, tools/spec-loop/PROMPT_consolidate.md,
   and docs/spec-driven-development.md.
@@ -41,6 +42,12 @@ and never opens a pull request.
 ## Where it lives
 
 - `tools/spec-loop/loop.sh` — Bash runner for the four beats.
+- `tools/spec-loop/lib.sh` — deterministic prompt assembly, harness
+  command rendering, agent launch, and `.last-sync` marker helpers used
+  by the runner and fixture tests.
+- `tools/spec-loop/tests/test_runner_fixtures.sh` — deterministic
+  fixture tests for prompt assembly, harness command construction, and
+  `.last-sync` marker helpers; executed by `spec-validate`.
 - `tools/spec-loop/PROMPT_plan.md` — gap-analysis prompt that rewrites
   `IMPLEMENTATION_PLAN.md`.
 - `tools/spec-loop/PROMPT_build.md` — implementation prompt for exactly
@@ -140,13 +147,12 @@ updating `loop.sh` in the same change.
 ```bash
 bash -n tools/spec-loop/loop.sh
 shellcheck tools/spec-loop/loop.sh
+shellcheck tools/spec-loop/lib.sh tools/spec-loop/tests/test_runner_fixtures.sh
 uv run --project tools/spec-validator --group dev spec-validate
 ```
 
 ## Known gaps
 
-- There is no deterministic fixture test for prompt assembly, harness
-  command construction, or `.last-sync` marker amendment.
 - The non-Claude harnesses rely on external policy/config plus the OS
   sandbox for push/PR denial; only Claude has a per-invocation hard-deny
   flag in the current runner.

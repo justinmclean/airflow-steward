@@ -32,10 +32,10 @@
 ## Mission
 
 Apache Magpie is responsible for the creation and maintenance of software
-related to agent-assisted repository maintainership and development,
-including issue and pull-request triage, contributor mentoring,
-agent-drafted remediation, developer-side development-cycle skills, and
-narrowly-scoped fix-and-merge automation
+related to creation and maintenance of software related to agent-assisted
+repository maintainership and development, including issue and pull-request
+triage, contributor mentoring, agent-drafted remediation, developer-side
+development-cycle skills, and narrowly-scoped fix-and-merge automation
 
 ## Abstract
 
@@ -98,7 +98,7 @@ Magpie's scope is broad on *capability* and deliberately narrow on *authority*. 
 - **Ship at least one Agentic Pairing skill family** in v1, with mentorship hooks intrinsic — multi-agent review or pre-flight self-review — demonstrated against a friendly-pilot project's contributor development cycle, so the maintainership-and-development scope claim and the human-relationship-preservation claim both have working code to point at.
 - Settle on a contributor-sentiment evaluation methodology (an eval framework such as Apache Plumb, likewise an illustrative placeholder name, not a real or planned ASF project). Eval covers both ASF and non-ASF cohorts so the data isn't an internal-ASF artefact.
 - **Ship the privacy and security posture** as a release-blocking part of v1 — sandbox setup, clean-env wrapper, privacy-LLM gate, PII redactor, signed releases, pinned-tools manifest. Not a follow-up.
-- **Ship the maintainer-education stream** alongside v1 — pattern catalogue, "your first skill" path, first scheduled workshops. The platform is only as adoptable as the docs that go with it.
+- **Ship the maintainer-education stream** alongside v1 — pattern catalogue and "your first skill" path. The platform is only as adoptable as the docs that go with it.
 - **Validate vendor-neutrality** in v1 pilots: at least one project running Agentic Triage, Agentic Mentoring, and Agentic Drafting against a frontier-model backend, one against fully-local inference (Ollama / vLLM), one against an Apache-hosted or Apache-aligned endpoint as it becomes available.
 
 ## Technical scope
@@ -127,10 +127,11 @@ Magpie runs a maintainer-facing education stream as a **first-class part of the 
 
 - **Pattern catalogue** — copy-pasteable skill / prompt / tool-use patterns with notes on what worked, what didn't, and why. The same way the early days of Python testing or distributed systems were taught: war stories with code attached.
 - **Eval-driven development examples** — how to think about correctness when "correct" is a distribution. Worked examples from real Magpie modes; integration with an eval framework such as Apache Plumb so the eval methodology is shared, not reinvented per-project.
-- **Workshops and pairing sessions** — scheduled office-hour sessions where maintainers from any project (ASF or not) can show up with their use case and pair with the Magpie team. Recordings published.
 - **A "your first skill" path** — equivalent of "your first PR" docs, but for landing a working skill in your project. Aim: any motivated maintainer can take a working agentic skill from zero to merged in a weekend, without first having to learn LLM internals.
 
 Every Magpie release ships with the docs and patterns the maintainers using it actually need. The steepness of this learning curve is currently one of the larger barriers to broader agentic adoption in open source; lowering it is part of the platform's job.
+
+The education stream lives at [`docs/education/`](docs/education/README.md).
 
 ## Privacy, security, and supply-chain integrity — the top-most priority
 

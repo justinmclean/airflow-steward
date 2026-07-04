@@ -130,3 +130,4 @@ from mailing lists, slack etc.
 | Know what it costs to run | [mode-economics.md](mode-economics.md) |
 | Understand the privacy model | [rfcs/RFC-AI-0003.md](rfcs/RFC-AI-0003.md) |
 | Contribute to the framework | [CONTRIBUTING.md](../CONTRIBUTING.md) |
+| Learn to build and extend skills | [education/](education/README.md) |

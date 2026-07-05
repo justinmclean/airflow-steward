@@ -169,6 +169,10 @@ class VCSBackend(ABC):
     def reset_worktree(self) -> None:
         """Discard all uncommitted changes (the per-run reset protocol)."""
 
+    @abstractmethod
+    def cat(self, rev: str, path: str) -> str:
+        """Return the contents of *path* at revision *rev*."""
+
 
 def _run(
     args: Sequence[str],
@@ -289,6 +293,9 @@ class GitBackend(VCSBackend):
         _run(["git", "clean", "-fd"], self.root, capture=False)
         _run(["git", "checkout", "--", "."], self.root, capture=False)
 
+    def cat(self, rev: str, path: str) -> str:
+        return _run(["git", "show", f"{rev}:{path}"], self.root)
+
 
 class _UnimplementedBackend(VCSBackend):
     """Shared base for detected-but-not-yet-implemented non-Git backends.
@@ -354,6 +361,9 @@ class _UnimplementedBackend(VCSBackend):
 
     def reset_worktree(self) -> None:
         raise self._unsupported("reset_worktree")
+
+    def cat(self, rev: str, path: str) -> str:
+        raise self._unsupported("cat")
 
 
 class MercurialBackend(VCSBackend):
@@ -449,6 +459,144 @@ class MercurialBackend(VCSBackend):
         _run(["hg", "update", "--clean"], self.root, check=False, capture=False)
         _run(["hg", "purge", "--config", "extensions.purge="], self.root, check=False, capture=False)
 
+    def cat(self, rev: str, path: str) -> str:
+        return _run(["hg", "cat", "-r", rev, path], self.root)
+
+
+class FossilBackend(VCSBackend):
+    """Fossil SCM binding of the source-control capability."""
+
+    name = "fossil"
+    distributed = True
+
+    @classmethod
+    def detect(cls, start: Path) -> Path | None:
+        for d in (start, *start.parents):
+            if (d / ".fslckg").exists() or (d / "_FOSSIL_").exists():
+                return d
+        return None
+
+    @classmethod
+    def is_available(cls) -> bool:
+        try:
+            subprocess.run(["fossil", "version"], capture_output=True, check=True)
+        except (OSError, subprocess.CalledProcessError):
+            return False
+        return True
+
+    def status(self) -> str:
+        try:
+            out = _run(["fossil", "changes"], self.root)
+        except VCSError:
+            out = ""
+        try:
+            extras = _run(["fossil", "extras"], self.root)
+        except VCSError:
+            extras = ""
+
+        lines = []
+        for line in out.splitlines():
+            parts = line.split(None, 1)
+            if len(parts) == 2:
+                status_type, path = parts
+                status_char = "M"
+                if "ADDED" in status_type:
+                    status_char = "A"
+                elif "DELETED" in status_type:
+                    status_char = "D"
+                lines.append(f"{status_char} {path}")
+        for path in extras.splitlines():
+            if path.strip():
+                lines.append(f"? {path.strip()}")
+        return "\n".join(lines) + ("\n" if lines else "")
+
+    def current_branch(self) -> str:
+        return _run(["fossil", "branch", "current"], self.root).strip()
+
+    def diff(self, base: str | None = None, cached: bool = False, paths: Sequence[str] = ()) -> str:
+        if cached:
+            raise VCSError("fossil does not support staging area/cached diff")
+        args = ["fossil", "diff"]
+        if base:
+            args.extend(["-r", base])
+        if paths:
+            args.extend(paths)
+        return _run(args, self.root)
+
+    def log(
+        self,
+        max_count: int | None = None,
+        grep: str | None = None,
+        author: str | None = None,
+        since: str | None = None,
+        paths: Sequence[str] = (),
+    ) -> str:
+        args = ["fossil", "timeline", "checkin"]
+        if max_count is not None:
+            args.extend(["-n", str(max_count)])
+        if author:
+            args.extend(["-u", author])
+        if paths:
+            args.extend(["-p", paths[0]])
+
+        out = _run(args, self.root)
+
+        lines = []
+        for line in out.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("===") and line.endswith("==="):
+                continue
+            if " [" in line and "] " in line:
+                parts = line.split(" [", 1)
+                if len(parts) == 2:
+                    h_parts = parts[1].split("] ", 1)
+                    if len(h_parts) == 2:
+                        rev_hash = h_parts[0]
+                        comment = h_parts[1]
+                        if " (user: " in comment:
+                            comment = comment.rsplit(" (user: ", 1)[0]
+                        if grep and grep.lower() not in comment.lower():
+                            continue
+                        lines.append(f"{rev_hash} {comment}")
+        return "\n".join(lines) + ("\n" if lines else "")
+
+    def create_branch(self, name: str) -> None:
+        basis = self.current_branch()
+        _run(["fossil", "branch", "new", name, basis], self.root, capture=False)
+        _run(["fossil", "update", name], self.root, capture=False)
+
+    def switch(self, ref: str) -> None:
+        _run(["fossil", "update", ref], self.root, capture=False)
+
+    def stage(self, paths: Sequence[str]) -> None:
+        if not paths:
+            raise VCSError("stage: refusing to stage nothing")
+        _run(["fossil", "add", "--", *paths], self.root, capture=False)
+
+    def commit(self, message: str) -> None:
+        _run(["fossil", "commit", "-m", message, "--no-warnings"], self.root, capture=False)
+
+    def fetch(self, remote: str | None = None, ref: str | None = None) -> None:
+        args = ["fossil", "pull"]
+        if remote:
+            args.append(remote)
+        _run(args, self.root, capture=False)
+
+    def push(self, remote: str, ref: str, set_upstream: bool = False) -> None:
+        args = ["fossil", "push"]
+        if remote:
+            args.append(remote)
+        _run(args, self.root, capture=False)
+
+    def reset_worktree(self) -> None:
+        _run(["fossil", "revert"], self.root, check=False, capture=False)
+        _run(["fossil", "clean", "--force"], self.root, check=False, capture=False)
+
+    def cat(self, rev: str, path: str) -> str:
+        return _run(["fossil", "cat", path, "-r", rev], self.root)
+
 
 class SubversionBackend(_UnimplementedBackend):
     """Apache Subversion (SVN) extension point — see apache/magpie#602."""
@@ -463,6 +611,7 @@ class SubversionBackend(_UnimplementedBackend):
 BACKENDS: tuple[type[VCSBackend], ...] = (
     GitBackend,
     MercurialBackend,
+    FossilBackend,
     SubversionBackend,
 )
 
@@ -556,6 +705,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("ref")
 
     sub.add_parser("reset-worktree", help="discard all uncommitted changes")
+
+    p = sub.add_parser("cat", help="print file content at a specific revision")
+    p.add_argument("rev", help="revision or ref")
+    p.add_argument("path", help="file path relative to repository root")
+
     return parser
 
 
@@ -610,6 +764,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             backend.push(ns.remote, ns.ref, set_upstream=ns.set_upstream)
         elif ns.op == "reset-worktree":
             backend.reset_worktree()
+        elif ns.op == "cat":
+            sys.stdout.write(backend.cat(ns.rev, ns.path))
         else:  # pragma: no cover - argparse enforces the choices
             parser.error(f"unknown operation {ns.op!r}")
     except VCSError as exc:

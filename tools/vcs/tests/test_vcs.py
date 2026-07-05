@@ -23,6 +23,7 @@ import pytest
 
 from magpie_vcs import (
     BACKENDS,
+    FossilBackend,
     GitBackend,
     MercurialBackend,
     SubversionBackend,
@@ -89,7 +90,7 @@ def test_detect_git(git_repo: Path) -> None:
     assert backend.root == git_repo
 
 
-def test_detect_marks_hg_and_svn(tmp_path: Path) -> None:
+def test_detect_marks_hg_svn_fossil(tmp_path: Path) -> None:
     (tmp_path / ".hg").mkdir()
     backend = detect_backend(tmp_path)
     assert isinstance(backend, MercurialBackend)
@@ -98,6 +99,16 @@ def test_detect_marks_hg_and_svn(tmp_path: Path) -> None:
     svn.mkdir()
     (svn / ".svn").mkdir()
     assert isinstance(detect_backend(svn), SubversionBackend)
+
+    fossil_dir = tmp_path / "fossil_wc"
+    fossil_dir.mkdir()
+    (fossil_dir / ".fslckg").touch()
+    assert isinstance(detect_backend(fossil_dir), FossilBackend)
+
+    fossil_dir2 = tmp_path / "fossil_wc_win"
+    fossil_dir2.mkdir()
+    (fossil_dir2 / "_FOSSIL_").touch()
+    assert isinstance(detect_backend(fossil_dir2), FossilBackend)
 
 
 def test_detect_none(tmp_path: Path) -> None:
@@ -190,6 +201,12 @@ def test_git_reset_worktree(git_repo: Path) -> None:
     assert (git_repo / "file.txt").read_text() == "hello\n"
 
 
+@git_required
+def test_git_cat(git_repo: Path) -> None:
+    backend = GitBackend(git_repo)
+    assert backend.cat("HEAD", "file.txt") == "hello\n"
+
+
 # -- unimplemented backends ------------------------------------------------
 
 
@@ -273,7 +290,7 @@ def test_cli_detect_and_status(git_repo: Path, capsys: pytest.CaptureFixture[str
 def test_cli_backends_lists_all(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["backends"]) == 0
     out = capsys.readouterr().out
-    for name in ("git", "hg", "svn"):
+    for name in ("git", "hg", "svn", "fossil"):
         assert name in out
 
 
@@ -286,3 +303,9 @@ def test_cli_unimplemented_backend_errors(tmp_path: Path, capsys: pytest.Capture
     (tmp_path / ".svn").mkdir()
     assert main(["-C", str(tmp_path), "status"]) == 2
     assert "apache/magpie#602" in capsys.readouterr().err
+
+
+@git_required
+def test_cli_cat(git_repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["-C", str(git_repo), "cat", "HEAD", "file.txt"]) == 0
+    assert capsys.readouterr().out == "hello\n"

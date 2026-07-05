@@ -33,6 +33,14 @@ it back with the framework maintainers (or keep it local).  Pilot
 reports are the primary feedback channel for moving a skill family from
 `experimental` to `stable`.
 
+Pilot reports alone do not satisfy the contributor-sentiment gate. After
+at least two release cycles of Magpie use, also run the
+[`contributor-sentiment`](../skills/contributor-sentiment/SKILL.md) skill
+to generate a machine-readable gate report covering thread tone,
+time-to-first-reply, first-PR retention, and reviewer load. See
+[`docs/contributor-sentiment.md`](contributor-sentiment.md) for the full
+methodology and promotion rule.
+
 To validate a filled-in report file, run:
 
 ```bash

@@ -1,0 +1,12 @@
+{
+  "upstream": "myorg/brand-new-project",
+  "window_months": 3,
+  "window_start": "2026-04-05",
+  "window_end": "2026-07-05",
+  "baseline_start": "2026-01-05",
+  "baseline_end": "2026-04-05",
+  "baseline_available": false,
+  "profile": "non-asf",
+  "inputs_valid": true,
+  "notes": ["baseline period pre-dates project creation; snapshot-only output will be produced"]
+}

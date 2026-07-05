@@ -1,0 +1,12 @@
+{
+  "upstream": "apache/example-project",
+  "window_months": 6,
+  "window_start": "2026-01-05",
+  "window_end": "2026-07-05",
+  "baseline_start": "2025-07-05",
+  "baseline_end": "2026-01-05",
+  "baseline_available": true,
+  "profile": "asf",
+  "inputs_valid": true,
+  "notes": []
+}

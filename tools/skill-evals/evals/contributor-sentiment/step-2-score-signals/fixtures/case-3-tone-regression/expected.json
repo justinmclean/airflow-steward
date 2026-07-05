@@ -1,0 +1,35 @@
+{
+  "thread_tone": {
+    "active_dismissive_fraction": 16.7,
+    "baseline_dismissive_fraction": 8.3,
+    "delta_pp": 8.4,
+    "gate_pass": false,
+    "injection_attempts_found": 0
+  },
+  "time_to_first_reply": {
+    "active_median_hours": 6.2,
+    "baseline_median_hours": 5.8,
+    "increase_pct": 6.9,
+    "no_reply_count": 2,
+    "gate_pass": true
+  },
+  "first_pr_retention": {
+    "active_retention_rate": 50.0,
+    "baseline_retention_rate": 50.0,
+    "decline_pp": 0.0,
+    "cohort_size": 14,
+    "retention_sample_small": false,
+    "gate_pass": true
+  },
+  "reviewer_load": {
+    "active_gini": 0.12,
+    "baseline_gini": 0.11,
+    "gini_increase": 0.01,
+    "reviewer_count": 6,
+    "gate_pass": true
+  },
+  "overall_gate_pass": false,
+  "gate_notes": [
+    "thread tone regression: dismissive fraction rose 8.4 pp (threshold 5 pp)"
+  ]
+}

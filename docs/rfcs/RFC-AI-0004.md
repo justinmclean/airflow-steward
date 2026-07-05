@@ -146,7 +146,7 @@ A skill that triages 200 PRs in 10 minutes is doing 200 state changes. If the ma
 Agentic Autonomous ("limited fix-and-merge", in Apache Magpie's terminology) is the explicit exception. It permits auto-merge, but only after **all** of the following gate conditions hold:
 
 - The change class is on a per-project, per-class allow-list (lint fixes, dependency bumps within an allow-list, license headers, formatting, broken-link repair). Security-class changes are explicitly out.
-- The project has been running Agentic Triage, Agentic Mentoring, and Agentic Drafting with HITL confirmation for at least two release cycles, and a contributor-sentiment evaluation says the project is healthier, not just faster.
+- The project has been running Agentic Triage, Agentic Mentoring, and Agentic Drafting with HITL confirmation for at least two release cycles, and a contributor-sentiment evaluation says the project is healthier, not just faster. See [`docs/contributor-sentiment.md`](../contributor-sentiment.md) for the evaluation methodology and the four signal dimensions (thread tone, time-to-first-reply, first-PR retention, reviewer load) that constitute this gate.
 - Every auto-merged change is reversibly logged; reverts are one keystroke away.
 
 The carve-out exists because lint-rebase-format has marginal human value and should not require a human in the loop forever. It is **off by default** in the reference implementation. A project that turns it on without first running the manual loop has skipped the proof.

@@ -1,0 +1,12 @@
+{
+  "upstream": "apache/another-project",
+  "window_months": 6,
+  "window_start": "2026-01-05",
+  "window_end": "2026-07-05",
+  "baseline_start": "2024-01-01",
+  "baseline_end": "2024-07-01",
+  "baseline_available": true,
+  "profile": "asf",
+  "inputs_valid": true,
+  "notes": ["baseline period overridden by user argument"]
+}

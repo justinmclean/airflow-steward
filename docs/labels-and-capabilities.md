@@ -217,6 +217,7 @@ Capabilities for every skill currently in
 | `contributor-nomination` | `capability:stats` |
 | `contributor-to-committer` | `capability:stats` |
 | `contributor-activity-sweep` | `capability:stats` |
+| `contributor-sentiment` | `capability:stats` *(measures contributor-sentiment signals — thread tone, time-to-first-reply, first-PR retention, reviewer load — and produces the gate report for experimental→stable advancement)* |
 | `committer-onboarding` | `capability:resolve` + `capability:triage` *(post-vote onboarding close-out — resolve — after validating the vote result in pre-flight — triage)* |
 | `list-skills` | `capability:stats` |
 | `release-audit-report` | `capability:stats` *(assembles the per-release audit record from the planning issue, vote thread, artefact list, and announce archive URL)* |

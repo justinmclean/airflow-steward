@@ -37,6 +37,7 @@ Suites are currently implemented for:
 - **ci-runner-audit** — 6 cases across 2 steps (step-scope-selection, step-reporting)
 - **setup-status** — 14 cases across 4 steps (step-0-preflight, step-1-command, step-2-present, step-3-adjust-decision)
 - **non-asf-profile-smoke** — 6 cases across 2 steps (step-1-fetch-pool, step-3-classify); drives `issue-stale-sweep` through the `projects/non-asf-example/` fixture to verify non-ASF config resolves without skill-body edits
+- **contributor-sentiment** — 10 cases across 3 steps (step-0-resolve-inputs, step-2-score-signals, step-3-generate-report)
 
 ## Prerequisites
 

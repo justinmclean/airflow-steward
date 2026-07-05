@@ -17,7 +17,7 @@
 
 """Validate framework skill definitions.
 
-This module validates seventeen aspects of every skill under
+This module validates eighteen aspects of every skill under
 skills/:
 
 1. YAML frontmatter — every SKILL.md must have a valid frontmatter
@@ -126,6 +126,13 @@ skills/:
     mention the prompt-injection risk in embedded mail content. Both
     are advisories — the check warns without failing the run so legacy
     adapters can be brought into compliance deliberately.
+20. SKILL.md line-length limit (SOFT) — ``SKILL.md`` entrypoint files
+    must stay under ``SKILL_LINE_LIMIT`` (500) lines per PRINCIPLE 14.
+    Reference material beyond that limit should move into sibling
+    markdown files linked one level deep, with no unreferenced siblings.
+    Advisory only — existing skills that pre-date this check are flagged
+    for gradual migration; the check prevents new oversized entrypoints
+    from being merged unnoticed.
 
 SOFT categories surface as advisory warnings (stderr) without
 failing the run unless ``--strict`` is passed.
@@ -515,6 +522,11 @@ CAPABILITY_TAXONOMY_CATEGORY = "capability-taxonomy"
 # SOFT advisory: contract:mail-source and contract:mail-archive adapter READMEs must
 # declare the data-not-instructions posture and prompt-injection risk for fetched mail.
 MAIL_PRIVACY_CATEGORY = "mail-privacy-boundary"
+# SOFT advisory: SKILL.md entrypoint files must stay under SKILL_LINE_LIMIT lines
+# (PRINCIPLES.md).  Reference material beyond the limit should move into sibling
+# markdown files linked one level deep, with no unreferenced siblings.
+SKILL_LINE_LIMIT = 500
+SKILL_LINE_LIMIT_CATEGORY = "skill-line-limit"
 
 # The `magpie-` namespace prefix every installed framework skill carries.
 SKILL_NAME_PREFIX = "magpie-"
@@ -537,6 +549,7 @@ SOFT_CATEGORIES: frozenset[str] = frozenset(
         BRANCH_CONFIDENTIALITY_CATEGORY,
         CAPABILITY_TAXONOMY_CATEGORY,
         MAIL_PRIVACY_CATEGORY,
+        SKILL_LINE_LIMIT_CATEGORY,
     }
 )
 HARD_CATEGORIES: frozenset[str] = frozenset(
@@ -3517,6 +3530,30 @@ def validate_branch_name_confidentiality(path: Path, text: str) -> Iterable[Viol
                 )
 
 
+def validate_skill_line_limit(path: Path, text: str) -> Iterable[Violation]:
+    """SOFT advisory: SKILL.md entrypoint files must stay under SKILL_LINE_LIMIT lines.
+
+    PRINCIPLES.md requires SKILL.md to stay under 500 lines; reference material
+    beyond that limit moves into sibling markdown files linked one level deep, with
+    no unreferenced siblings.  Reported as SOFT so existing over-limit skills can be
+    migrated deliberately without blocking unrelated changes.
+    """
+    if path.name != "SKILL.md":
+        return
+    lines = text.splitlines()
+    line_count = len(lines)
+    if line_count > SKILL_LINE_LIMIT:
+        yield Violation(
+            path,
+            SKILL_LINE_LIMIT,
+            f"skill-line-limit: SKILL.md is {line_count} lines, exceeding the "
+            f"{SKILL_LINE_LIMIT}-line limit (PRINCIPLES.md §14) — move reference "
+            f"material into sibling markdown files linked one level deep; "
+            f"no unreferenced siblings",
+            category=SKILL_LINE_LIMIT_CATEGORY,
+        )
+
+
 def run_validation(root: Path | None = None) -> list[Violation]:
     """Run the full validation suite and return all violations."""
     repo_root = root or find_repo_root()
@@ -3541,6 +3578,7 @@ def run_validation(root: Path | None = None) -> list[Violation]:
             violations.extend(validate_privacy_patterns(path, text))
             violations.extend(validate_trigger_preservation(path, text, repo_root=repo_root))
             violations.extend(validate_asf_coupling(path, text))
+            violations.extend(validate_skill_line_limit(path, text))
 
         # All skill files get link + placeholder + security-pattern checks
         violations.extend(validate_links(path, text, skill_dirs, doc_files))
@@ -3678,6 +3716,7 @@ _SOFT_RULE_PREFIXES: tuple[str, ...] = (
     "lowercase-f-field",
     "mail-privacy-boundary",
     "modes-doc:",
+    "skill-line-limit",
     "multi-capability declared",
     "override-contract",
     "override-weakening",

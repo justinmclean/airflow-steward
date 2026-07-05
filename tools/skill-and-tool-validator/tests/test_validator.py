@@ -57,6 +57,8 @@ from skill_and_tool_validator import (
     PRIVACY_CATEGORY,
     SECURITY_PATTERN_CATEGORY,
     SKILL_CAPABILITIES,
+    SKILL_LINE_LIMIT,
+    SKILL_LINE_LIMIT_CATEGORY,
     SKILL_SOURCE_CATEGORY,
     SOFT_CATEGORIES,
     STATUS_CATEGORY,
@@ -109,6 +111,7 @@ from skill_and_tool_validator import (
     validate_privacy_patterns,
     validate_project_template_drift,
     validate_security_patterns,
+    validate_skill_line_limit,
     validate_skill_source_descriptors,
     validate_skill_source_pointers,
     validate_tools,
@@ -4745,3 +4748,62 @@ class TestMailPrivacyBoundary:
         )
         violations = list(validate_mail_privacy_boundary(root))
         assert all(v.category == MAIL_PRIVACY_CATEGORY for v in violations)
+
+
+class TestValidateSkillLineLimit:
+    """Tests for the SOFT skill-line-limit check (aspect #20)."""
+
+    def _skill_md(self, tmp_path: Path, line_count: int) -> Path:
+        """Write a SKILL.md with exactly *line_count* lines under tmp_path."""
+        skill_dir = tmp_path / "skills" / "my-skill"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        lines = ["line"] * line_count
+        skill_path.write_text("\n".join(lines))
+        return skill_path
+
+    def test_under_limit_no_violation(self, tmp_path: Path) -> None:
+        path = self._skill_md(tmp_path, SKILL_LINE_LIMIT - 100)
+        text = path.read_text()
+        violations = list(validate_skill_line_limit(path, text))
+        assert violations == []
+
+    def test_at_limit_no_violation(self, tmp_path: Path) -> None:
+        path = self._skill_md(tmp_path, SKILL_LINE_LIMIT)
+        text = path.read_text()
+        violations = list(validate_skill_line_limit(path, text))
+        assert violations == []
+
+    def test_one_over_limit_fires_violation(self, tmp_path: Path) -> None:
+        path = self._skill_md(tmp_path, SKILL_LINE_LIMIT + 1)
+        text = path.read_text()
+        violations = list(validate_skill_line_limit(path, text))
+        assert len(violations) == 1
+
+    def test_violation_message_contains_line_count(self, tmp_path: Path) -> None:
+        line_count = SKILL_LINE_LIMIT + 42
+        path = self._skill_md(tmp_path, line_count)
+        text = path.read_text()
+        violations = list(validate_skill_line_limit(path, text))
+        assert str(line_count) in violations[0].message
+
+    def test_violation_message_contains_limit(self, tmp_path: Path) -> None:
+        path = self._skill_md(tmp_path, SKILL_LINE_LIMIT + 1)
+        text = path.read_text()
+        violations = list(validate_skill_line_limit(path, text))
+        assert str(SKILL_LINE_LIMIT) in violations[0].message
+
+    def test_violation_category_is_skill_line_limit(self, tmp_path: Path) -> None:
+        path = self._skill_md(tmp_path, SKILL_LINE_LIMIT + 1)
+        text = path.read_text()
+        violations = list(validate_skill_line_limit(path, text))
+        assert violations[0].category == SKILL_LINE_LIMIT_CATEGORY
+
+    def test_non_skill_md_not_checked(self, tmp_path: Path) -> None:
+        other = tmp_path / "SOMETHING.md"
+        other.write_text("\n".join(["line"] * (SKILL_LINE_LIMIT + 10)))
+        violations = list(validate_skill_line_limit(other, other.read_text()))
+        assert violations == []
+
+    def test_category_is_soft(self) -> None:
+        assert SKILL_LINE_LIMIT_CATEGORY in SOFT_CATEGORIES

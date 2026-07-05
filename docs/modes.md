@@ -56,7 +56,7 @@ Autonomous* (the renamed former *Auto-merge*).
 
 | Mode | Purpose | Status | Skill count |
 |---|---|---|---|
-| **Triage** | *(Agentic Triage)* Issues, security reports, PRs: spot, classify, route, surface duplicates. Every output is a suggestion the human signs off on. | stable (security) / experimental (pr-management, issue-management, contributor-nomination, repo-health, release-management) | 32 |
+| **Triage** | *(Agentic Triage)* Issues, security reports, PRs: spot, classify, route, surface duplicates. Every output is a suggestion the human signs off on. | stable (security) / experimental (pr-management, issue-management, contributor-nomination, repo-health, release-management) | 33 |
 | **Mentoring** | *(Agentic Mentoring)* Joins issue and PR threads in a teaching register: clarifying questions, pointers to project conventions, paired examples from prior PRs, hand-off to a human when scope exceeds the agent. Also authors net-new good first issues, curates the existing backlog, and explains filed issues to newcomers to lower onboarding latency. | experimental | 7 |
 | **Drafting** | *(Agentic Drafting)* Agent drafts a fix for a well-scoped problem and opens a PR; every PR is reviewed and merged by a human committer. | stable (security-only); experimental (issue-management, audit-findings, release-management family) | 9 |
 | **Pairing** | *(Agentic Pairing)* Developer-side dev-cycle skills with mentorship intrinsic — multi-agent review pipelines, self-review and pre-flight patterns, scoped fix drafting under the developer's driver's seat. | experimental | 3 |
@@ -82,6 +82,7 @@ do not act without human review.
 | [`issue-triage`](../skills/issue-triage/SKILL.md) | General-issue-tracker triage (per-issue classification + disposition proposal). | experimental |
 | [`issue-reassess`](../skills/issue-reassess/SKILL.md) | Pool-level sweep of resolved / EOL issues for re-assessment. | experimental |
 | [`issue-stale-sweep`](../skills/issue-stale-sweep/SKILL.md) | Sweep open issues for inactivity past a configurable threshold; proposes a nudge (`REQUEST-UPDATE`) or a pre-close notice (`CLOSE-STALE`); waits for maintainer confirmation before posting. | experimental |
+| [`pr-stale-sweep`](../skills/pr-stale-sweep/SKILL.md) | Sweep open PRs for inactivity past a configurable threshold; proposes a nudge (`REQUEST-UPDATE`) or a pre-close notice (`CLOSE-STALE`); skips maintainer-court and ready-labelled PRs; waits for maintainer confirmation before posting. | experimental |
 | [`issue-backlog-stats`](../skills/issue-backlog-stats/SKILL.md) | Read-only maintainer dashboard for the open general-issue backlog: health rating, age/staleness breakdowns, area pressure ranking, and triage-funnel summary. | experimental |
 | [`issue-deduplicate`](../skills/issue-deduplicate/SKILL.md) | Merge two open `<issue-tracker>` issues that describe the same root cause, preserving both reporters' context; proposes closure comment on the duplicate and a cross-reference on the kept issue. | experimental |
 | [`contributor-nomination`](../skills/contributor-nomination/SKILL.md) | Nomination-readiness brief for a named contributor — activity breadth, consistency, and evidence prose for a committer or PMC thread. | experimental |

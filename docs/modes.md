@@ -57,7 +57,7 @@ Autonomous* (the renamed former *Auto-merge*).
 | Mode | Purpose | Status | Skill count |
 |---|---|---|---|
 | **Triage** | *(Agentic Triage)* Issues, security reports, PRs: spot, classify, route, surface duplicates. Every output is a suggestion the human signs off on. | stable (security) / experimental (pr-management, issue-management, contributor-nomination, repo-health, release-management) | 32 |
-| **Mentoring** | *(Agentic Mentoring)* Joins issue and PR threads in a teaching register: clarifying questions, pointers to project conventions, paired examples from prior PRs, hand-off to a human when scope exceeds the agent. Also authors net-new good first issues and curates the existing backlog to lower onboarding latency. | experimental | 5 |
+| **Mentoring** | *(Agentic Mentoring)* Joins issue and PR threads in a teaching register: clarifying questions, pointers to project conventions, paired examples from prior PRs, hand-off to a human when scope exceeds the agent. Also authors net-new good first issues and curates the existing backlog to lower onboarding latency. | experimental | 6 |
 | **Drafting** | *(Agentic Drafting)* Agent drafts a fix for a well-scoped problem and opens a PR; every PR is reviewed and merged by a human committer. | stable (security-only); experimental (issue-management, audit-findings, release-management family) | 9 |
 | **Pairing** | *(Agentic Pairing)* Developer-side dev-cycle skills with mentorship intrinsic — multi-agent review pipelines, self-review and pre-flight patterns, scoped fix drafting under the developer's driver's seat. | experimental | 2 |
 | **Agentic Autonomous** | Auto-merge restricted to objectively boring change classes only (lint, dependency bumps inside an allow-list, license-header insertion, formatting, broken-link repair). | off | 0 |
@@ -128,7 +128,7 @@ Three notes on the boundaries:
 
 ## Mentoring
 
-**Status: experimental. 5 skills shipped.**
+**Status: experimental. 6 skills shipped.**
 
 [`MISSION.md` § Agentic Mentoring](../MISSION.md#technical-scope) names this
 the highest-value project-side mode and the one off-the-shelf agent
@@ -143,6 +143,7 @@ choices were reviewable independently from the runtime behaviour.
 | [`mentoring-welcome`](../skills/mentoring-welcome/SKILL.md) | Draft a first-contact orientation comment for a first-time contributor on a newly opened issue or PR; detects first-time authorship via `author_association`, drafts a welcome with contributing-guide link and expected next steps; waits for maintainer confirmation before posting. | experimental |
 | [`contributor-to-committer`](../skills/contributor-to-committer/SKILL.md) | Read-only readiness tracker mapping a contributor's GitHub activity against the adopter's PMC-declared committer/PMC thresholds; surfaces a traffic-light brief (Not yet / Approaching / Ready to nominate) plus the specific evidence gaps that remain. | experimental |
 | [`good-first-issue-sweep`](../skills/good-first-issue-sweep/SKILL.md) | Sweep the open issue backlog for existing issues that could be labelled as good first issues; scores each against the G1–G7 suitability rubric and classifies as READY / NEAR-MISS / SKIP; proposes labels only after explicit maintainer confirmation. | experimental |
+| [`onboarding-concierge`](../skills/onboarding-concierge/SKILL.md) | Answer a newcomer's "how do I contribute here" question by grounding the response in `CONTRIBUTING.md` and the project's own docs; classifies the question (setup / workflow / first-issue), retrieves the relevant excerpt, and drafts a concise answer; hands off to a human for design, security, or out-of-scope questions. | experimental |
 
 | Doc | Purpose |
 |---|---|

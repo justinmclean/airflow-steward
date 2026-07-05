@@ -24,7 +24,7 @@
 
 ## Status
 
-Experimental. Five skills shipped:
+Experimental. Six skills shipped:
 
 | Skill | Purpose |
 |---|---|
@@ -33,6 +33,7 @@ Experimental. Five skills shipped:
 | [`mentoring-welcome`](../../skills/mentoring-welcome/SKILL.md) | Draft a first-contact orientation comment for a first-time contributor on a newly opened issue or PR. |
 | [`contributor-to-committer`](../../skills/contributor-to-committer/SKILL.md) | Read-only readiness tracker mapping a contributor's GitHub activity against the adopter's declared committer/PMC thresholds. |
 | [`good-first-issue-sweep`](../../skills/good-first-issue-sweep/SKILL.md) | Sweep the open issue backlog for issues that could be labelled as good first issues, scoring each against the G1–G7 suitability rubric. |
+| [`onboarding-concierge`](../../skills/onboarding-concierge/SKILL.md) | Answer a newcomer's "how do I contribute here" question from the project's `CONTRIBUTING.md`; classifies the question and hands off to a human for design, security, or out-of-scope queries. |
 
 This document is the normative Agentic Mentoring spec: tone guide, hand-off
 protocol, and adopter contract. The skills implement these conventions;

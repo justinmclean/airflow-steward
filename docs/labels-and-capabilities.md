@@ -185,6 +185,7 @@ Capabilities for every skill currently in
 | `good-first-issue-author` | `capability:review` *(authors a newcomer-ready good first issue — contributor mentoring on the supply side)* |
 | `good-first-issue-sweep` | `capability:review` + `capability:triage` *(sweeps the open issue backlog for GFI candidates; scores each against the G1–G7 rubric and proposes the label on maintainer confirmation — a triage sweep in the mentoring family)* |
 | `mentoring-welcome` | `capability:review` *(drafts a first-contact orientation comment for first-time contributors on issues and PRs)* |
+| `onboarding-concierge` | `capability:review` *(answers newcomer "how do I contribute here" questions from the project's contributing guide; hands off design, security, and out-of-scope queries to a human)* |
 | `issue-fix-workflow` | `capability:fix` |
 | `audit-finding-fix` | `capability:fix` |
 | `security-issue-fix` | `capability:fix` + `capability:resolve` *(opens the PR that closes the tracker — both phases)* |

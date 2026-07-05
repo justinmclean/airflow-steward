@@ -1,0 +1,3 @@
+SYNC_MARKER_12345
+skill: magpie-onboarding-concierge
+skill_path: skills/onboarding-concierge/SKILL.md

@@ -324,6 +324,8 @@ already open, labelled `good first issue`:
 [Amazon Q](https://github.com/apache/magpie/issues/320),
 [JetBrains Junie](https://github.com/apache/magpie/issues/321),
 [OpenHands](https://github.com/apache/magpie/issues/322).
+The step-by-step wiring recipe for any new runtime is
+[`docs/adapters/add-a-harness.md`](adapters/add-a-harness.md).
 
 ### 3. Forge and tracker
 

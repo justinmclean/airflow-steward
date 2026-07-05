@@ -170,6 +170,7 @@ Capabilities for every skill currently in
 | `pr-management-triage` | `capability:triage` |
 | `issue-triage` | `capability:triage` |
 | `issue-stale-sweep` | `capability:triage` |
+| `pr-stale-sweep` | `capability:triage` |
 | `security-issue-triage` | `capability:triage` |
 | `ci-runner-audit` | `capability:triage` |
 | `dependency-audit` | `capability:triage` |

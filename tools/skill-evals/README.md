@@ -41,6 +41,7 @@ Suites are currently implemented for:
 - **onboarding-concierge** — 10 cases across 2 steps (question-classify, answer-draft)
 - **newcomer-issue-explainer** — 11 cases across 2 steps (issue-assessment, explanation-quality)
 - **pre-first-pr-check** — 9 cases across 2 steps (step-2-check-categories, step-3-compose-report)
+- **pr-stale-sweep** — 19 cases across 5 steps (step-1-fetch-pool, step-3-classify, step-4-compose-comment, step-5-confirm, step-7-recap)
 
 ## Prerequisites
 

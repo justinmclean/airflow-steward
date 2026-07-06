@@ -675,12 +675,12 @@ def exec_main(argv: list[str]) -> int:
         )
         return 1
     os.environ[_EXEC_DEPTH_VAR] = str(depth + 1)
+    # execvp replaces the process image on success; on failure it raises OSError.
     try:
         os.execvp(argv[0], argv)
     except OSError as exc:
         sys.stderr.write(f"agent-guard --exec: {exc}\n")
         return 1
-    return 1  # unreachable on success (execvp replaces the process image)
 
 
 def cli(argv: list[str] | None = None) -> int:

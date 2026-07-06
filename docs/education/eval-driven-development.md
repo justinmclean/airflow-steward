@@ -23,11 +23,12 @@
 
 # Eval-driven development
 
-This is **step 6** in the [learning progression](README.md). You wrote a skill in
-step 4 and applied its safety patterns in step 5; this page is how you tell
-whether it actually works. A skill is not finished without an eval suite, and
-the next step (autonomy) depends on the evidence you build here, so this stage
-sits on the main path, not off to the side.
+This is **step 7** in the [learning progression](README.md). You wrote a skill in
+step 4, applied its safety patterns in step 5, and debugged its failures in step
+6; this page is how you tell whether it actually works across the full range of
+inputs. A skill is not finished without an eval suite, and the next step
+(autonomy) depends on the evidence you build here, so this stage sits on the
+main path, not off to the side.
 
 For a service that returns `200 OK` or throws an error, "correct" is a yes or
 no. For an agentic skill, it is not. A skill that reads a GitHub issue,
@@ -432,10 +433,14 @@ In practice this means:
   mechanics of making an eval suite: the file layout, running the harness, and
   the case format. This page covers the *design* of evals: what to check, when
   to use prose grading, and how to think about correctness.
-- **[`writing-safe-skills.md`](writing-safe-skills.md)** is step 5, the page
-  immediately before this one. The attack cases you write in evals (including
-  the prompt-injection fixture) pair directly with the patterns it describes.
-- **[`agentic-work.md`](agentic-work.md)** is step 7, the page after this one.
+- **[`writing-safe-skills.md`](writing-safe-skills.md)** is step 5. The attack
+  cases you write in evals (including the prompt-injection fixture) pair
+  directly with the patterns it describes.
+- **[`debugging-skills.md`](debugging-skills.md)** is step 6, the page
+  immediately before this one. That page covers the debug loop when an eval
+  fails; this one covers designing the evals that surface the bug in the first
+  place. They pair.
+- **[`agentic-work.md`](agentic-work.md)** is step 8, the page after this one.
   The eval evidence you build here is exactly what lets a skill run
   autonomously, so evals come first for a reason.
 - **[`tools/skill-evals/README.md`](../../tools/skill-evals/README.md)** is the

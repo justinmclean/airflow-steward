@@ -88,10 +88,11 @@ each builds on the ones before it.
 | 3 | [Choosing models](choosing-models.md) | Choosing a model by capability, speed, and cost, and letting evals decide |
 | 4 | [Your first skill](your-first-skill.md) | Writing and merging your own skill, the main work in Magpie |
 | 5 | [Writing safe skills](writing-safe-skills.md) | Authoring patterns that hold the data-not-instructions and sandbox principles in every skill you write |
-| 6 | [Eval-driven development](eval-driven-development.md) | How to judge whether an agent's answers are good, when the answers can change |
-| 7 | [Agentic & autonomous work](agentic-work.md) | Letting an agent run a whole task, and the guardrails that make that safe |
-| 8 | [English as code](english-as-code.md) | The mindset underneath it all: the words you write *are* the program |
-| 9 | [Contributing back](contributing.md) | Giving your work back: contributing skills, patterns, and docs to the framework |
+| 6 | [Debugging a skill](debugging-skills.md) | Reading the audit log, reproducing failures with the eval harness, and isolating prompt vs tool vs model problems |
+| 7 | [Eval-driven development](eval-driven-development.md) | How to judge whether an agent's answers are good, when the answers can change |
+| 8 | [Agentic and autonomous work](agentic-work.md) | Letting an agent run a whole task, and the guardrails that make that safe |
+| 9 | [English as a programming language](english-as-code.md) | The mindset underneath it all: the words you write *are* the program |
+| 10 | [How to contribute to Magpie](contributing.md) | Giving your work back: contributing skills, patterns, and docs to the framework |
 
 **Supporting references for the skill-writing steps (4 and 5):**
 

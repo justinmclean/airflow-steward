@@ -128,6 +128,24 @@ class TestGenericIsoDirectExec:
         assert res.returncode == 0, res.stderr
         assert _argv(res.stdout) == ["--flag", "value", "positional"]
 
+    def test_worktree_flag_stripped_for_generic_cli(self, tmp_path: Path) -> None:
+        # -w / --worktree is a Claude-only control flag; it must not leak into a
+        # generic CLI's argv where it could be misparsed as a native flag.
+        res = _run_direct(tmp_path, extra_cli_args=["-w", "run"])
+        assert res.returncode == 0, res.stderr
+        argv = _argv(res.stdout)
+        assert "-w" not in argv
+        assert "--worktree" not in argv
+        assert argv == ["run"]
+
+    def test_ssh_auth_sock_passed_through_for_generic_cli(self, tmp_path: Path) -> None:
+        # SSH_AUTH_SOCK is a fixed member of the Layer 0 passthrough (RFC-AI-0002
+        # § Layer 0) and must reach every harness identically, generic ones
+        # included. Gating git push is a separate Layer 3 concern.
+        res = _run_direct(tmp_path, extra_env={"SSH_AUTH_SOCK": "/tmp/agent.sock"})
+        assert res.returncode == 0, res.stderr
+        assert _parse_env(res.stdout).get("SSH_AUTH_SOCK") == "/tmp/agent.sock"
+
     def test_missing_cli_exits_127(self, tmp_path: Path) -> None:
         # No fake binary in tmp_path — should exit 127.
         env = {
@@ -242,3 +260,68 @@ class TestGenericIsoSourced:
             )
             assert res.returncode == 0, f"CLI {cli!r} failed: {res.stderr}"
             assert f"[{cli}-iso] running in isolated env" in res.stderr
+
+    def test_sourced_no_cli_arg_exits_nonzero(self, tmp_path: Path) -> None:
+        # Sourced `agent-iso` with no CLI must match the direct-exec path: a
+        # usage hint and a non-zero exit, not a confusing "'' not found".
+        env = {
+            "PATH": f"{tmp_path}:{os.environ.get('PATH', '/usr/bin:/bin')}",
+            "HOME": "/tmp/testhome",
+            "USER": "testuser",
+            "SHELL": "/bin/sh",
+        }
+        res = subprocess.run(
+            [BASH, "-c", f'source "{SCRIPT}"\nagent-iso\n'],
+            env=env,
+            cwd=str(tmp_path),
+            capture_output=True,
+            text=True,
+        )
+        assert res.returncode != 0
+        assert "Usage" in res.stderr
+
+
+class TestGenericIsoSymlink:
+    """The direct-exec ``case "agent-iso")`` branch: a symlink named exactly
+    ``agent-iso`` takes its first positional arg as the harness CLI name."""
+
+    @staticmethod
+    def _env(tmp_path: Path) -> dict:
+        return {
+            "PATH": f"{tmp_path}:{os.environ.get('PATH', '/usr/bin:/bin')}",
+            "HOME": "/tmp/testhome",
+            "USER": "testuser",
+            "SHELL": "/bin/sh",
+            "TERM": "xterm",
+            "LANG": "en_US.UTF-8",
+        }
+
+    def test_symlink_named_agent_iso_launches_cli(self, tmp_path: Path) -> None:
+        _make_fake_cli(tmp_path)
+        link = tmp_path / "agent-iso"
+        link.symlink_to(SCRIPT)
+        res = subprocess.run(
+            [BASH, str(link), _FAKE_CLI, "run", "hello"],
+            env=self._env(tmp_path),
+            cwd=str(tmp_path),
+            capture_output=True,
+            text=True,
+        )
+        assert res.returncode == 0, res.stderr
+        assert f"[{_FAKE_CLI}-iso] running in isolated env" in res.stderr
+        assert _argv(res.stdout) == ["run", "hello"]
+
+    def test_symlink_named_agent_iso_no_cli_arg_exits_nonzero(
+        self, tmp_path: Path
+    ) -> None:
+        link = tmp_path / "agent-iso"
+        link.symlink_to(SCRIPT)
+        res = subprocess.run(
+            [BASH, str(link)],
+            env=self._env(tmp_path),
+            cwd=str(tmp_path),
+            capture_output=True,
+            text=True,
+        )
+        assert res.returncode != 0
+        assert "Usage" in res.stderr

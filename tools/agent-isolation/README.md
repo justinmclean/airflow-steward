@@ -40,7 +40,13 @@ the same `env -i` credential-strip core:
 - **`agent-iso <cli>`** — launches *any* agentic CLI (`codex`, `cursor`,
   `gemini`, `aider`, …) with the same credential strip. The `--settings`
   injection is skipped for non-Claude CLIs, which take their filesystem
-  isolation from the OS-level sandbox.
+  isolation from the OS-level sandbox. The `-w` / `--worktree` flag is a
+  Claude-only control flag and is stripped from the argv of non-Claude CLIs
+  (it has no meaning for them). The Layer 0 env passthrough (including
+  `SSH_AUTH_SOCK`) is identical for every harness per
+  [RFC-AI-0002 § Layer 0](https://magpie.apache.org/docs/rfcs/rfc-ai-0002/#layer-0--clean-env-wrapper);
+  gating git push is a separate Layer 3 concern wired per-harness (see
+  [`docs/adapters/add-a-harness.md`](../../docs/adapters/add-a-harness.md)).
 
 All three paths enforce layer 0 of the secure-agent posture regardless of
 which harness drives the session. Harness-specific layers (the in-process

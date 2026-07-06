@@ -9,6 +9,7 @@
   - [Prerequisites](#prerequisites)
   - [What it checks](#what-it-checks)
   - [How to use](#how-to-use)
+  - [Harness-neutral posture check (any runtime)](#harness-neutral-posture-check-any-runtime)
   - [CI wiring](#ci-wiring)
   - [Updating the baseline](#updating-the-baseline)
   - [Residual risk](#residual-risk)
@@ -22,7 +23,7 @@
 
 **Capability:** substrate:sandbox
 
-**Harness:** Claude Code, OpenCode, Kiro
+**Harness:** Claude Code, Codex, Cursor, Gemini CLI, OpenCode, Kiro
 
 Lints `.claude/settings.json` against the shipped baseline at
 `tools/sandbox-lint/expected.json`, and against the security
@@ -64,6 +65,22 @@ not be a blanket `.*`.
 
 ```bash
 uv run --project tools/sandbox-lint sandbox-lint --kiro .kiro/agents/<name>.json
+```
+
+**Any other harness (Codex, Cursor, Gemini CLI, …).** `--any-harness`
+validates the harness-neutral OS-level security posture: checks that the
+two enforcement components shared across all runtimes —
+`tools/agent-isolation/agent-iso.sh` (layer 0, clean-env credential strip)
+and `tools/agent-guard/` dispatch core (layer 3, harness-neutral `--exec`
+command gating) — are present in the framework tree. Runtimes without a
+dedicated `settings.json` or `opencode.json` get the same enforcement
+posture through these two OS-level layers rather than through a
+harness-specific config file.
+
+```bash
+uv run --project tools/sandbox-lint sandbox-lint --any-harness
+# or with an explicit framework root:
+uv run --project tools/sandbox-lint sandbox-lint --any-harness /path/to/magpie
 ```
 
 ## Prerequisites
@@ -117,6 +134,52 @@ uv run --directory tools/sandbox-lint --group dev sandbox-lint \
 
 Exit code is `0` on a clean pass, `1` on any invariant violation or
 baseline drift.
+
+## Harness-neutral posture check (any runtime)
+
+For runtimes that do not expose a per-harness sandbox configuration file
+(Codex, Cursor, Gemini CLI, Kiro, and any other agent runtime not listed
+under `--settings` or `--opencode`), the security posture is enforced at
+the OS level by two harness-agnostic components:
+
+Layer numbers follow the
+[RFC-AI-0002](https://magpie.apache.org/docs/rfcs/rfc-ai-0002/) four-layer model
+(Layer 0 clean-env, Layer 1 filesystem sandbox, Layer 2 tool permissions, Layer
+3 forced confirmation). This presence check covers the two layers that need no
+per-harness `settings.json`:
+
+| Layer | Component | Purpose |
+|---|---|---|
+| Layer 0 (clean-env) | `tools/agent-isolation/agent-iso.sh` | Strips credential-shaped env vars (`GH_TOKEN`, `AWS_*`, `ANTHROPIC_API_KEY`, …) before exec, so even a fully sandboxed session cannot exfiltrate secrets via the environment. Made harness-agnostic (`agent-iso <cli>`) by `harness-posture-portability`. |
+| Layer 3 (forced confirmation / action guard) | `tools/agent-guard/` dispatch core | The harness-neutral equivalent of Claude Code's `permissions.ask`. Inspects every shell command before execution and denies the ones that break a hard framework rule (`git push`, wrong commit trailer, premature `--ready-for-review`, …). The `--exec` path (added by `harness-guard-exec-mode`) lets any harness or shell wrapper enforce these rules without a harness-specific hook adapter. |
+
+`sandbox-lint --any-harness [FRAMEWORK_ROOT]` checks that both components
+are present. `FRAMEWORK_ROOT` is auto-detected by walking up from CWD: the
+nearest ancestor that either contains `tools/agent-isolation/` directly (the
+framework tree) or ships the installed snapshot at
+`.apache-magpie/tools/agent-isolation/` (an adopter repo).
+
+```bash
+# From an adopter repo root — the .apache-magpie/ snapshot is auto-detected:
+uv run --project tools/sandbox-lint sandbox-lint --any-harness
+
+# From the Magpie framework tree itself:
+uv run --project tools/sandbox-lint sandbox-lint --any-harness
+
+# Or point at an explicit framework root:
+uv run --project tools/sandbox-lint sandbox-lint --any-harness /path/to/magpie
+```
+
+Exit code is `0` when both components are present, `1` when any are
+missing. A `0` confirms the enforcement components are **present**, not that a
+harness is actively wired to them (see Scope below). The output identifies which
+layer is missing and points to the relevant setup documentation.
+
+**Scope.** This check validates the *presence* of the enforcement components,
+not their live runtime behaviour. To probe whether the OS sandbox is
+actually active in a running agent session (SSH-agent reachability,
+localhost port binding, docker/podman socket), use
+[`setup-isolated-setup-doctor`](../../skills/setup-isolated-setup-doctor/SKILL.md).
 
 ## CI wiring
 

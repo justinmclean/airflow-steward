@@ -294,13 +294,49 @@ def _lint_kiro(config_path: Path) -> int:
     return 1
 
 
+def _lint_any_harness(framework_root: Path | None) -> int:
+    """Validate the harness-neutral OS-level security posture.
+
+    Checks that the two harness-agnostic enforcement components —
+    ``tools/agent-isolation/`` (layer 0, clean-env wrapper) and
+    ``tools/agent-guard/`` (layer 3, action guard) — are present in the
+    framework tree. This is the posture check for runtimes that do not have a
+    settings.json or opencode.json (Codex, Cursor, Gemini CLI, …).
+    """
+    from sandbox_lint.posture import PostureViolation, check_posture_violations, find_framework_root
+
+    root = framework_root if framework_root is not None else find_framework_root()
+    violations: list[PostureViolation] = check_posture_violations(root)
+    if not violations:
+        # Presence check only: this proves the enforcement components exist in
+        # the tree, NOT that a harness is wired to use them (see the module
+        # docstring and README § Scope). Word the success line so it cannot be
+        # mistaken for a live-enforcement guarantee.
+        print(
+            "sandbox-lint: OK (harness-neutral enforcement components present at "
+            f"{root}; run setup-isolated-setup-doctor to verify live enforcement)"
+        )
+        return 0
+    print(
+        f"sandbox-lint: harness-neutral posture violations at {root} —\n"
+        "  For runtimes without a settings.json (Codex, Cursor, Gemini CLI, …)\n"
+        "  the security posture is enforced by these OS-level components:",
+        file=sys.stderr,
+    )
+    for v in violations:
+        print(f"  - [{v.layer}] {v.detail}", file=sys.stderr)
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="sandbox-lint",
         description=(
             "Lint .claude/settings.json against the shipped baseline and the "
-            "security invariants from docs/security/threat-model.md (M.29); or, "
-            "with --opencode, lint an opencode.json permission policy."
+            "security invariants from docs/security/threat-model.md (M.29); "
+            "or lint an OpenCode opencode.json permission policy (--opencode); "
+            "or validate the harness-neutral OS-level posture for runtimes "
+            "without a dedicated config file (--any-harness)."
         ),
     )
     parser.add_argument(
@@ -315,7 +351,10 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_EXPECTED,
         help=f"Path to the canonical baseline (default: {DEFAULT_EXPECTED})",
     )
-    parser.add_argument(
+    # --opencode and --any-harness select alternate lint modes and are mutually
+    # exclusive; passing both is a usage error rather than one silently winning.
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--opencode",
         type=Path,
         default=None,
@@ -326,7 +365,7 @@ def main(argv: list[str] | None = None) -> int:
             "config (invariants only — no baseline diff)."
         ),
     )
-    parser.add_argument(
+    mode.add_argument(
         "--kiro",
         type=Path,
         default=None,
@@ -337,12 +376,32 @@ def main(argv: list[str] | None = None) -> int:
             "Code sandbox config (invariants only — no baseline diff)."
         ),
     )
+    mode.add_argument(
+        "--any-harness",
+        nargs="?",
+        const=True,  # True when flag given without a path → auto-detect framework root
+        default=None,  # None when flag not given at all
+        metavar="FRAMEWORK_ROOT",
+        help=(
+            "Validate the harness-neutral security posture for runtimes without "
+            "a dedicated settings file (Codex, Cursor, Gemini CLI, …). "
+            "Checks that the OS-level enforcement components (agent-isolation "
+            "layer-0 clean-env wrapper and agent-guard layer-3 action guard) "
+            "are present. Optionally supply the framework root directory; "
+            "default: auto-detected by walking up from the current directory."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.kiro is not None:
         return _lint_kiro(args.kiro)
     if args.opencode is not None:
         return _lint_opencode(args.opencode)
+
+    if args.any_harness is not None:
+        # True → auto-detect; string path → convert to Path
+        explicit_root = None if args.any_harness is True else Path(args.any_harness)
+        return _lint_any_harness(explicit_root)
 
     settings = _load_json(args.settings)
     expected = _load_json(args.expected)

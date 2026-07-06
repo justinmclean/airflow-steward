@@ -273,12 +273,51 @@ claude_iso_main() { agent_iso_run "${AGENT_ISO_AGENT:-claude}" "$@"; }
 # executed directly, pick the agent from the invoked name (a symlink such as
 # `opencode-iso` selects OpenCode) or from AGENT_ISO_AGENT, defaulting to
 # `claude` so existing `bash agent-iso.sh …` invocations are unchanged.
+#
+# Generic entry point:
+#   agent-iso() / `bash agent-iso.sh agent-iso <cli> [args]` takes the
+#   harness CLI name as its first positional argument and works for ANY
+#   agentic runtime — Codex, Cursor, Gemini CLI, Aider, or any future CLI.
+#   The credential-strip and clean-env launch are harness-agnostic; only the
+#   `--settings` sandbox allowRead injection is skipped (it is Claude-specific
+#   and already guarded by `if [[ "$agent" == "claude" ]]`).
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
   claude-iso()   { agent_iso_run claude "$@"; }
   opencode-iso() { agent_iso_run opencode "$@"; }
+  # Harness-agnostic entry point: agent-iso <cli> [cli-args]
+  agent-iso()    { agent_iso_run "$@"; }
 else
-  case "$(basename "${0}")" in
+  _aig_basename="$(basename "${0}")"
+  case "$_aig_basename" in
     opencode-iso*) agent_iso_run opencode "$@" ;;
-    *)             agent_iso_run "${AGENT_ISO_AGENT:-claude}" "$@" ;;
+    # Symlink named exactly `agent-iso` (no .sh extension) → first positional
+    # arg is the harness CLI name.
+    agent-iso)
+      if [[ $# -ge 1 ]]; then
+        _aig_cli="$1"; shift; agent_iso_run "$_aig_cli" "$@"
+      else
+        printf 'Usage: %s <cli> [cli-args]\n  e.g.: agent-iso codex "my prompt"\n' \
+          "$_aig_basename" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      # Default direct-exec path (e.g. `bash agent-iso.sh`).
+      # If the first positional arg is the literal word "agent-iso", treat
+      # the next arg as the harness CLI name — generic sub-command:
+      #   bash agent-iso.sh agent-iso codex [codex-args]
+      if [[ "${1-}" == "agent-iso" ]]; then
+        shift
+        if [[ $# -ge 1 ]]; then
+          _aig_cli="$1"; shift; agent_iso_run "$_aig_cli" "$@"
+        else
+          printf 'Usage: %s agent-iso <cli> [cli-args]\n  e.g.: bash %s agent-iso codex "my prompt"\n' \
+            "$_aig_basename" "$_aig_basename" >&2
+          exit 1
+        fi
+      else
+        agent_iso_run "${AGENT_ISO_AGENT:-claude}" "$@"
+      fi
+      ;;
   esac
 fi

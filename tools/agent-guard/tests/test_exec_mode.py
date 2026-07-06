@@ -35,15 +35,6 @@ import sys
 import pytest
 
 import agent_guard
-from agent_guard import (
-    ALLOW_EXIT,
-    DENY_EXIT,
-    USAGE_EXIT,
-    _EXEC_DEPTH_MAX,
-    _EXEC_DEPTH_VAR,
-    check_main,
-    cli,
-)
 
 # ---------------------------------------------------------------------------
 # --check mode (check_main called directly — safe, no exec)
@@ -52,32 +43,32 @@ from agent_guard import (
 
 def test_check_denied_coauthor(capsys: pytest.CaptureFixture[str]) -> None:
     """--check should exit DENY_EXIT and print reason for a Co-Authored-By commit."""
-    rc = check_main(["git", "commit", "-m", "fix\n\nCo-Authored-By: A <a@b.c>"])
+    rc = agent_guard.check_main(["git", "commit", "-m", "fix\n\nCo-Authored-By: A <a@b.c>"])
     out = capsys.readouterr().out
-    assert rc == DENY_EXIT
+    assert rc == agent_guard.DENY_EXIT
     assert "commit-trailer" in out
 
 
 def test_check_allowed_safe(capsys: pytest.CaptureFixture[str]) -> None:
     """--check should exit ALLOW_EXIT silently for a non-guarded command."""
-    rc = check_main(["git", "status"])
-    assert rc == ALLOW_EXIT
+    rc = agent_guard.check_main(["git", "status"])
+    assert rc == agent_guard.ALLOW_EXIT
     assert capsys.readouterr().out == ""
 
 
 def test_check_non_git_command(capsys: pytest.CaptureFixture[str]) -> None:
     """--check fast-path allows commands that are not in GUARDED_HEADS."""
-    rc = check_main(["ls", "-la"])
-    assert rc == ALLOW_EXIT
+    rc = agent_guard.check_main(["ls", "-la"])
+    assert rc == agent_guard.ALLOW_EXIT
     assert capsys.readouterr().out == ""
 
 
 def test_check_empty_argv(capsys: pytest.CaptureFixture[str]) -> None:
     """--check with no argv is a usage error: USAGE_EXIT, not DENY_EXIT."""
-    rc = check_main([])
+    rc = agent_guard.check_main([])
     err = capsys.readouterr().err
-    assert rc == USAGE_EXIT
-    assert rc != DENY_EXIT  # a misinvocation must not read as a policy block
+    assert rc == agent_guard.USAGE_EXIT
+    assert rc != agent_guard.DENY_EXIT  # a misinvocation must not read as a policy block
     assert "no command" in err
 
 
@@ -90,8 +81,8 @@ def test_check_fail_open_on_dispatch_error(
         raise RuntimeError("guard exploded")
 
     monkeypatch.setattr(agent_guard, "dispatch", _boom)
-    rc = check_main(["git", "push", "origin", "main"])
-    assert rc == ALLOW_EXIT
+    rc = agent_guard.check_main(["git", "push", "origin", "main"])
+    assert rc == agent_guard.ALLOW_EXIT
     assert "guard engine error" in capsys.readouterr().err
 
 
@@ -99,7 +90,7 @@ def test_check_decision_matches_dispatch() -> None:
     """--check must deny exactly what dispatch() denies (shared core)."""
     command_tokens = ["git", "commit", "-m", "x\n\nCo-Authored-By: A <a@b.c>"]
     dispatch_denies = agent_guard.dispatch(" ".join(command_tokens)) is not None
-    check_denies = check_main(command_tokens) == DENY_EXIT
+    check_denies = agent_guard.check_main(command_tokens) == agent_guard.DENY_EXIT
     assert dispatch_denies is check_denies is True
 
 
@@ -107,21 +98,21 @@ def test_check_allowed_decision_matches_dispatch() -> None:
     """--check allows exactly what dispatch() allows."""
     command_tokens = ["git", "log", "--oneline"]
     dispatch_allows = agent_guard.dispatch(" ".join(command_tokens)) is None
-    check_allows = check_main(command_tokens) == ALLOW_EXIT
+    check_allows = agent_guard.check_main(command_tokens) == agent_guard.ALLOW_EXIT
     assert dispatch_allows is check_allows is True
 
 
 def test_cli_routes_check_flag(capsys: pytest.CaptureFixture[str]) -> None:
     """cli() should route --check to check_main."""
-    rc = cli(["--check", "git", "status"])
-    assert rc == ALLOW_EXIT
+    rc = agent_guard.cli(["--check", "git", "status"])
+    assert rc == agent_guard.ALLOW_EXIT
     assert capsys.readouterr().out == ""
 
 
 def test_cli_check_denied(capsys: pytest.CaptureFixture[str]) -> None:
     """cli() --check routing should propagate deny from check_main."""
-    rc = cli(["--check", "git", "commit", "-m", "x\n\nCo-Authored-By: A <a@b.c>"])
-    assert rc == DENY_EXIT
+    rc = agent_guard.cli(["--check", "git", "commit", "-m", "x\n\nCo-Authored-By: A <a@b.c>"])
+    assert rc == agent_guard.DENY_EXIT
     assert "commit-trailer" in capsys.readouterr().out
 
 
@@ -149,7 +140,7 @@ def test_exec_allowed_runs_command() -> None:
 def test_exec_denied_does_not_run_command() -> None:
     """--exec should exit DENY_EXIT and NOT run the command on deny."""
     proc = _run_exec("git", "commit", "-m", "x\n\nCo-Authored-By: A <a@b.c>")
-    assert proc.returncode == DENY_EXIT
+    assert proc.returncode == agent_guard.DENY_EXIT
     # Command never ran — no git error on stdout, reason on stderr.
     assert "Co-Authored-By" in proc.stderr or "commit-trailer" in proc.stderr
 
@@ -157,7 +148,7 @@ def test_exec_denied_does_not_run_command() -> None:
 def test_exec_denied_prints_reason_to_stderr() -> None:
     """--exec deny reason must go to stderr (stdout belongs to the exec'd command)."""
     proc = _run_exec("git", "commit", "-m", "fix\n\nCo-Authored-By: A <a@b.c>")
-    assert proc.returncode == DENY_EXIT
+    assert proc.returncode == agent_guard.DENY_EXIT
     assert proc.stderr.strip() != ""
     assert proc.stdout.strip() == ""
 
@@ -175,8 +166,8 @@ def test_exec_empty_argv() -> None:
         capture_output=True,
         text=True,
     )
-    assert proc.returncode == USAGE_EXIT
-    assert proc.returncode != DENY_EXIT
+    assert proc.returncode == agent_guard.USAGE_EXIT
+    assert proc.returncode != agent_guard.DENY_EXIT
     assert "no command" in proc.stderr
 
 
@@ -194,7 +185,7 @@ def test_exec_recursion_guard_refuses_at_depth_cap() -> None:
     allowed command must refuse with exit 1 and a diagnostic, rather than exec.
     """
     env = dict(os.environ)
-    env[_EXEC_DEPTH_VAR] = str(_EXEC_DEPTH_MAX)
+    env[agent_guard._EXEC_DEPTH_VAR] = str(agent_guard._EXEC_DEPTH_MAX)
     proc = subprocess.run(
         [sys.executable, "-m", "agent_guard", "--exec", "echo", "should-not-run"],
         capture_output=True,
@@ -211,7 +202,7 @@ def test_exec_depth_counter_increments_for_child() -> None:
     proc = _run_exec(
         sys.executable,
         "-c",
-        f"import os; print(os.environ.get({_EXEC_DEPTH_VAR!r}))",
+        f"import os; print(os.environ.get({agent_guard._EXEC_DEPTH_VAR!r}))",
     )
     assert proc.returncode == 0
     assert proc.stdout.strip() == "1"

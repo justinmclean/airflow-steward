@@ -25,7 +25,7 @@
   "has_no_cve_signal": {
     "type": "regex",
     "field": "key_signals",
-    "pattern": "(no|not|without|missing|un-?).{0,25}cve|cve.{0,25}(no|not|without|missing|un-?allocat|_?no response_?|link.{0,15}(no|empty|missing))",
+    "pattern": "(no|not|without|missing|un-?).{0,25}cve|cve.{0,25}(no|not|without|missing|un-?allocated|_?no response_?|link.{0,15}(no|empty|missing))",
     "flags": "i"
   },
   "has_fix_released_signal": {

@@ -8,7 +8,7 @@
   "has_single_risk": {
     "field": "risks",
     "type": "regex",
-    "pattern": "^(?:[^t]|t(?!ype))*\"type\"(?:[^t]|t(?!ype))*$",
+    "pattern": "^(?:[^t]|t(?!y[p]e))*\"type\"(?:[^t]|t(?!y[p]e))*$",
     "flags": "s"
   },
   "has_env_read_risk": {
@@ -31,7 +31,7 @@
   "has_two_risks": {
     "field": "risks",
     "type": "regex",
-    "pattern": "^(?:(?:[^t]|t(?!ype))*\"type\"){2}(?:[^t]|t(?!ype))*$",
+    "pattern": "^(?:(?:[^t]|t(?!y[p]e))*\"type\"){2}(?:[^t]|t(?!y[p]e))*$",
     "flags": "s"
   }
 }

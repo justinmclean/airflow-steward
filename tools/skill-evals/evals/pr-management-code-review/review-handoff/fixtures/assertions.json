@@ -2,7 +2,7 @@
   "has_edit_incorporated": {
     "type": "regex",
     "field": "reason",
-    "pattern": "edit|revis|reword|chang|incorporat|updat|wording",
+    "pattern": "edit|revis|reword|chang|incorporat|update|updating|wording",
     "flags": "i"
   },
   "has_reshow_before_post": {

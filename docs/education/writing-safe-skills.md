@@ -313,10 +313,13 @@ in between.
   one. When the patterns you write here do not hold for a given input, that page
   is the diagnostic path: reading the audit log, isolating the failure, and
   writing a regression case.
-- **[Eval-driven development](eval-driven-development.md)** is step 7. The eval
+- **[Writing portable skills](portable-skills.md)** is step 7. It shows how to
+  apply the placeholder convention and capability-floor discipline so the skill
+  you just made safe also works for any project and any model.
+- **[Eval-driven development](eval-driven-development.md)** is step 8. The eval
   suite is where you prove these patterns hold across the full range of inputs —
   including the attack cases that make the injection defence real.
-- **[Agentic and autonomous work](agentic-work.md)** is step 8. It shows why
+- **[Agentic and autonomous work](agentic-work.md)** is step 9. It shows why
   these patterns become even more important when the agent runs without a human
   watching every step.
 - **[Pattern catalogue](pattern-catalogue.md)** has ready-to-copy skill shapes

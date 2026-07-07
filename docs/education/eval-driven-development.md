@@ -23,10 +23,11 @@
 
 # Eval-driven development
 
-This is **step 7** in the [learning progression](README.md). You wrote a skill in
-step 4, applied its safety patterns in step 5, and debugged its failures in step
-6; this page is how you tell whether it actually works across the full range of
-inputs. A skill is not finished without an eval suite, and the next step
+This is **step 8** in the [learning progression](README.md). You wrote a skill in
+step 4, applied its safety patterns in step 5, debugged its failures in step 6,
+and made it portable in step 7; this page is how you tell whether it actually
+works across the full range of inputs. A skill is not finished without an eval
+suite, and the next step
 (autonomy) depends on the evidence you build here, so this stage sits on the
 main path, not off to the side.
 
@@ -436,11 +437,13 @@ In practice this means:
 - **[`writing-safe-skills.md`](writing-safe-skills.md)** is step 5. The attack
   cases you write in evals (including the prompt-injection fixture) pair
   directly with the patterns it describes.
-- **[`debugging-skills.md`](debugging-skills.md)** is step 6, the page
-  immediately before this one. That page covers the debug loop when an eval
-  fails; this one covers designing the evals that surface the bug in the first
-  place. They pair.
-- **[`agentic-work.md`](agentic-work.md)** is step 8, the page after this one.
+- **[`debugging-skills.md`](debugging-skills.md)** is step 6. That page covers
+  the debug loop when an eval fails; this one covers designing the evals that
+  surface the bug in the first place. They pair.
+- **[`portable-skills.md`](portable-skills.md)** is step 7, the page immediately
+  before this one. Evals are how you prove portability holds: running the same
+  suite against two different models confirms there is no hidden model dependency.
+- **[`agentic-work.md`](agentic-work.md)** is step 9, the page after this one.
   The eval evidence you build here is exactly what lets a skill run
   autonomously, so evals come first for a reason.
 - **[`tools/skill-evals/README.md`](../../tools/skill-evals/README.md)** is the

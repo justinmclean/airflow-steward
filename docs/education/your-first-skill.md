@@ -381,10 +381,10 @@ step is to make the skill safe to run against outside text:
   patterns that hold the data-not-instructions and sandbox principles in every
   skill you write. Covers the injection-flag idiom, the privacy gate, and the
   draft-before-post shape.
-- **[Eval-driven development](eval-driven-development.md)** — step 6: how to judge
+- **[Eval-driven development](eval-driven-development.md)** — step 8: how to judge
   output that can vary, with worked examples from real Magpie skills. Your skill
   is not finished until it has an eval suite, so read step 5 first and then this.
-- **[Agentic and autonomous work](agentic-work.md)** — step 7: once a skill is
+- **[Agentic and autonomous work](agentic-work.md)** — step 9: once a skill is
   written, tested, and safe, this is how you let it run without watching every step.
 
 Supporting references for skill-writing:

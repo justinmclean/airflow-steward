@@ -257,14 +257,16 @@ Here is the full workflow as a checklist.
   this one. The injection-flag idiom and the draft-before-post pattern both
   appear in audit logs when they fire — knowing them makes the log easier to
   read.
-- **[Eval-driven development](eval-driven-development.md)** is step 7, the page
-  after this one. That page covers how to *design* an eval suite; this page
-  covers the debug loop you run when one fails. They pair: the evals surface the
-  bug; this page fixes it.
+- **[Writing portable skills](portable-skills.md)** is step 7, the page after
+  this one. Once a skill runs correctly, that page makes it work for any project
+  and any model, not only the one you debugged it on.
+- **[Eval-driven development](eval-driven-development.md)** is step 8. That page
+  covers how to *design* an eval suite; this page covers the debug loop you run
+  when one fails. They pair: the evals surface the bug; this page fixes it.
 - **[Choosing models](choosing-models.md)** is step 3. When a failure turns out
   to be a model-capability problem, that page is where to look for guidance on
   which model tier to try next.
-- **[Agentic and autonomous work](agentic-work.md)** is step 8. When no one is
+- **[Agentic and autonomous work](agentic-work.md)** is step 9. When no one is
   watching every step, flakiness and silent tool failures become much harder to
   catch. The debugging habits here are the foundation for safe autonomy.
 - **[tools/skill-evals/README.md](../../tools/skill-evals/README.md)** — the

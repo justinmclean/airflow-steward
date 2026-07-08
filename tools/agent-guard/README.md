@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
@@ -64,7 +67,7 @@ way — see [Contributing guards](#contributing-guards)):
 
 | Guard | Owner skill | Blocks | Rule it enforces |
 |---|---|---|---|
-| `mention` | `pr-management-triage` | `gh pr comment` / `gh issue comment` that `@`-mentions anyone other than the PR/issue author; **any** `@`-mention in `gh pr edit --body[-file]` | denoise: author-directed feedback never pings maintainers; body edits stay silent |
+| `mention` | `pr-management-triage` | `gh pr comment` / `gh issue comment` that `@`-mentions anyone other than the PR/issue author; **any** `@`-mention in `gh pr edit --body[-file]` | denoise: author-directed feedback never pings maintainers; body edits stay silent. Exempt: the operator commenting on their **own** PR/issue (author == authenticated `gh` user), and the `MAGPIE_ALLOW_MENTIONS=1` override |
 | `mark-ready` | `pr-management-triage` | adding `ready for maintainer review` while the PR head SHA has GitHub Actions runs awaiting approval | Golden rule 1b |
 | `security-language` | `security-issue-fix` | a CVE id / security-fix language in a **public** `gh pr create`/`gh pr edit` title/body (not comments) | public-PR scrubbing |
 

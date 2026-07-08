@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
 # Output specification — Step 5d test plan
 
 Return a JSON object with these fields. Do not include the prose test-plan text itself.
@@ -12,6 +15,12 @@ Return a JSON object with these fields. Do not include the prose test-plan text 
   "has_typecheck_command": <bool — mypy / type-check command is included>
 }
 ```
+
+Every boolean field above MUST always be present in the returned object; never
+omit a field. In particular, `has_unit_test_command` and `has_precommit_command`
+MUST always be present: the plan always lists the exact unit-test invocation and
+the `prek run --from-ref main --stage pre-commit` command, so both are `true`
+in every scenario (they run even for a pure rename).
 
 Rules:
 - `has_new_tests` is true when the plan says new tests will be added, false when it says none are needed or are omitted.

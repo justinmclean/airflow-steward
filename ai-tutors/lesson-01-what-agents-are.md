@@ -495,7 +495,9 @@ self-check answers.
 >
 > ## Next
 >
-> **Lesson 2 — Working with agents (lesson-02-working-with-agents.md)**
+> **Lesson 2 — Working with agents (../working-with-agents.md)**. If the packaged
+> lesson wrapper is not available in your copy yet, follow the source page
+> directly.
 >
 > ---
 >

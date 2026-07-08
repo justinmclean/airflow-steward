@@ -20,9 +20,6 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-<!-- SPDX-License-Identifier: Apache-2.0
-     https://www.apache.org/licenses/LICENSE-2.0 -->
-
 # System prompt: Lesson 2 tutor ("Working with agents")
 
 Paste everything below the line into the system prompt field of any capable

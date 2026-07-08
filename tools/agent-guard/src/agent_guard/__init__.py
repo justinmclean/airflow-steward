@@ -124,7 +124,16 @@ class Segment:
             name, _, value = tokens[i].partition("=")
             self.env[name] = value
             i += 1
-        self.argv: list[str] = tokens[i:]
+        argv = tokens[i:]
+        # Normalise the command head to its basename so a path-qualified
+        # invocation (`/usr/bin/git`, `./git`) is guarded identically to the
+        # bare name. Guard rules only inspect argv[0] as a command *name*; the
+        # real execution path is untouched (exec_main hands the original argv
+        # to os.execvp). Prefix wrappers like `env git` / `command git` keep
+        # argv[0] == "env" and remain a separate, pre-existing gap.
+        if argv:
+            argv[0] = os.path.basename(argv[0])
+        self.argv: list[str] = argv
         self.raw = raw
 
     def override(self, *names: str) -> bool:

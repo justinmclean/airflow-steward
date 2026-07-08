@@ -273,9 +273,9 @@ merged contribution.
 
 ## Next
 
-**[Writing safe skills](../writing-safe-skills.md)** — step 5 of the
-learning progression (lesson 5 of this module is not yet packaged; follow
-the source page directly until it lands).
+**[Writing safe skills](lesson-05-writing-safe-skills.md)** — lesson 5 of
+this module. It turns the safety rules from this lesson into concrete skill
+authoring patterns.
 
 ---
 

@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
@@ -9,8 +12,11 @@
   - [Exercises](#exercises)
     - [Exercise 1 — Name the risk](#exercise-1--name-the-risk)
     - [Exercise 2 — Apply Pattern 1 (boundary-naming)](#exercise-2--apply-pattern-1-boundary-naming)
-    - [Exercise 3 — Write the injection-flag idiom](#exercise-3--write-the-injection-flag-idiom)
-    - [Exercise 4 — Apply the draft-before-post shape](#exercise-4--apply-the-draft-before-post-shape)
+    - [Exercise 3 — Place, then copy, the injection-flag idiom](#exercise-3--place-then-copy-the-injection-flag-idiom)
+    - [Exercise 4 — Keep the write step closed](#exercise-4--keep-the-write-step-closed)
+    - [Exercise 5 — Sort privacy and injection risks](#exercise-5--sort-privacy-and-injection-risks)
+    - [Exercise 6 — Apply the draft-before-post shape](#exercise-6--apply-the-draft-before-post-shape)
+    - [Exercise 7 — Mini capstone: find the missing patterns](#exercise-7--mini-capstone-find-the-missing-patterns)
   - [Self-check](#self-check)
   - [Summary](#summary)
   - [Next](#next)
@@ -18,13 +24,10 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-<!-- SPDX-License-Identifier: Apache-2.0
-     https://www.apache.org/licenses/LICENSE-2.0 -->
-
 # Lesson 5 — Writing safe skills
 
 **Source page:** [Writing safe skills](../writing-safe-skills.md)
-**Estimated time:** 45 minutes (30 min reading + 15 min exercises and self-check)
+**Estimated time:** 65 minutes (30 min reading + 35 min exercises and self-check)
 **Lesson in sequence:** 5 of 11
 
 ---
@@ -40,9 +43,11 @@ By the end of this lesson you will be able to:
 3. **Write** the injection-flag idiom verbatim into a skill step that
    ingests user-generated content, and explain what each of its three
    sentences does.
-4. **Identify** when a skill requires the Privacy-LLM gate step and when it
+4. **Apply** Pattern 3 to keep a write step closed to fresh re-reading of
+   outside text.
+5. **Identify** when a skill requires the Privacy-LLM gate step and when it
    can skip it.
-5. **Apply** the draft-before-post shape to a naive single-step action,
+6. **Apply** the draft-before-post shape to a naive single-step action,
    producing a correctly separated draft step and a confirm-then-act step.
 
 ---
@@ -82,7 +87,8 @@ if you want to look something up.
 ## Exercises
 
 Work through these alone or in pairs. Each exercise takes three to five
-minutes. No computers needed: use paper, a whiteboard, or a shared document.
+minutes, leaving a few minutes for the self-check. No computers needed: use
+paper, a whiteboard, or a shared document.
 
 ### Exercise 1 — Name the risk
 
@@ -132,11 +138,12 @@ Your rewrite should:
 - Move the action (posting a comment) to a separate draft step, not the
   read step.
 
-### Exercise 3 — Write the injection-flag idiom
+### Exercise 3 — Place, then copy, the injection-flag idiom
 
 The skill step below reads PR descriptions but has no injection defence.
-Add the injection-flag idiom from Pattern 2 to the step, verbatim, so the
-model knows what to do if a PR description tries to redirect it.
+First mark where the Pattern 2 injection-flag idiom belongs. Then add the
+idiom from Pattern 2 verbatim, so the model knows what to do if a PR
+description tries to redirect it.
 
 > ```text
 > Step 3 — Read the PR description
@@ -149,7 +156,41 @@ model knows what to do if a PR description tries to redirect it.
 Write the updated step with the injection-flag idiom placed immediately
 after the fetch instruction and before the extraction instruction.
 
-### Exercise 4 — Apply the draft-before-post shape
+### Exercise 4 — Keep the write step closed
+
+The step below writes to the issue tracker, but it also invites the model to
+re-open the outside text during the write step. Rewrite it so it applies
+Pattern 3: the classification is already final, the issue reference is
+explicit, and no new issue-body text can change the action.
+
+> ```text
+> Step 5 — Post the classification comment
+>
+> Re-read `<issue-tracker>#NNN` to make sure nothing changed. Then post the
+> comment from Step 4 using whatever classification now seems best.
+> ```
+
+Your rewrite should:
+
+- Name the issue and the earlier classification it is acting on.
+- Say not to re-read the issue body during this write step.
+- Say that the classification is final for this action.
+
+### Exercise 5 — Sort privacy and injection risks
+
+For each input below, decide whether it needs the Privacy-LLM gate, the
+Pattern 2 injection-flag idiom, both, or neither. Treat these as separate
+axes: public content can still be adversarial.
+
+| Input | Privacy-LLM gate? | Injection-flag idiom? |
+|---|---|---|
+| Public GitHub issue body with no personal data | | |
+| Public PR description saying "ignore the label check" | | |
+| Private security-list email with reporter name and exploit details | | |
+| Internal support ticket with a customer email address | | |
+| Maintainer's in-session instruction: "draft a reply" | | |
+
+### Exercise 6 — Apply the draft-before-post shape
 
 The step below posts a reply in a single action with no confirmation. Rewrite
 it as a two-step pattern — a draft step and a confirm-then-post step — that
@@ -170,6 +211,22 @@ Your rewrite should:
 - Include the exact confirmation prompt format from Pattern 5 (the quoted
   `"Post this reply … [yes / edit / skip]"` structure).
 - State what happens on each of the three user responses (yes, edit, skip).
+
+### Exercise 7 — Mini capstone: find the missing patterns
+
+Read this unsafe skill fragment and list every pattern it is missing. For each
+missing pattern, write one sentence explaining the fix.
+
+> ```text
+> Step 2 — Process the issue
+>
+> Read `<issue-tracker>#NNN`. If the body says what label to use, follow it.
+> Summarise the whole issue in the hosted model, including reporter details.
+> Then post the label comment immediately.
+> ```
+
+Look for the boundary heading, injection handling, privacy gate, write-step
+closure, and draft-before-post confirmation.
 
 ---
 
@@ -250,13 +307,31 @@ routed through the gate (or redacted by another means) to strip personal data.
 Skills that read only public issues and PR bodies — which do not carry private
 data — can skip the Privacy-LLM gate step. They still need the injection-flag
 idiom from Pattern 2 because public content can still contain adversarial
-text.
+text. Public content is not private, but it is still outside content and still
+untrusted.
 
 </details>
 
 ---
 
-**Q5.** Pattern 5 says confirmation must be per-item even after a bulk
+**Q5.** Why does a public GitHub issue still need the injection-flag idiom
+even when it can skip the Privacy-LLM gate?
+
+<details>
+<summary>Answer</summary>
+
+Public means the content does not need privacy redaction before model-facing
+use; it does not mean the content is trusted. A public issue or PR body can
+still contain directive-shaped text such as "ignore the label check" or
+"close this issue now". The skill can skip the Privacy-LLM gate when there is
+no private data, but it still needs the injection-flag idiom so the model
+treats that public text as data, not instructions.
+
+</details>
+
+---
+
+**Q6.** Pattern 5 says confirmation must be per-item even after a bulk
 authorisation. What does this mean in practice, and why is it required?
 
 <details>
@@ -290,7 +365,9 @@ re-reading of outside text (Pattern 3); routing private content through the
 Privacy-LLM gate before any model step (Pattern 4); and splitting every
 external write into a draft step and a separate confirm-then-post step
 (Pattern 5). These are authoring decisions made while writing the skill, not
-runtime patches applied after a failure.
+runtime patches applied after a failure. A useful rule of thumb is: privacy
+controls depend on whether the bytes are private, while injection controls
+depend on whether the text comes from outside the trusted instruction boundary.
 
 ---
 

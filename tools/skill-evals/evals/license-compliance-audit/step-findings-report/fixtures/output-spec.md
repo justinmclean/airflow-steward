@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
 ## Output format
 
 Return ONLY valid JSON with this structure:
@@ -18,7 +21,7 @@ Return ONLY valid JSON with this structure:
 }
 ```
 
-`finding_classes` is the list of finding class strings present (e.g. `["MISSING-SPDX-HEADER", "INCOMPLETE-NOTICE"]`); empty array for a clean repo.
+`finding_classes` is the list of finding class strings present (one entry per distinct class that has at least one finding); empty array for a clean repo. List order does not matter.
 `finding_count` is the total number of individual findings across all classes.
 `highest_severity` is the highest severity among all classes, or `"none"` for a clean repo.
 `missing_license_file` is `true` only when there is no LICENSE file at the repo root.

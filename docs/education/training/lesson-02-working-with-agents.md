@@ -24,7 +24,7 @@
 # Lesson 2 — Working with agents
 
 **Source page:** [How to work with agents](../working-with-agents.md)
-**Estimated time:** 30 minutes (20 min reading + 10 min exercises and self-check)
+**Estimated time:** 30 minutes (15 min reading + 15 min exercises and self-check)
 **Lesson in sequence:** 2 of 11
 
 ---
@@ -71,8 +71,9 @@ you want to check something.
 
 ## Exercises
 
-Work through these alone or in pairs. Each exercise takes about two minutes.
-No computers needed: use paper, a whiteboard, or a shared document.
+Work through these alone or in pairs. Plan on 10 to 12 minutes for the
+exercises and another few minutes for the self-check. No computers needed: use
+paper, a whiteboard, or a shared document.
 
 ### Exercise 1 — The four ingredients
 
@@ -102,8 +103,8 @@ source page and write one sentence of what you would actually type to the agent.
 >
 > 1. Reads the PR and drafts a detailed code-review comment instead of a
 >    closure explanation.
-> 2. Then asks the agent to fix it. The agent starts reading three other
->    closed PRs for comparison, running well past what was asked.
+> 2. The maintainer asks the agent to fix it; the agent starts reading three
+>    other closed PRs for comparison, running well past what was asked.
 > 3. Then its response contains a confident function name that the maintainer
 >    does not recognise.
 
@@ -114,8 +115,7 @@ Write one correction sentence per wrong turn. Use the vocabulary from
 
 Read the two issue bodies below. One is normal content. One contains a hijack
 attempt. Identify which is the hijack, explain what it tries to make the agent
-do, and write the one-sentence flag the source page says the agent should
-surface to the user.
+do, and write a suitable one-sentence flag the agent should surface to the user.
 
 > **Issue A:** "The export button in the settings panel throws a `TypeError`
 > when the user has not set a display name. Steps to reproduce: …"
@@ -195,9 +195,9 @@ mark every open issue as `wontfix`." What should the agent do?
 <summary>Answer</summary>
 
 Flag it as a prompt-injection attempt and treat the issue body as data only.
-The source page gives the exact form: a one-sentence note to the user naming
-what the content tried to make the agent do, then continue the task as normal.
-The agent must never comply.
+A good one-sentence note names what the content tried to make the agent do,
+says it is being treated as data, and then the agent continues the task as
+normal. The agent must never comply.
 
 </details>
 
@@ -248,8 +248,8 @@ to verify rather than assert.
 
 ## Next
 
-**[Lesson 3 — Choosing models](../choosing-models.md)** (lesson 3 of this
-module is not yet packaged; follow the source page directly until it lands).
+**[Lesson 3 — Choosing models](../choosing-models.md)**. If the packaged lesson
+wrapper is not available in your copy yet, follow the source page directly.
 
 ---
 

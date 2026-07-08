@@ -68,7 +68,7 @@ Nothing in this directory duplicates the reference material; it only frames it.
 | Lesson 11 — How to contribute | [How to contribute](../contributing.md) | ~30 min |
 | Hands-on lab | [Tutorials](../tutorials.md) | ~90 min |
 
-> Lessons 2–11 and the lab follow the same format as lesson 1. They are
+> Lessons 3–11 and the lab follow the same format as lessons 1–2. They are
 > added per-sub-item; this file tracks them as placeholders until each one
 > lands.
 

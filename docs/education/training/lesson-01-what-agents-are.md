@@ -24,7 +24,7 @@
 # Lesson 1 — What agents are
 
 **Source page:** [What agents are](../what-agents-are.md)
-**Estimated time:** 30 minutes (20 min reading + 10 min exercises and self-check)
+**Estimated time:** 30 minutes (15 min reading + 15 min exercises and self-check)
 **Lesson in sequence:** 1 of 11
 
 ---
@@ -41,7 +41,7 @@ By the end of this lesson you will be able to:
    that an agent *can*.
 4. **Describe** what "context" means in an agent and why it is finite.
 5. **Explain** in your own words why an agent's answer can vary between two
-   identical requests and why that is not a defect.
+   identical requests and why that is not automatically a defect.
 
 ---
 
@@ -69,8 +69,9 @@ during the exercises, but keep it open if you want to look something up.
 
 ## Exercises
 
-Work through these alone or in pairs. Each exercise takes about two minutes.
-There are no computers needed: use paper, a whiteboard, or a shared document.
+Work through these alone or in pairs. Plan on 10 to 12 minutes for the
+exercises and another few minutes for the self-check. There are no computers
+needed: use paper, a whiteboard, or a shared document.
 
 ### Exercise 1 — Draw the agent loop
 
@@ -85,7 +86,8 @@ Your diagram must include at minimum:
 
 Compare your diagram with the text description in the source page (the
 "you ask for something → model looks at …" block). What did you miss or
-add?
+add? The source diagram shows the tool-use path; your diagram should also show
+the branch where the model decides it is done and answers.
 
 ### Exercise 2 — Spot the context
 
@@ -114,8 +116,11 @@ checking the exact output.
 You are describing AI agents to a new `<PROJECT>` contributor. They ask: "Why
 do we need all this machinery? Can't we just ask the AI model directly?"
 
-List three things the agent can do that a bare language model called once
-cannot. Use the ideas from the source page. Write one sentence per item.
+If you are reading this outside a project-specific copy, replace `<PROJECT>`
+with "your project."
+
+List two things the agent can do that a bare language model called once cannot.
+Use the ideas from the source page. Write one sentence per item.
 
 ---
 
@@ -130,9 +135,9 @@ cannot answer one, re-read the matching section of the source page.
 <summary>Answer</summary>
 
 Model, tools, loop, context. The model reads and writes text. Tools are actions
-in the real world (read a file, post a comment). The loop runs the model
-repeatedly, feeding tool results back in. Context is everything the model can
-see at that moment.
+in the real world (read a file, open a saved comment draft, open an issue
+draft). The loop runs the model repeatedly, feeding tool results back in.
+Context is everything the model can see at that moment.
 
 </details>
 
@@ -152,32 +157,33 @@ model.
 
 ---
 
-**Q3.** Why can't an agent act on a file it has never been shown?
+**Q3.** Why can't a model know the contents of a file it has never been shown?
 
 <details>
 <summary>Answer</summary>
 
 Because the model can only reason about what is in its context. If a file has
-not been read into context, the model has never seen it — it can only guess
-what might be in it. The agent is not omniscient; it only knows what it has
-been given.
+not been read into context, the model has never seen its contents — it can only
+guess what might be in it. An agent may have a tool that can act on a named
+file, but the model still cannot know the file's contents until the relevant
+content is shown to it.
 
 </details>
 
 ---
 
-**Q4.** You run an agent twice on the same input and get two different
-responses. One response is clearly better. What does this tell you about how
-you should test an agent?
+**Q4.** You run an agent twice on the same input. The wording differs, and one
+answer makes a better decision. What does this tell you about how you should
+test an agent?
 
 <details>
 <summary>Answer</summary>
 
-It tells you that testing an agent by running it once and checking the exact
-output is not reliable. Instead you test with *evals*: you run many examples,
-look at the results together, and judge the behaviour across the range of
-inputs. One-time exact-match checks are for deterministic code; evals are for
-agents.
+It tells you two things. Wording variation is expected and is not automatically
+a defect. Quality or decision variation is exactly why testing an agent by
+running it once and checking the exact output is not reliable. Instead you test
+with *evals*: run many examples, look at the results together, and judge the
+behaviour across the range of inputs.
 
 </details>
 
@@ -191,8 +197,7 @@ a stale issue, but it cannot …"
 
 Any reasonable completion that captures the human-oversight theme from the
 source page, for example: "… post it without a maintainer reviewing and
-approving the proposal." Or: "… guarantee the reply will be identical each time
-it is asked to draft one." The key idea is that the agent proposes; a person
+approving the proposal." The key idea is that the agent proposes; a person
 confirms.
 
 </details>

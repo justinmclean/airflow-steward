@@ -53,6 +53,15 @@ which harness drives the session. Harness-specific layers (the in-process
 action guard, the `permissions.ask` confirmation list) are wired separately
 per runtime — see [`docs/adapters/add-a-harness.md`](../../docs/adapters/add-a-harness.md).
 
+> ⚠️ **Generic harnesses (`agent-iso <cli>`) get Layer 0 only — no push gate.**
+> Claude and OpenCode ship a Layer 3 push gate (agent-guard / `permissions.ask`),
+> so a `git push` from those harnesses is gated. An arbitrary CLI launched via
+> `agent-iso` (`codex`, `aider`, …) receives the live `SSH_AUTH_SOCK` with
+> **nothing gating `git push`**. The credential-strip posture is identical across
+> harnesses, but the *net* protection is weaker: a runtime with no Layer 3 adapter
+> is responsible for providing its own push gate before it is trusted with the
+> agent socket.
+
 ## Prerequisites
 
 - **Runtime:** Bash + coreutils — this directory is plain shell scripts plus a TOML manifest, not a Python project (the `pyproject.toml` ships only the test harness, which runs under Python 3.11+ via `uv`). `claude-term-bg.sh` uses `python3` / `python` for one heuristic and falls back to calm when absent.

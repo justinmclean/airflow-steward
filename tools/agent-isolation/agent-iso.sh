@@ -217,6 +217,10 @@ agent_iso_run() {
       esac
     done
     set -- "${_passargs[@]}"
+    # The main-repo git resolution below is Claude-only (settings injection is
+    # gated on `$agent == claude`), so once `-w` is stripped for a non-Claude
+    # agent there is nothing left to resolve — skip the git calls.
+    has_worktree=0
   fi
 
   local main_repo=""

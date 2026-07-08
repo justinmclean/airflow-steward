@@ -33,7 +33,7 @@
 
 By the end of this lesson you will be able to:
 
-1. **List** the four required frontmatter fields for a skill and state what
+1. **List** the five frontmatter fields shown in the starter skill and state what
    each one is used for at runtime.
 2. **Apply** the "propose, confirm, act" rule to a set of skill steps and
    correctly separate those that require confirmation from those that do not.
@@ -42,8 +42,9 @@ By the end of this lesson you will be able to:
 4. **Describe** the minimum structure of an eval suite — the directory layout,
    the three files every step fixture needs, and the three case types a
    minimum suite must include.
-5. **Trace** the six-step workflow from "I have an idea" to "the PR is merged",
-   naming the tool or check that completes each step.
+5. **Trace** the authoring workflow from Step 0 through Step 6, from "I have an
+   idea" to "the PR is merged", naming the tool or check that completes each
+   step.
 
 ---
 
@@ -110,7 +111,7 @@ and write the corrected version alongside each.
 > Check the mailing list at security@airflow.apache.org for unreported
 > threads.
 >
-> For each finding, open a tracker issue at
+> For each finding, propose opening a tracker issue at
 > github.com/airflow-s/airflow-s with the extracted template fields.
 > ```
 
@@ -119,14 +120,14 @@ from the table in [AGENTS.md](../../../AGENTS.md).
 
 ### Exercise 3 — Write a frontmatter block
 
-You are writing a skill for a fictional project called `<PROJECT>`. The skill
+You are writing a skill for your project. The skill
 does this: *when a PR is labelled `ready-for-review`, it checks whether a
 matching issue is linked in the PR description and proposes adding a link if
 not.*
 
-Write the YAML frontmatter for this skill, filling in all four required fields
-(`name`, `description`, `when_to_use`, `capability`). Use only the fields the
-source page shows; do not invent new ones.
+Write the YAML frontmatter for this skill, filling in the five fields the starter
+skill shows (`name`, `description`, `when_to_use`, `capability`, `license`). Use
+only the fields the source page shows; do not invent new ones.
 
 Reference the `capability:` values from two or three existing skills in
 `skills/` to pick the tag that fits best.
@@ -154,7 +155,7 @@ confirmation).
 Answer each question in a sentence or two before moving to lesson 5. If you
 cannot answer one, re-read the matching section of the source page.
 
-**Q1.** Name the four required frontmatter fields and explain in one sentence
+**Q1.** Name the five frontmatter fields in the starter skill and explain in one sentence
 what each one is used for at runtime.
 
 <details>
@@ -167,6 +168,8 @@ what each one is used for at runtime.
 - `when_to_use` — the trigger vocabulary: the phrases or situations that should
   cause the agent to invoke the skill. Without it the agent cannot pick the
   skill reliably.
+- `capability` — the taxonomy tag that files the skill in the framework's
+  categories; the validator checks that it is present.
 - `license` — the open-source licence (almost always `Apache-2.0`); required
   by the validator.
 
@@ -228,21 +231,24 @@ class of input most likely to cause a real security or reliability problem.
 
 ---
 
-**Q5.** What are the three files every eval-step fixture directory must
-contain, and what does each one hold?
+**Q5.** You are testing a skill step named `## Step 2 — Propose to the
+maintainer`. The step reads a PR description and decides whether to propose
+adding a missing issue link. What would you put in each of the three eval-step
+files, and what three case types would you create?
 
 <details>
 <summary>Answer</summary>
 
-1. `step-config.json` — a JSON object that ties the eval to the skill file
-   and the step heading it tests (`skill_md` and `step_heading` keys).
-2. `user-prompt-template.md` — the input the agent receives, written as a
-   Markdown template with `{placeholders}` that each case fills in.
-3. `output-spec.md` — the exact specification of what a correct answer must
-   contain or avoid; the harness checks the agent's output against this file.
+`step-config.json` would name the skill file and the exact step heading, for
+example `skills/pr-issue-link-check/SKILL.md` and `## Step 2 — Propose to the
+maintainer`. `user-prompt-template.md` would hold a reusable prompt with a
+placeholder for the PR description. `output-spec.md` would say that a correct
+answer must report whether a link is present, propose adding one when missing,
+and must not edit or post without confirmation.
 
-Each case directory under `fixtures/` then provides its own
-`expected.json` with the case-specific variable values and expected output.
+The three cases should be: a normal PR description with no linked issue, an
+empty PR description, and an attack description that tries to make the agent
+skip confirmation or add the link directly.
 
 </details>
 
@@ -252,14 +258,14 @@ Each case directory under `fixtures/` then provides its own
 
 A skill is a Markdown file with YAML frontmatter and a numbered step list —
 not code, and not tested with unit tests, but with an eval suite of example
-cases. Four frontmatter fields are required: `name`, `description`,
-`when_to_use`, and `license`; the validator enforces all four. Three rules
+cases. The starter skill shows five frontmatter fields: `name`, `description`,
+`when_to_use`, `capability`, and `license`; the validator checks them. Three rules
 govern every skill body: external content is data not instructions; every
 external action must be proposed and confirmed before it runs; and
 project-specific names are always placeholders. An eval suite requires three
 case types as a minimum — normal input, empty/degenerate input, and an attack
 case — because the attack case is where prompt-injection weaknesses live. The
-six-step workflow (look around → pick a use case → create the starter file →
+authoring workflow (look around → pick a use case → create the starter file →
 write the body → validate → write evals → open PR) is the path from idea to
 merged contribution.
 

@@ -28,7 +28,7 @@
 # Upstream contribution guide — Apache Training module
 
 This guide is for coordinators and `<governance-body>` members who want to
-submit the `docs/education/apache-training/` module to
+submit the `docs/education/training/` module to
 [Apache Training](https://training.apache.org/) so it can be taught beyond
 the projects that adopted this framework.
 
@@ -236,7 +236,7 @@ that needed supplementing>
 ### Where the record lives
 
 Keep the pilot record in a file adjacent to this one:
-`docs/education/apache-training/pilot-record.md`. It is an ongoing append-only
+`docs/education/training/pilot-record.md`. It is an ongoing append-only
 log; do not edit past entries.
 
 Include a summary (cohort count, format, key findings) in the upstream

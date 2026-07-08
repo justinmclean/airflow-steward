@@ -24,7 +24,7 @@
 # Lesson 3 — Choosing models
 
 **Source page:** [How to use different models](../choosing-models.md)
-**Estimated time:** 30 minutes (20 min reading + 10 min exercises and self-check)
+**Estimated time:** 35 minutes (20 min reading + 15 min exercises and self-check)
 **Lesson in sequence:** 3 of 11
 
 ---
@@ -61,6 +61,8 @@ from start to finish. Pay particular attention to:
 
 - The "There is no single 'best' model" section and its three-way tradeoff.
 - The "Match the model to the job" task-complexity ladder.
+- The "Local or hosted?" deployment choice.
+- The "Bigger context is not automatically better" section.
 - The "Let evals decide, not vibes" four-step process.
 - The "Check your understanding" block at the bottom.
 
@@ -71,13 +73,14 @@ you want to check something.
 
 ## Exercises
 
-Work through these alone or in pairs. Each exercise takes about two minutes.
-No computers needed: use paper, a whiteboard, or a shared document.
+Work through these alone or in pairs. The exercise block takes about 10 to 12
+minutes. No computers needed: use paper, a whiteboard, or a shared document.
 
 ### Exercise 1 — The three-way tradeoff
 
 Below are three model descriptions. For each one, identify which of the
-three tradeoff dimensions it has maximised and which it has compromised.
+three tradeoff dimensions or deployment factors it has maximised and which it
+has compromised.
 Then match each model to the task type it fits best.
 
 > **Model A:** Answers in under two seconds, costs less than a cent per
@@ -95,8 +98,8 @@ Task types to assign (one per model):
 - Triaging an ambiguous bug report that references four interacting components.
 - Processing contributor emails on a project with strict data-residency rules.
 
-Write: which model fits which task, and name the tradeoff dimension that
-makes it the right fit.
+Write: which model fits which task, and name the tradeoff dimension or
+deployment factor that makes it the right fit.
 
 ### Exercise 2 — Classify the task
 
@@ -108,7 +111,8 @@ each classification.
 1. Extract the issue number from each of 200 pull-request titles.
 2. Decide whether a two-paragraph bug report describes a known issue or a
    genuinely new one, given a list of 30 existing issues to compare.
-3. Add the label `needs-info` to issues that have no steps to reproduce.
+3. Identify issues that should receive the `needs-info` label because they have
+   no steps to reproduce.
 4. Review a proposed API change across five files and identify whether it
    breaks the public contract documented in `CHANGELOG.md`.
 5. Summarise the last seven days of mailing-list activity in three bullet

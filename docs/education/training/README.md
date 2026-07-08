@@ -57,7 +57,7 @@ Nothing in this directory duplicates the reference material; it only frames it.
 |---|---|---|
 | [Lesson 1 — What agents are](lesson-01-what-agents-are.md) | [What agents are](../what-agents-are.md) | ~30 min |
 | [Lesson 2 — Working with agents](lesson-02-working-with-agents.md) | [Working with agents](../working-with-agents.md) | ~30 min |
-| [Lesson 3 — Choosing models](lesson-03-choosing-models.md) | [Choosing models](../choosing-models.md) | ~30 min |
+| [Lesson 3 — Choosing models](lesson-03-choosing-models.md) | [Choosing models](../choosing-models.md) | ~35 min |
 | Lesson 4 — Your first skill | [Your first skill](../your-first-skill.md) | ~60 min |
 | Lesson 5 — Writing safe skills | [Writing safe skills](../writing-safe-skills.md) | ~45 min |
 | Lesson 6 — Debugging a skill | [Debugging a skill](../debugging-skills.md) | ~45 min |

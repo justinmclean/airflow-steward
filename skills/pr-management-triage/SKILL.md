@@ -1,4 +1,6 @@
 ---
+# SPDX-License-Identifier: Apache-2.0
+# https://www.apache.org/licenses/LICENSE-2.0
 name: magpie-pr-management-triage
 mode: Triage
 description: |
@@ -442,6 +444,13 @@ notified:
   blocks every other. See
   [`tools/agent-guard`](../../tools/agent-guard/README.md) and
   [`comment-templates.md`](comment-templates.md#the-folded-maintainer-triage-note--the-single-contributor-channel).
+- Exemption — **your own PR/issue**: this rule targets triaging
+  *other* people's PRs. When the operator is themselves the author
+  (author == the authenticated `gh` user), the guard allows
+  `@`-mentioning maintainers/reviewers — nudging your own reviewers
+  from your own PR is a legitimate, deliberate act. A one-off
+  `MAGPIE_ALLOW_MENTIONS=1` override is the escape hatch for any
+  other intentional exception.
 
 This supersedes Golden rule 9's "pings still notify a maintainer"
 expectation for the operator/reviewer side: F5a/F5b still make the

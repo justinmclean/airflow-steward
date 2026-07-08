@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
 You are executing the License headers sub-check from Step 4 of the
 pr-management-code-review skill from the Apache Magpie framework.
 
@@ -23,6 +26,11 @@ If the PR both (a) adds or modifies a header-tool exclusion entry (an
 carrying a third-party header, CI passes green by construction. Raise a
 `major` finding asking the maintainer to confirm the exclusion is
 appropriate.
+This rule takes precedence over the rule 6 exemptions. The act of adding
+an exclusion entry for a file is exactly what defeats the tooling, so the
+excluded file must be confirmed by a human rather than assumed exempt — do
+not silently apply a rule 6 exemption to a file the PR is adding to an
+exclusion list.
 
 **3. Overly broad exclusion pattern.**
 If the PR adds or modifies a header-tool exclusion entry whose glob is
@@ -44,7 +52,17 @@ Even on a fully-tooled project with green CI, raise a finding for:
   still wrong) — `major`
 
 **6. Exemptions — no finding.**
-- Generated files
+Determine each exemption from evidence in the diff and CI context, not from
+the file's name. A file's name is not proof of its category: a file named
+`GeneratedClient.java`, `vendored_util.py`, or `test_helpers.go` is only
+generated / vendored / test-resource if the diff, build config, or a codegen
+annotation actually shows it to be. When the diff body explicitly states the
+file is hand-written (or otherwise contradicts the category its name
+suggests), the exemption does NOT apply — trust the content over the name.
+- Generated files (only when a generator config, codegen annotation, or the
+  PR itself confirms the file is machine-generated; a "Generated"-style name
+  alone is not enough, and an explicit "hand-written / not generated" note
+  overrides it)
 - Vendored or third-party files
 - Data and test-resource fixtures
 - Binary files

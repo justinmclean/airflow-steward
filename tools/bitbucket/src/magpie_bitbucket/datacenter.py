@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from magpie_bitbucket.client import BitbucketConfig, get_json, quote_path, require
+from magpie_bitbucket.client import BitbucketConfig, BitbucketError, get_json, quote_path, require
 
 
 def _api_base(config: BitbucketConfig) -> str:
@@ -81,6 +81,59 @@ def get_pull_request(config: BitbucketConfig, pull_request_id: str) -> dict[str,
     pr_id = quote_path(pull_request_id)
     url = f"{_api_base(config)}/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
     return get_json(url, config)
+
+
+def get_pull_request_status(config: BitbucketConfig, pull_request_id: str) -> dict[str, Any]:
+    """Fetch build statuses for the source commit of a Bitbucket Data Center pull request."""
+    pull_request = get_pull_request(config, pull_request_id)
+    commit = _pull_request_source_commit(pull_request)
+    commit_id = quote_path(commit)
+
+    base_url = f"{require(config.base_url, 'BITBUCKET_BASE_URL').rstrip('/')}/rest/build-status/1.0/commits/{commit_id}"
+
+    start = 0
+    combined: dict[str, Any] = {
+        "pull_request_id": pull_request_id,
+        "commit": commit,
+        "values": [],
+        "paginated": True,
+        "pages": [],
+        "pull_request": pull_request,
+    }
+
+    while True:
+        page = get_json(f"{base_url}?start={start}", config)
+        combined["pages"].append(page)
+
+        values = page.get("values")
+        if isinstance(values, list):
+            combined["values"].extend(item for item in values if isinstance(item, dict))
+
+        if page.get("isLastPage") is True:
+            break
+
+        next_start = page.get("nextPageStart")
+        if not isinstance(next_start, int):
+            break
+
+        if next_start <= start:
+            break
+
+        start = next_start
+
+    return combined
+
+
+def _pull_request_source_commit(raw: dict[str, Any]) -> str:
+    """Return the Bitbucket Data Center source commit hash for a pull request."""
+    from_ref = raw.get("fromRef")
+    if isinstance(from_ref, dict):
+        latest_commit = from_ref.get("latestCommit")
+        if isinstance(latest_commit, str) and latest_commit:
+            return latest_commit
+
+    msg = "Bitbucket Data Center pull request response did not include fromRef.latestCommit"
+    raise BitbucketError(msg)
 
 
 # Bitbucket Data Center exposes PR comments through the broader activities feed.

@@ -60,7 +60,7 @@ Nothing in this directory duplicates the reference material; it only frames it.
 | [Lesson 3 — Choosing models](lesson-03-choosing-models.md) | [Choosing models](../choosing-models.md) | ~35 min |
 | [Lesson 4 — Your first skill](lesson-04-your-first-skill.md) | [Your first skill](../your-first-skill.md) | ~60 min |
 | [Lesson 5 — Writing safe skills](lesson-05-writing-safe-skills.md) | [Writing safe skills](../writing-safe-skills.md) | ~45 min |
-| [Lesson 6 — Debugging a skill](lesson-06-debugging-a-skill.md) | [Debugging a skill](../debugging-skills.md) | ~45 min |
+| [Lesson 6 — Debugging a skill](lesson-06-debugging-a-skill.md) | [Debugging a skill](../debugging-skills.md) | ~50 min |
 | Lesson 7 — Writing portable skills | [Writing portable skills](../portable-skills.md) | ~30 min |
 | Lesson 8 — Eval-driven development | [Eval-driven development](../eval-driven-development.md) | ~60 min |
 | Lesson 9 — Agentic and autonomous work | [Agentic and autonomous work](../agentic-work.md) | ~45 min |

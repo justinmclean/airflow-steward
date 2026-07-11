@@ -12,6 +12,7 @@
     - [`dependency-audit` (experimental)](#dependency-audit-experimental)
     - [`license-compliance-audit` (experimental)](#license-compliance-audit-experimental)
     - [`flaky-test-triage` (experimental)](#flaky-test-triage-experimental)
+    - [`dependency-license-audit` (experimental)](#dependency-license-audit-experimental)
   - [Status](#status)
   - [Adopter contract](#adopter-contract)
   - [Cross-references](#cross-references)
@@ -134,11 +135,58 @@ SHA, job-name patterns across runs. No test code is modified.
 the audit window, the failure-rate threshold, and which test-name patterns
 to include or exclude.
 
+### `dependency-license-audit` (experimental)
+
+Resolve the license of every direct and transitive dependency and classify
+each against the project's license policy. This is distinct from the two
+existing skills: `license-compliance-audit` checks the project's own
+LICENSE, NOTICE, and SPDX headers (and excludes vendored code), and
+`dependency-audit` checks dependencies for known vulnerabilities, not
+license terms. Neither audits the licenses of the dependency tree.
+
+Checks performed:
+
+1. Detect the dependency manager(s) (reusing `dependency-audit`'s detection)
+   and enumerate direct and transitive dependencies.
+2. Resolve each dependency's declared license from ecosystem metadata
+   (`pip-licenses` / PyPI, `license-checker` for npm, `cargo-deny` or
+   `cargo license` for Rust, or `trivy` license scanning for multi-language).
+3. Classify each result against a configured policy. The default ASF policy
+   applies the three-category model: category A allowed, category B allowed in
+   binary/convenience-binary form only (not in source releases), category X
+   (copyleft such as GPL / AGPL / LGPL, and non-commercial terms) forbidden. Dependencies whose license
+   cannot be resolved are reported as unknown.
+
+Surfaces incompatible, forbidden, and unknown-license dependencies as a
+grouped report with a proposed remedy per finding (replace, remove, or
+request a relicense). Read-only; never edits a manifest or lock file.
+
+**Adopter contract**: reads `<project-config>/repo-health-config.md`
+(`dependency_license_audit`) for the policy model, explicit allow / forbid
+lists, whether to include transitive dependencies, and how to treat
+unknown-license dependencies.
+
+**Note — optional dependencies are out of scope, and that is usually fine.**
+The scan reports the resolved/installed dependency graph, so optional extras
+and feature-gated dependencies (Python extras, npm `optionalDependencies` /
+`peerDependencies`, Cargo features, Gradle `compileOnly` and feature variants,
+Maven `provided`-scope deps) are not covered unless enabled at scan time. For
+ASF adopters this is by design rather than a gap: a Category X dependency is
+prohibited only when it is *distributed* in ASF source or a convenience
+binary. An optional, non-distributed Category X dependency that merely
+supports an optional feature (or a build-time-only tool) is explicitly
+permitted, so the default scan already covers what the policy cares about. If
+a maintainer wants the full dependency inventory regardless of distribution,
+enable all extras and features (for example `uv sync --all-extras
+--all-groups`, `cargo license --all-features`) or audit a full-universe lock
+file. See the "may not be distributed" guidance in the ASF resolved-licenses
+policy: <https://www.apache.org/legal/resolved.html>.
+
 ---
 
 ## Status
 
-**Experimental.** All five skills shipped. No adopter-pilot evaluation
+**Experimental.** All six skills shipped. No adopter-pilot evaluation
 has run end-to-end yet; shape may change between framework versions.
 
 To provide pilot feedback, copy
@@ -187,6 +235,19 @@ repo_health:
     window_days: 30
     # Minimum failure rate (fraction) to flag a test as candidate flaky.
     failure_rate_threshold: 0.1
+
+  dependency_license_audit:
+    # License policy model: "asf" applies the ASF category A/B/X model;
+    # "allowlist" uses allowed_licenses only.
+    policy: asf
+    # SPDX expressions always allowed, regardless of policy.
+    allowed_licenses: [Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC]
+    # SPDX expressions always forbidden (category X).
+    forbidden_licenses: [GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only, LGPL-3.0-only]
+    # Include transitive dependencies (default true).
+    include_transitive: true
+    # What to do when a dependency's license cannot be resolved: flag | ignore.
+    unknown_license_action: flag
 ```
 
 ---

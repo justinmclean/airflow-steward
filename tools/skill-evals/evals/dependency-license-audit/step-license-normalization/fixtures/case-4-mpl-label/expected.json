@@ -1,0 +1,5 @@
+{
+  "spdx": "MPL-2.0",
+  "ambiguous": false,
+  "reason": "the classifier label 'Mozilla Public License 2.0 (MPL 2.0)' normalises unambiguously to MPL-2.0"
+}

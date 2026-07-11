@@ -38,7 +38,7 @@ grouped, prioritised report → wait for confirmation before any write.
 
 ## Where it lives
 
-- Skills (five shipped): `ci-runner-audit` (obsolete GitHub-hosted runner
+- Skills (six shipped): `ci-runner-audit` (obsolete GitHub-hosted runner
   labels and macOS architecture mismatches), `workflow-security-audit`
   (zizmor-backed Actions security findings — injection, excessive
   permissions, unpinned external actions, fork-secret leaks),
@@ -50,6 +50,24 @@ grouped, prioritised report → wait for confirmation before any write.
   one Apache project's repos, or the full Apache GitHub org, is read-only
   (no workflow file, manifest, lock file, source file, or test is
   modified), and ships `mode: Triage` + `experimental` with an eval suite.
+- Sixth skill: `dependency-license-audit` (resolves the license
+  of every direct and transitive dependency, classifies each against the
+  project's license policy, and reports incompatible or unknown-license
+  dependencies). This closes a gap the existing pair leaves open:
+  `license-compliance-audit` covers only the project's own LICENSE, NOTICE,
+  and SPDX headers (and excludes vendored code), while `dependency-audit`
+  checks dependencies for known vulnerabilities, not license terms. Before
+  it, no shipped skill audited the license of the dependency tree. It
+  reuses `dependency-audit`'s manager detection, resolves each dependency's
+  declared license from ecosystem metadata (`pip-licenses` / PyPI,
+  `license-checker` for npm, `cargo-deny` / `cargo license` for Rust, or
+  `trivy` license scanning for multi-language), and classifies each result
+  against a configured policy. For ASF adopters the default policy applies
+  the three-category model: category A allowed, category B allowed in
+  binary/convenience-binary form only (not in source releases), category X
+  forbidden. Read-only; it proposes remediation (replace, remove, or
+  request a relicense) and never edits a manifest or lock file. Ships
+  `mode: Triage` + `experimental` with an eval suite.
 - Design docs: `docs/repo-health/README.md` — family overview and the
   adopter-config scaffold.
 - Planned adopter config: `projects/_template/repo-health-config.md` —
@@ -112,15 +130,16 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
 
 ## Known gaps
 
-- **Family is five skills deep — feature-complete.** `ci-runner-audit`,
+- **Family is six skills deep — feature-complete.** `ci-runner-audit`,
   `workflow-security-audit`, `dependency-audit`, `license-compliance-audit`,
-  and `flaky-test-triage` have all shipped (read-only, `experimental`, each
-  with an eval suite). No further candidate skills remain designed; the
-  family is complete pending adopter-pilot evaluation.
+  `flaky-test-triage`, and `dependency-license-audit` have all shipped
+  (read-only, `experimental`, each with an eval suite). No further candidate
+  skills remain designed; the family is complete pending adopter-pilot
+  evaluation.
 - **Adopter-config scaffold exists.** `projects/_template/repo-health-config.md`
-  covers all five skills; adopters copy it into their `<project-config>/`
+  covers all six skills; adopters copy it into their `<project-config>/`
   and fill in the relevant keys.
-- **No adopter pilot has run any family skill end-to-end.** All five
+- **No adopter pilot has run any family skill end-to-end.** All six
   shipped skills are `experimental`; behaviour may change as cross-org run
   volumes expose edge cases in classification, runner-label handling, and
   dependency-manager detection.

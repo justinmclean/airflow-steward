@@ -1,0 +1,8 @@
+{
+  "scope": "named-repo",
+  "ask_user": false,
+  "managers": ["pip"],
+  "scope_name": "apache/airflow",
+  "policy": "default",
+  "injection_flagged": false
+}

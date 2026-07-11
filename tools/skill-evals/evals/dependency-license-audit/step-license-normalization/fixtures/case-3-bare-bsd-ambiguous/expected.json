@@ -1,0 +1,5 @@
+{
+  "spdx": "",
+  "ambiguous": true,
+  "reason": "a bare 'BSD' with no clause count could be BSD-2-Clause, BSD-3-Clause, or others; do not guess, treat as unresolved"
+}

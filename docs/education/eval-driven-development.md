@@ -385,8 +385,10 @@ Pinning the exact rationale text means any correct-but-differently-worded answer
 fails. Use prose grading or structural checks for text the model writes freely.
 
 **Checking too little.**
-An `expected.json` that only checks `has_output: true` tells you nothing. Decide
-which properties matter and check those.
+An `expected.json` that pins a secondary field but never the decision it exists
+to test — one that checks `confidence` but not `class`, say — passes even when
+the skill labels every input wrong. Decide which properties actually matter, and
+always pin the decision field, not just the ones around it.
 
 **"Did it produce output?" is not an eval.**
 This is the most common mistake in early eval suites. If the eval passes as long

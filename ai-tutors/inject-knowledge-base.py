@@ -119,10 +119,35 @@ def source_page_for(training_lesson: Path) -> Path:
     return (training_lesson.parent / source_ref).resolve()
 
 
+def tag_bare_code_fences(text: str, default_lang: str = "text") -> str:
+    """Give every language-less opening code fence a language.
+
+    Markdownlint's MD040 rejects a fenced code block whose opening fence names
+    no language. A source page that opens a fence with a bare ``` would, once
+    embedded verbatim, make the generated tutor prompt fail that lint. Opening
+    fences with no info string get ``default_lang``; closing fences and fences
+    that already name a language are left untouched.
+    """
+    lines = text.split("\n")
+    in_code = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if not in_code:
+                in_code = True
+                if stripped == "```":  # opening fence with no language
+                    indent = line[: len(line) - len(line.lstrip())]
+                    lines[i] = f"{indent}```{default_lang}"
+            else:
+                in_code = False
+    return "\n".join(lines)
+
+
 def clean_markdown_for_embedding(text: str) -> str:
     text = SPDX_RE.sub("", text)
     text = DOCTOC_RE.sub("", text)
     text = MARKDOWN_LINK_RE.sub(r"\1 (\2)", text)
+    text = tag_bare_code_fences(text)
     return text.strip()
 
 

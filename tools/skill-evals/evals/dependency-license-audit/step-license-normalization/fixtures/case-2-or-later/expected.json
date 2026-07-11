@@ -1,0 +1,5 @@
+{
+  "spdx": "GPL-3.0-or-later",
+  "ambiguous": false,
+  "reason": "'or later' / the '+' suffix maps to the -or-later SPDX form, so this is GPL-3.0-or-later, not GPL-3.0-only"
+}

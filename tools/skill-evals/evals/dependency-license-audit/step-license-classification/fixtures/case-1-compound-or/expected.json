@@ -1,0 +1,5 @@
+{
+  "category": "A",
+  "selected_operand": "Apache-2.0",
+  "reason": "disjunction: the adopter may choose the most permissive operand; Apache-2.0 is category A, so the dependency is usable as Apache-2.0 even though GPL-2.0-only is an alternative"
+}

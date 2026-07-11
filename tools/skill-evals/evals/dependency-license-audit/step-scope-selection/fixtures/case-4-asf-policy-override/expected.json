@@ -1,0 +1,8 @@
+{
+  "scope": "named-repo",
+  "ask_user": false,
+  "managers": ["trivy"],
+  "scope_name": "apache/flink",
+  "policy": "asf",
+  "injection_flagged": false
+}

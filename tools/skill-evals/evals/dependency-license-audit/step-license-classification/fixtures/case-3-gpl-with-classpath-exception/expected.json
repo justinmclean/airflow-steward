@@ -1,0 +1,5 @@
+{
+  "category": "review",
+  "selected_operand": "",
+  "reason": "a WITH exception is not the base license; GPL-2.0 WITH Classpath-exception-2.0 may or may not affect the product per ASF policy, so it must be flagged for PMC review rather than auto-blocked as plain GPL"
+}

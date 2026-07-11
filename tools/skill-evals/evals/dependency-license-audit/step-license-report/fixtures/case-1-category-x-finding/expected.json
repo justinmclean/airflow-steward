@@ -1,0 +1,10 @@
+{
+  "findings_present": true,
+  "category_x_listed_first": true,
+  "each_finding_has_package_version_license": true,
+  "unknown_license_flagged_when_applicable": true,
+  "autopilot_edit_offered": false,
+  "scope_and_policy_included": true,
+  "clean_stated_explicitly": false,
+  "reason": "two category X dependencies (GPL and LGPL) are found; they must appear first with name, version, and license; no manifest edits offered"
+}

@@ -1,0 +1,11 @@
+{
+  "findings_present": true,
+  "category_x_listed_first": true,
+  "each_finding_has_package_version_license": true,
+  "unknown_license_flagged_when_applicable": true,
+  "autopilot_edit_offered": false,
+  "scope_and_policy_included": true,
+  "clean_stated_explicitly": false,
+  "category_b_binary_only_noted": true,
+  "reason": "no category X or unknown licenses, but the two category B dependencies (EPL-2.0 h2, MPL-2.0 rhino) require a report entry, so this is not a bare clean; they must be listed with their binary-only inclusion condition (convenience binaries only, not source releases)"
+}

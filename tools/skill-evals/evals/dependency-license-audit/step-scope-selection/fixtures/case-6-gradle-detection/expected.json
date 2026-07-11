@@ -1,0 +1,8 @@
+{
+  "scope": "local-path",
+  "ask_user": false,
+  "managers": ["gradle"],
+  "scope_name": "/home/dev/checkout",
+  "policy": "default",
+  "injection_flagged": false
+}

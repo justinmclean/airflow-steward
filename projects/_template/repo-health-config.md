@@ -14,8 +14,8 @@
 Per-skill switches for the repo-health audit family. Copy this file into
 your `<project-config>/` directory and fill in the `TODO` values. Skills
 in this family (`ci-runner-audit`, `workflow-security-audit`,
-`dependency-audit`, `license-compliance-audit`, and `flaky-test-triage`)
-read from this file at run time.
+`dependency-audit`, `license-compliance-audit`, `flaky-test-triage`, and
+`dependency-license-audit`) read from this file at run time.
 
 See `docs/repo-health/README.md` for a full description of each skill
 and adopter-contract details.
@@ -132,4 +132,42 @@ repo_health:
     # Job-name glob patterns to exclude (known-always-failing or skipped jobs).
     # TODO: add patterns for jobs that are legitimately unstable but not flaky.
     exclude_patterns: []
+
+  # ---------------------------------------------------------------------------
+  # dependency-license-audit — license classification of direct + transitive
+  # dependencies against a policy.  Consumed by: dependency-license-audit.
+  # ---------------------------------------------------------------------------
+  dependency_license_audit:
+
+    # License policy model.
+    #   asf       — apply the ASF three-category model (A allowed, B allowed
+    #               in binary/convenience-binary form only, X forbidden).
+    #   allowlist — allow only the SPDX expressions in allowed_licenses below.
+    # Default: asf.
+    policy: asf
+
+    # SPDX expressions always treated as allowed, regardless of policy.
+    # Override when: your project permits additional permissive licenses.
+    allowed_licenses:
+      - Apache-2.0
+      - MIT
+      - BSD-2-Clause
+      - BSD-3-Clause
+      - ISC
+
+    # SPDX expressions always treated as forbidden (ASF category X).
+    # Override when: your project has an exception for a specific dependency.
+    forbidden_licenses:
+      - GPL-2.0-only
+      - GPL-3.0-only
+      - AGPL-3.0-only
+      - LGPL-3.0-only
+
+    # Audit transitive dependencies, not just direct ones. Default: true.
+    include_transitive: true
+
+    # How to treat a dependency whose license cannot be resolved.
+    # Allowed values: flag (report as unknown), ignore.
+    # Default: flag.
+    unknown_license_action: flag
 ```

@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
@@ -14,9 +17,9 @@
     - [In-person](#in-person)
     - [Virtual](#virtual)
   - [Schedule templates](#schedule-templates)
-    - [One-day workshop (~7 hours with breaks)](#one-day-workshop-7-hours-with-breaks)
+    - [One-day workshop (~7.5 hours with breaks)](#one-day-workshop-75-hours-with-breaks)
     - [Two-session intensive](#two-session-intensive-1)
-    - [Weekly reading group (~10 weeks)](#weekly-reading-group-10-weeks)
+    - [Weekly reading group (~11 weeks)](#weekly-reading-group-11-weeks)
   - [Per-lesson facilitator notes](#per-lesson-facilitator-notes)
     - [Lesson 1 — What agents are](#lesson-1--what-agents-are)
     - [Lesson 2 — Working with agents](#lesson-2--working-with-agents)
@@ -28,6 +31,7 @@
     - [Lesson 8 — Eval-driven development](#lesson-8--eval-driven-development)
     - [Lesson 9 — Agentic and autonomous work](#lesson-9--agentic-and-autonomous-work)
     - [Lesson 10 — English as a programming language](#lesson-10--english-as-a-programming-language)
+    - [Lesson 11 — How to contribute](#lesson-11--how-to-contribute)
   - [Customising for your project](#customising-for-your-project)
     - [Replacing placeholders](#replacing-placeholders)
     - [Adapting examples](#adapting-examples)
@@ -41,9 +45,6 @@
   - [Licence](#licence)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-<!-- SPDX-License-Identifier: Apache-2.0
-     https://www.apache.org/licenses/LICENSE-2.0 -->
 
 # Facilitator guide — Building and running AI agents for open-source projects
 
@@ -66,7 +67,7 @@ moves that turn static reading material into an active learning session.
 
 ## Module overview
 
-Ten lessons totalling approximately 6–7 hours of learner time:
+Eleven lessons totalling approximately 7 hours of learner time:
 
 | Lesson | Topic | Learner time |
 |---|---|---|
@@ -80,9 +81,10 @@ Ten lessons totalling approximately 6–7 hours of learner time:
 | 8 | Eval-driven development | 60 min |
 | 9 | Agentic and autonomous work | 45 min |
 | 10 | English as a programming language | 30 min |
+| 11 | How to contribute | 30 min |
 
 Each lesson follows the same structure: read the source page → work through
-four exercises (20–40 min) → answer the self-check questions. Exercises need
+four or five exercises (20–40 min) → answer the self-check questions. Exercises need
 no computer; they use paper, a whiteboard, or a shared document. The self-check
 questions include hidden answers that learners reveal to grade themselves.
 
@@ -99,7 +101,7 @@ groups.** Lowest facilitation overhead; high learner flexibility.
 
 ### Instructor-led workshop (one day)
 
-Cover all ten lessons in a single day. Use the one-day schedule in the
+Cover all eleven lessons in a single day. Use the one-day schedule in the
 [Schedule templates](#schedule-templates) section. Requires a dedicated room
 or video-conference session. Best for initial project on-boarding, conference
 tutorials, or intensive team training.
@@ -107,8 +109,8 @@ tutorials, or intensive team training.
 ### Two-session intensive
 
 Split the module across two half-days or two evenings. Lessons 1–5 (concepts
-and first skill) in session one; lessons 6–10 (safety, portability, evals,
-autonomy, prose discipline) in session two. A natural break point: session two
+and first skill) in session one; lessons 6–11 (safety, portability, evals,
+autonomy, prose discipline, and contributing) in session two. A natural break point: session two
 builds on working skills, so learners have time between sessions to write one
 for their own project.
 
@@ -153,7 +155,7 @@ questions in the discussion forum.
 
 ## Schedule templates
 
-### One-day workshop (~7 hours with breaks)
+### One-day workshop (~7.5 hours with breaks)
 
 | Time | Activity |
 |---|---|
@@ -171,20 +173,21 @@ questions in the discussion forum.
 | 15:15–16:15 | Lesson 8 — Eval-driven development (60 min) |
 | 16:15–17:00 | Lesson 9 — Agentic and autonomous work |
 | 17:00–17:30 | Lesson 10 — English as a programming language |
-| 17:30–17:45 | Wrap-up and next steps |
+| 17:30–18:00 | Lesson 11 — How to contribute |
+| 18:00–18:15 | Wrap-up and next steps |
 
 Reduce to a half-day by covering lessons 1–5 only (concepts and first
-skill). Lessons 6–10 form a natural second half.
+skill). Lessons 6–11 form a natural second half.
 
 ### Two-session intensive
 
 **Session 1 (~3.5 hours):** Welcome (15 min), lessons 1–5 (175 min), wrap-up
 (10 min). Assign: write one skill for your project between sessions.
 
-**Session 2 (~3.5 hours):** Review and share skills from the between-session
-assignment (20 min), lessons 6–10 (195 min), retrospective (15 min).
+**Session 2 (~4.5 hours):** Review and share skills from the between-session
+assignment (20 min), lessons 6–11 (240 min), retrospective (15 min).
 
-### Weekly reading group (~10 weeks)
+### Weekly reading group (~11 weeks)
 
 One lesson per week, 45 minutes per session. Learners read the source page
 and lesson file before the session. The session time is for exercises and
@@ -202,6 +205,7 @@ debrief only.
 | 8 | Eval-driven development | Read `eval-driven-development.md` and lesson 8 |
 | 9 | Agentic and autonomous work | Read `agentic-work.md` and lesson 9 |
 | 10 | English as a programming language | Read `english-as-code.md` and lesson 10 |
+| 11 | How to contribute | Read `contributing.md` and lesson 11 |
 
 ---
 
@@ -210,6 +214,12 @@ debrief only.
 For each lesson: the core idea to anchor, discussion prompts to deepen the
 group's understanding, common misconceptions to correct, and rough timing
 guidance for instructor-led delivery.
+
+These timings are for instructor-led delivery, where the reading is compressed
+(skimmed, or presented together) to leave most of the slot for exercises. They
+deliberately allocate less reading time than the self-paced estimates in each
+lesson's own header — a workshop should spend its time on active practice, not
+on reading the source page aloud.
 
 ---
 
@@ -408,7 +418,7 @@ config-resolution, not from "making it generic."
 - "Look at the skill draft you started in lesson 4. How many project-specific
   strings are in it? What would you need to replace to make it reusable across
   `<PROJECT>` and a sister project?"
-- "The `<TRACKER>` placeholder resolves differently for a GitHub project and
+- "The `<tracker>` placeholder resolves differently for a GitHub project and
   a Jira-backed project. Who decides which adapter to load, and when?"
 - "What is the difference between a placeholder and a conditional? When is
   'if GitHub else Jira' the wrong approach?"
@@ -420,7 +430,7 @@ config-resolution, not from "making it generic."
   test with a dummy config, easier to explain to new contributors, and easier
   to donate upstream if the project later wants to.
 - *"Placeholders make the skill harder to read."* A well-named placeholder
-  (`<TRACKER>`, `<PROJECT>`) is more readable than a hardcoded URL. It makes
+  (`<tracker>`, `<PROJECT>`) is more readable than a hardcoded URL. It makes
   the assumption explicit rather than hiding it in a string.
 
 ---
@@ -521,6 +531,38 @@ like, state boundaries, name edge cases — are the tools for closing gaps.
 
 ---
 
+### Lesson 11 — How to contribute
+
+**Core idea.** Most of Magpie is prose the agent executes, so contributing is
+within reach of anyone who can write precisely. The four first contributions —
+fix a skill, improve a doc, add a pattern, write a new skill — all follow the
+same spec-first, eval-backed, reviewed path.
+
+**Timing.** 30 min: 10 min reading, 15 min exercises, 5 min debrief.
+
+**Discussion prompts.**
+
+- "Of the four first-contribution types (fix a skill, improve a doc, add a
+  pattern, write a new skill), which would you start with for `<PROJECT>`, and
+  why that one?"
+- "Take a change you might make to one of `<PROJECT>`'s skills. Does it alter a
+  rule, a flow, or a contract? Walk the group through whether it needs a spec
+  update."
+- "You are reviewing a contributor's first skill PR. Which of the five
+  framework rules would you check first, and what would you look for in the
+  diff?"
+
+**Common misconceptions.**
+
+- *"You need to be a strong programmer to contribute."* No — most contributions
+  are prose the agent executes. Clear thinking and precise writing are the core
+  skills; systems programming is only needed for the tool layer (`tools/`).
+- *"Evals can come in a follow-up PR."* No — a skill without a matching eval
+  suite is not finished, and a PR that defers the evals will not pass review.
+  The eval suite ships in the same PR as the skill.
+
+---
+
 ## Customising for your project
 
 ### Replacing placeholders
@@ -538,8 +580,9 @@ Other placeholders you may encounter:
 | Placeholder | What it represents |
 |---|---|
 | `<PROJECT>` | The adopting project's name |
-| `<TRACKER>` | The issue tracker (e.g. GitHub Issues, Jira) |
-| `<UPSTREAM>` | The main repository |
+| `<tracker>` | The issue tracker (e.g. GitHub Issues, JIRA) |
+| `<upstream>` | The main repository (e.g. `org/repo`) |
+| `<security-list>` | The private security mailing list |
 
 ### Adapting examples
 
@@ -550,7 +593,7 @@ illustrative context changes.
 
 ### Selecting lessons
 
-You do not need to teach all ten lessons in one sitting. A team that already
+You do not need to teach all eleven lessons in one sitting. A team that already
 has experience with agent concepts and wants to focus on safety can start at
 lesson 5. A team writing its first eval suite can teach lessons 1, 4, and 8
 as a standalone mini-module. The lessons reference each other but are
@@ -562,7 +605,7 @@ designed to be understandable on their own.
 
 ### Self-check questions
 
-Each lesson ends with five self-check questions with hidden answers. Learners
+Each lesson ends with five or six self-check questions with hidden answers. Learners
 reveal the answers themselves and grade their own understanding. This is
 intentional: the goal is self-knowledge, not formal grading.
 
@@ -591,7 +634,7 @@ that passes — not a quiz score.
 
 **"Do learners need a running agent installation?"**
 No. The exercises are paper-based or whiteboard-based. Learners can work
-through all ten lessons without installing any software. Lesson 4 (your first
+through all eleven lessons without installing any software. Lesson 4 (your first
 skill) suggests writing a skill file; that requires only a text editor.
 
 **"Can I skip the exercises and just present the source pages?"**

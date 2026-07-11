@@ -63,12 +63,12 @@ Nothing in this directory duplicates the reference material; it only frames it.
 | [Lesson 6 — Debugging a skill](lesson-06-debugging-a-skill.md) | [Debugging a skill](../debugging-skills.md) | ~50 min |
 | [Lesson 7 — Writing portable skills](lesson-07-writing-portable-skills.md) | [Writing portable skills](../portable-skills.md) | ~35 min |
 | [Lesson 8 — Eval-driven development](lesson-08-eval-driven-development.md) | [Eval-driven development](../eval-driven-development.md) | ~60 min |
-| Lesson 9 — Agentic and autonomous work | [Agentic and autonomous work](../agentic-work.md) | ~45 min |
+| [Lesson 9 — Agentic and autonomous work](lesson-09-agentic-and-autonomous-work.md) | [Agentic and autonomous work](../agentic-work.md) | ~45 min |
 | Lesson 10 — English as a programming language | [English as a programming language](../english-as-code.md) | ~30 min |
 | Lesson 11 — How to contribute | [How to contribute](../contributing.md) | ~30 min |
 | Hands-on lab | [Tutorials](../tutorials.md) | ~90 min |
 
-> Lessons 9–11 and the lab follow the same format as lessons 1–8. They are
+> Lessons 10–11 and the lab follow the same format as lessons 1–9. They are
 > added per-sub-item; this file tracks them as placeholders until each one
 > lands.
 

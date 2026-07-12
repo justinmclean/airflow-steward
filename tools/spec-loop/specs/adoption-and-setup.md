@@ -17,6 +17,10 @@ acceptance:
     re-installs the same framework version.
   - Drift between the committed pin and the local install is detected and
     surfaced with an upgrade proposal.
+  - A gitignored `.apache-magpie-local/` supplies per-person overrides that
+    layer above the committed `.apache-magpie-overrides/`, cannot weaken the
+    safety baseline, and can be ignored for a single run via a one-shot
+    default switch.
 ---
 
 # Adoption & setup
@@ -67,6 +71,23 @@ gitignored skill symlinks, and committed agent-readable override files.
   privacy, or external-content-as-data baseline. If an override conflicts
   with those baseline rules, the framework rule wins and the conflict is
   surfaced.
+- **Personal, gitignored overrides** live under `.apache-magpie-local/`, a
+  per-person sibling to the committed `.apache-magpie-overrides/` that is
+  never committed. It is read at runtime under the same additive-only
+  guardrail as any override: it may carry a person's paths, wording, or
+  capability/MCP enablement (for example a release manager enabling a
+  Policy MCP that other members leave off), but it cannot weaken the safety,
+  confidentiality, or privacy baseline. Precedence, first hit wins:
+  `.apache-magpie-local/` -> `.apache-magpie-overrides/` -> organization
+  defaults -> framework default. Adoption adds the `.gitignore` entry; on a
+  repo that has not adopted Magpie, the user adds that one line by hand so
+  the directory stays untracked. This is the surface that makes hybrid
+  setups work: one person can run Magpie against a shared or non-adopting
+  repo without committing anything or requiring teammates to opt in.
+- **One-shot default run.** A per-invocation switch runs a skill against
+  framework defaults for that session only, ignoring both
+  `.apache-magpie-local/` and `.apache-magpie-overrides/`, without editing or
+  removing either file. The safety baseline still applies.
 
 ## Out of scope
 
@@ -82,6 +103,14 @@ gitignored skill symlinks, and committed agent-readable override files.
 4. Override files can be discovered and surfaced to skills without
    editing upstream skill bodies, and override text cannot weaken the
    safety/confidentiality baseline.
+5. A gitignored `.apache-magpie-local/` is read as a per-person override
+   surface that layers above `.apache-magpie-overrides/` (personal-local ->
+   committed -> organization -> framework default, first hit wins), under the
+   same additive-only guardrail, and works on a repo that has not adopted
+   Magpie once its `.gitignore` line is present.
+6. A one-shot switch runs a skill against framework defaults for a single
+   session, ignoring both override surfaces without deleting them, and the
+   safety baseline still applies.
 
 ## Validation
 
@@ -95,3 +124,9 @@ uv run --project tools/skill-and-tool-validator --group dev skill-and-tool-valid
 - `stable`; gaps appear as new agent targets to add to the registry
   ([`agents.md`](../../../skills/setup/agents.md)) or new override
   surfaces — recorded by the plan pass.
+- **Not yet built:** the `.apache-magpie-local/` personal override surface
+  (acceptance 5) and the one-shot default-run switch (acceptance 6). Both are
+  intended behaviour recorded here and tracked as work items
+  `magpie-local-convention` and `override-bypass-one-shot` in the plan. The
+  three hybrid-setup how-tos that build on the local surface are tracked
+  alongside them.

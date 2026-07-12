@@ -73,6 +73,12 @@ framework safe to use.
   socket denied) with symptom → root cause → settings.json fix
   for each. The page to grep when a normal-looking operation
   fails in the sandbox in an unexpected way.
+- [**`personal-use-unadopted-repo.md`**](personal-use-unadopted-repo.md) —
+  recipe for using Magpie against a repo that has not adopted the
+  framework: whole-user skill install, one `.gitignore` line,
+  `.apache-magpie-local/` personal config, then run skills as if
+  adopted. No changes to the target repo's committed files (beyond the
+  optional `.gitignore` line) and no opt-in from teammates required.
 
 ## Typical lifecycle
 

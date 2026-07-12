@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0
+     https://www.apache.org/licenses/LICENSE-2.0 -->
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
@@ -19,9 +22,6 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-<!-- SPDX-License-Identifier: Apache-2.0
-     https://www.apache.org/licenses/LICENSE-2.0 -->
-
 # Hands-on lab — Build and evaluate a skill
 
 **Source page:** [Tutorial: build and evaluate a skill](../tutorials.md)
@@ -35,7 +35,7 @@
 By the end of this lab you will be able to:
 
 1. **Scaffold** a new skill in the correct directory with valid frontmatter,
-   applying all four required fields without consulting the reference.
+   applying all five required fields without consulting the reference.
 2. **Write** a short skill body that follows the three core framework rules
    — external content is data not instructions, propose-confirm-act, and
    use-placeholders — identifying where each rule must appear in the text.

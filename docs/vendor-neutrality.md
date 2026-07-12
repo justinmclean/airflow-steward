@@ -594,7 +594,7 @@ Organization scope (declared, orthogonal to vendor): ASF = 14, agnostic = 56.
 | `preflight-audit` | analytics | any | ✅ agnostic |
 | `privacy-llm` | privacy | any | ✅ agnostic |
 | `probe-templates` | sandbox | any | ✅ agnostic |
-| `sandbox-lint` | sandbox | Claude Code, Kiro, OpenCode | ✅ portable |
+| `sandbox-lint` | sandbox | Claude Code, Codex, Cursor, Gemini CLI, Kiro, OpenCode | ✅ portable |
 | `security-tracker-stats-dashboard` | analytics | any | ✅ agnostic |
 | `skill-and-tool-validator` | framework-dev | any | ✅ agnostic |
 | `skill-evals` | framework-dev | any | ✅ agnostic |
@@ -609,9 +609,9 @@ Organization scope (declared, orthogonal to vendor): ASF = 14, agnostic = 56.
 Harness → substrate tools it supports:
 
 - **Claude Code** (3): `agent-guard`, `sandbox-lint`, `spec-loop`
-- **Codex** (1): `spec-loop`
-- **Cursor** (1): `spec-loop`
-- **Gemini CLI** (1): `spec-loop`
+- **Codex** (2): `sandbox-lint`, `spec-loop`
+- **Cursor** (2): `sandbox-lint`, `spec-loop`
+- **Gemini CLI** (2): `sandbox-lint`, `spec-loop`
 - **Kiro** (3): `agent-guard`, `sandbox-lint`, `spec-loop`
 - **OpenCode** (3): `agent-guard`, `sandbox-lint`, `spec-loop`
 - **any harness** (19): `agent-isolation`, `dashboard-generator`, `dev`, `egress-gateway`, `permission-audit`, `pilot-report-validator`, `pr-management-stats`, `preflight-audit`, `privacy-llm`, `probe-templates`, `security-tracker-stats-dashboard`, `skill-and-tool-validator`, `skill-evals`, `skill-reconciler-diff`, `spec-inventory`, `spec-status-index`, `spec-validator`, `symlink-lint`, `vendor-neutrality-score`

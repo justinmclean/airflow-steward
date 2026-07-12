@@ -556,6 +556,7 @@ idempotent — re-add them if they're missing.
 ```text
 /.apache-magpie/
 /.apache-magpie.local.lock
+/.apache-magpie-local/
 /.apache-magpie-sources/
 /.apache-magpie.sources.local.lock
 /.claude/settings.local.json
@@ -757,10 +758,26 @@ in the framework for the full contract.
 **Hard rule**: never modify the snapshot under
 `<repo-root>/.apache-magpie/`. Local mods go here.
 Framework changes go via PR to `apache/magpie`.
+
+**Personal (non-shared) overrides** belong in
+`<repo-root>/.apache-magpie-local/` (gitignored). Use that
+directory for per-developer paths, local tooling, or role-
+specific capability enablements you do not want committed
+to this repo.
 ```
 
 This directory is **committed** (overrides ship with the
 adopter repo).
+
+Tell the user about the personal override surface:
+
+> *"`.apache-magpie-local/` is gitignored (already in
+> `.gitignore`). Create it at any time for per-person
+> overrides that should not be committed — capability
+> enablements, local clone paths, wording you want only
+> for yourself. The framework reads it before the
+> committed `.apache-magpie-overrides/` on every skill
+> invocation."*
 
 ## Step 9b — Scaffold `user.md` (FRESH only)
 

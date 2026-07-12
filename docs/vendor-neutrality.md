@@ -588,11 +588,7 @@ Organization scope (declared, orthogonal to vendor): ASF = 14, agnostic = 56.
 | `dashboard-generator` | analytics | any | ✅ agnostic |
 | `dev` | framework-dev | any | ✅ agnostic |
 | `egress-gateway` | sandbox | any | ✅ agnostic |
-<<<<<<< HEAD
-| `permission-audit` | sandbox | Claude Code, Kiro, OpenCode | ✅ portable |
-=======
 | `permission-audit` | sandbox | any | ✅ agnostic |
->>>>>>> f6689f1c8 (feat(permission-audit): add audit-any and declare harness agnostic)
 | `pilot-report-validator` | framework-dev | any | ✅ agnostic |
 | `pr-management-stats` | analytics | any | ✅ agnostic |
 | `preflight-audit` | analytics | any | ✅ agnostic |
@@ -612,22 +608,13 @@ Organization scope (declared, orthogonal to vendor): ASF = 14, agnostic = 56.
 
 Harness → substrate tools it supports:
 
-<<<<<<< HEAD
-- **Claude Code** (4): `agent-guard`, `permission-audit`, `sandbox-lint`, `spec-loop`
+- **Claude Code** (3): `agent-guard`, `sandbox-lint`, `spec-loop`
 - **Codex** (1): `spec-loop`
 - **Cursor** (1): `spec-loop`
 - **Gemini CLI** (1): `spec-loop`
-- **Kiro** (4): `agent-guard`, `permission-audit`, `sandbox-lint`, `spec-loop`
-- **OpenCode** (4): `agent-guard`, `permission-audit`, `sandbox-lint`, `spec-loop`
-- **any harness** (18): `agent-isolation`, `dashboard-generator`, `dev`, `egress-gateway`, `pilot-report-validator`, `pr-management-stats`, `preflight-audit`, `privacy-llm`, `probe-templates`, `security-tracker-stats-dashboard`, `skill-and-tool-validator`, `skill-evals`, `skill-reconciler-diff`, `spec-inventory`, `spec-status-index`, `spec-validator`, `symlink-lint`, `vendor-neutrality-score`
-=======
-- **Claude Code** (4): `agent-guard`, `agent-isolation`, `sandbox-lint`, `spec-loop`
-- **Codex** (1): `spec-loop`
-- **Cursor** (1): `spec-loop`
-- **Gemini CLI** (1): `spec-loop`
-- **OpenCode** (4): `agent-guard`, `agent-isolation`, `sandbox-lint`, `spec-loop`
-- **any harness** (18): `dashboard-generator`, `dev`, `egress-gateway`, `permission-audit`, `pilot-report-validator`, `pr-management-stats`, `preflight-audit`, `privacy-llm`, `probe-templates`, `security-tracker-stats-dashboard`, `skill-and-tool-validator`, `skill-evals`, `skill-reconciler-diff`, `spec-inventory`, `spec-status-index`, `spec-validator`, `symlink-lint`, `vendor-neutrality-score`
->>>>>>> f6689f1c8 (feat(permission-audit): add audit-any and declare harness agnostic)
+- **Kiro** (3): `agent-guard`, `sandbox-lint`, `spec-loop`
+- **OpenCode** (3): `agent-guard`, `sandbox-lint`, `spec-loop`
+- **any harness** (19): `agent-isolation`, `dashboard-generator`, `dev`, `egress-gateway`, `permission-audit`, `pilot-report-validator`, `pr-management-stats`, `preflight-audit`, `privacy-llm`, `probe-templates`, `security-tracker-stats-dashboard`, `skill-and-tool-validator`, `skill-evals`, `skill-reconciler-diff`, `spec-inventory`, `spec-status-index`, `spec-validator`, `symlink-lint`, `vendor-neutrality-score`
 
 **Model endpoint: neutral by construction — 4 default-approved endpoint classes across independent trust domains, plus adopter opt-in.** From the [`privacy-llm` registry](../tools/privacy-llm/models.md): the framework keys approval on *endpoint identity*, not on who hosts the model, so no single LLM vendor is privileged.
 

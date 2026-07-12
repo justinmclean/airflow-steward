@@ -27,11 +27,7 @@
 
 **Capability:** substrate:sandbox
 
-<<<<<<< HEAD
-**Harness:** Claude Code, OpenCode, Kiro
-=======
 **Harness:** agnostic
->>>>>>> f6689f1c8 (feat(permission-audit): add audit-any and declare harness agnostic)
 
 Audit + atomically edit Claude Code's `permissions.allow[]` entries
 in `<repo>/.claude/settings.json` and `<repo>/.claude/settings.local.json`.

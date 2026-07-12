@@ -145,7 +145,6 @@ def _cmd_audit_opencode(args: argparse.Namespace) -> int:
     return 1 if result.forbidden else 0
 
 
-<<<<<<< HEAD
 def _cmd_audit_kiro(args: argparse.Namespace) -> int:
     config_path = Path(args.config_path).resolve()
     config = _read_opencode_config(config_path)
@@ -160,7 +159,8 @@ def _cmd_audit_kiro(args: argparse.Namespace) -> int:
     json.dump(output, sys.stdout, indent=2)
     sys.stdout.write("\n")
     return 1 if result.forbidden else 0
-=======
+
+
 # Known harness settings locations in declaration-check order.
 # Each entry: (harness_id, path_relative_to_project_dir, audit_kind)
 # audit_kind is "claude" (uses audit_settings) or "opencode" (uses audit_opencode).
@@ -218,7 +218,6 @@ def _cmd_audit_any(args: argparse.Namespace) -> int:
     json.dump(output, sys.stdout, indent=2)
     sys.stdout.write("\n")
     return 1 if has_forbidden else 0
->>>>>>> f6689f1c8 (feat(permission-audit): add audit-any and declare harness agnostic)
 
 
 def _cmd_list_known(args: argparse.Namespace) -> int:

@@ -21,9 +21,9 @@ open gaps. Confirm whether something is already built by the artifact it
 would produce, not by branch ancestry (squash-merged branches still read as
 ahead of `main`).
 
-_Last reconciled against `main` on 2026-07-12 (`main` at #829). Each
+*Last reconciled against `main` on 2026-07-12 (`main` at #829). Each
 In-flight entry below was re-verified by checking its artifact against
-`main`, not by branch ancestry._
+`main`, not by branch ancestry.*
 
 ## In-flight (implemented on a branch, not yet merged — not available to build)
 
